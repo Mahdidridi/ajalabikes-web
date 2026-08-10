@@ -13,15 +13,16 @@ export default defineConfig({
     { name: 'mobile', use: { ...devices['Pixel 7'] } },
   ],
   /*
-   * Serveur de PRODUCTION, pas `next dev` : avec Next 16.3 et le layout racine sous
-   * [locale], le serveur de developpement n'hydrate pas les Client Components. Le
-   * selecteur de taille y reste inerte, et les tests d'interactivite echoueraient
+   * Les deux serveurs sont lances A PART, volontairement :
+   *
+   *   terminal 1   cd ../ajalabikes-api && php artisan serve --port=8000
+   *   terminal 2   npm run build && npm start
+   *   terminal 3   npx playwright test
+   *
+   * Pas de `webServer` ici pour deux raisons. D'abord le parcours a besoin de
+   * l'API Laravel, que Playwright ne sait pas demarrer. Ensuite il faut le serveur
+   * de PRODUCTION : avec Next 16.3 et le layout racine sous [locale], `next dev`
+   * n'hydrate pas les Client Components et les tests d'interactivite echoueraient
    * sur un faux negatif. Voir CLAUDE.md.
    */
-  webServer: {
-    command: 'npm run build && npm start',
-    url: 'http://127.0.0.1:3000',
-    reuseExistingServer: true,
-    timeout: 300_000,
-  },
 });
