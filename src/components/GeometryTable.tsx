@@ -45,10 +45,8 @@ export function GeometryTable({
                 {row.label}
               </td>
               <td className="p-2 font-mono font-semibold tabular-nums">{row.value_formatted}</td>
-              <td className="p-2 font-mono text-xs opacity-60">
-                {row.original_value}
-                {row.original_unit ? ` ${row.original_unit}` : ''}
-              </td>
+              {/* Deja assemblee par Laravel : le front n'accole aucune unite. */}
+              <td className="p-2 font-mono text-xs opacity-60">{row.original_formatted}</td>
             </tr>
           ))}
         </tbody>

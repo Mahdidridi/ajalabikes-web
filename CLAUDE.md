@@ -37,6 +37,21 @@ npm run typecheck && npm run lint && npm run build
 npx playwright test          # desktop + mobile + RTL
 ```
 
+### Piège vérifié le 10 août 2026 — l'interactivité ne se teste pas en `npm run dev`
+
+Avec Next 16.3 et le layout racine sous `[locale]`, **le serveur de développement n'hydrate
+pas les Client Components** : la page s'affiche correctement mais aucun bouton ne réagit, et
+la console ne montre aucune erreur. Le symptôme trompe : on croit à un bug de son code.
+
+Diagnostic en une ligne dans la console du navigateur — s'il rend `0`, rien n'est hydraté :
+
+```js
+Object.keys(document.querySelector('button')).filter(k => k.startsWith('__react')).length
+```
+
+**Toute vérification d'interactivité passe par `npm run build && npm start`**, où l'hydratation
+fonctionne normalement. Playwright doit donc lancer le serveur de production, pas `next dev`.
+
 ## Règles propres à ce dépôt
 
 **1. Server Components par défaut.**

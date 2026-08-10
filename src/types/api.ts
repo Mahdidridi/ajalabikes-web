@@ -67,15 +67,23 @@ export interface components {
                     value_formatted: string | null;
                     value_raw: number | null;
                     unit: string | null;
-                    /** @description La provenance reste visible a cote du normalise. */
+                    /**
+                     * @description La provenance reste visible a cote du normalise, deja assemblee :
+                     *     le front n'a pas a decider s'il faut accoler l'unite.
+                     */
+                    original_formatted: string;
                     original_value: string;
                     original_unit: string | null;
                 }[];
             }[];
             components: {
                 key: string;
+                /**
+                 * @description "shortSpecFork" est une cle d'API Trek, pas un mot que quelqu'un
+                 *     reconnait. Elle ne doit jamais arriver a l'ecran.
+                 */
                 label: string;
-                /** @description Jamais traduite : "Fox Factory 36" reste "Fox Factory 36". */
+                /** @description La description, elle, n'est jamais traduite : "Fox Factory 36" reste tel quel. */
                 description: string;
             }[];
             freshness: {
