@@ -66,3 +66,5 @@ LCP ≤ 2,5 s p75 mobile · INP ≤ 200 ms · CLS ≤ 0,1 · TTFB page cachée �
 ## Ne pas committer
 
 `.claude/` · `.env.local` · `src/types/api.ts` modifié à la main
+
+@AGENTS.md
