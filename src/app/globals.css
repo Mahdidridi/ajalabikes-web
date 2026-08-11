@@ -3,24 +3,47 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Fond des vignettes produit. Les deux marques publient des detourages sur
+     blanc : un fond neutre tres clair fait tenir la grille sans halo. */
+  --surface: #f6f6f5;
+  --border: #e5e5e3;
+  --muted: #6b6b68;
+  --accent: #0f766e;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+    --surface: #17171a;
+    --border: #2a2a2e;
+    --muted: #9a9a97;
+    --accent: #2dd4bf;
   }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --font-sans: var(--font-sans), var(--font-arabic), system-ui, sans-serif;
+  --font-mono: var(--font-mono), ui-monospace, monospace;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  /*
+   * `--font-arabic` (Noto Sans Arabic) est declaree APRES la police latine :
+   * le navigateur prend la premiere qui couvre le caractere a rendre, donc
+   * Geist pour le latin et Noto pour l'arabe, dans la meme phrase.
+   *
+   * Elle etait chargee par le layout mais jamais appliquee : `font-family:
+   * Arial` la court-circuitait, et l'arabe tombait sur une substitution
+   * systeme differente d'une machine a l'autre.
+   */
+  font-family: var(--font-sans), var(--font-arabic), system-ui, sans-serif;
 }

@@ -12,8 +12,17 @@ export type Build = components['schemas']['BuildResource'];
 export type BuildSize = Build['sizes'][number];
 export type GeometryRow = BuildSize['geometry'][number];
 
+/** Une carte de catalogue. Le type vient du contrat, jamais reecrit a la main. */
+export type BuildCard = components['schemas']['BuildCardResource'];
+
 type ShowResponse =
   operations['builds.show']['responses'][200]['content']['application/json'];
+
+type IndexResponse =
+  operations['builds.index']['responses'][200]['content']['application/json'];
+
+export type CatalogPage = IndexResponse;
+export type Facets = IndexResponse['facets'];
 
 export function isLocale(value: string): value is Locale {
   return (LOCALES as readonly string[]).includes(value);
@@ -45,4 +54,31 @@ export async function getBuild(
   const payload: ShowResponse = await res.json();
 
   return payload.data;
+}
+
+/**
+ * Le catalogue, filtre par l'API.
+ *
+ * Les parametres sont transmis TELS QUELS : l'API decide de ce qu'elle
+ * accepte et refuse un filtre inconnu par un 422. Filtrer ici ferait un second
+ * endroit ou maintenir la liste, et le front finirait par masquer une erreur
+ * plutot que de la remonter.
+ */
+export async function getCatalog(
+  locale: Locale,
+  params: Record<string, string | undefined>,
+): Promise<CatalogPage> {
+  const query = new URLSearchParams();
+  for (const [cle, valeur] of Object.entries(params)) {
+    if (valeur !== undefined && valeur !== '') query.set(cle, valeur);
+  }
+
+  const res = await fetch(`${BASE}/v1/${locale}/builds?${query}`, {
+    headers: { Accept: 'application/json' },
+    next: { tags: ['catalog'] },
+  });
+
+  if (!res.ok) throw new Error(`API ${res.status} sur le catalogue`);
+
+  return res.json();
 }
