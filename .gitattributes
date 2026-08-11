@@ -1,0 +1,10 @@
+# Fins de ligne normalisees en LF dans le depot.
+#
+# Sans ce fichier, `src/types/api.ts` regenere sous Windows apparait modifie
+# alors que son contenu est identique — et la verification de derive de contrat
+# echoue en CI pour une raison qui n'a rien a voir avec le contrat.
+* text=auto eol=lf
+
+# Fichiers generes : ils ne polluent pas les diffs de revue.
+src/types/api.ts linguist-generated=true
+package-lock.json linguist-generated=true
