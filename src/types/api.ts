@@ -55,6 +55,12 @@ export interface components {
             } | null;
             msrp_label: string | null;
             msrp_absent_reason: string | null;
+            /**
+             * @description La galerie, image de tete en premier. L'ordre vient de la base,
+             *     pas d'un tri cote front : c'est `order_column` qui fait foi.
+             */
+            images: components["schemas"]["MediaResource"][];
+            geometry_chart: components["schemas"]["MediaResource"] | null;
             sizes: {
                 label: string;
                 label_alt: string | null;
@@ -90,6 +96,31 @@ export interface components {
                 last_checked_at: string;
                 last_changed_at: string;
             };
+        };
+        /** ImageSizeResource */
+        ImageSizeResource: {
+            url: string;
+            w: number;
+            h: number;
+        };
+        /** MediaResource */
+        MediaResource: {
+            id: number;
+            alt: string;
+            /**
+             * @description Les quatre cles sont ecrites en toutes lettres, et non produites
+             *     par une boucle sur BikeBuild::CONVERSIONS : Scramble lit le code
+             *     pour ecrire `openapi.json`, et une cle calculee ne se transcrit
+             *     pas. Un test compare cette liste a CONVERSIONS — ajouter une
+             *     taille sans l'exposer ici casse la suite.
+             */
+            sizes: {
+                thumb: components["schemas"]["ImageSizeResource"];
+                card: components["schemas"]["ImageSizeResource"];
+                detail: components["schemas"]["ImageSizeResource"];
+                detail_2x: components["schemas"]["ImageSizeResource"];
+            };
+            attribution: string | null;
         };
     };
     responses: never;
