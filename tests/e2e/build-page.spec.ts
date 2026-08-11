@@ -23,18 +23,34 @@ test('la meme fiche en anglais passe en LTR', async ({ page }) => {
   await expect(page.getByText('426 mm')).toBeVisible();
 });
 
-test('un prix absent ne devient jamais zero', async ({ page }) => {
+test('un prix ne devient jamais zero', async ({ page }) => {
+  // Ce test visait le Trek quand il n'avait pas de prix. Depuis que le MSRP
+  // remonte du listing, AUCUN des 98 velos n'en est depourvu : le rendu de
+  // l'absence n'est plus atteignable depuis les donnees reelles.
+  //
+  // La regle elle-meme reste verrouillee cote API, sur fixture figee —
+  // `BuildImporterTest::test_a_build_without_price_keeps_a_null_msrp_and_never_zero`,
+  // ou le Chisel est volontairement prive de prix. Ce qui se verifie ici, c'est
+  // qu'aucun zero ne s'affiche a l'ecran, dans les deux systemes de chiffres.
   await page.goto(TREK);
 
-  await expect(page.getByText('السعر غير متوفر')).toBeVisible();
-  await expect(page.getByText('لا نخمّن الأسعار.')).toBeVisible();
+  await expect(page.getByText('٥٬٩٩٩٫٩٩', { exact: false })).toBeVisible();
+  await expect(page.getByText('٠٫٠٠')).toHaveCount(0);
   await expect(page.getByText('0.00')).toHaveCount(0);
 });
 
 test('une annee inconnue est declaree, pas masquee', async ({ page }) => {
-  await page.goto(TREK);
+  // Sur un SPECIALIZED : la marque ne publie pas de millesime par fiche, alors
+  // que Trek le porte dans son JSON de listing. Le vide se teste la ou il est.
+  await page.goto('/ar-sa/bikes/specialized/allez-elite');
 
   await expect(page.getByText('السنة غير محددة')).toBeVisible();
+});
+
+test('un millesime publie par la marque est affiche tel quel', async ({ page }) => {
+  await page.goto(TREK_EN);
+
+  await expect(page.getByText('2027', { exact: true })).toBeVisible();
 });
 
 test('un prix present porte toujours son avertissement', async ({ page }) => {

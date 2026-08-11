@@ -1,6 +1,9 @@
+import Image from 'next/image';
 import { notFound } from 'next/navigation';
+import { BikeGallery } from '@/components/BikeGallery';
 import { SizePicker } from '@/components/SizePicker';
 import { getBuild, isLocale, type Locale } from '@/lib/api';
+import { sizeCatalogue } from '@/lib/images';
 
 /**
  * Libelles d'interface. Ils ne decrivent aucune donnee : tout ce qui vient de
@@ -15,8 +18,11 @@ const COPY = {
     inseam: 'طول الساق',
     wheels: 'العجلات',
     geometry: 'الهندسة',
+    geometryChart: 'مخطط الهندسة',
     components: 'المكونات',
     freshness: 'آخر تحديث',
+    thumbnails: 'صور الدراجة',
+    photoOf: 'صورة {n} من {total}',
   },
   'en-sa': {
     measure: 'Measure',
@@ -26,8 +32,11 @@ const COPY = {
     inseam: 'Inseam',
     wheels: 'Wheels',
     geometry: 'Geometry',
+    geometryChart: 'Geometry chart',
     components: 'Components',
     freshness: 'Last updated',
+    thumbnails: 'Bike photos',
+    photoOf: 'Photo {n} of {total}',
   },
 } as const satisfies Record<Locale, Record<string, string>>;
 
@@ -76,6 +85,18 @@ export default async function BuildPage({ params }: PageProps<'/[locale]/bikes/[
         </div>
       </header>
 
+      <BikeGallery
+        images={build.images}
+        labels={{
+          thumbnails: t.thumbnails,
+          // Composes ici, cote serveur : une fonction ne franchit pas la
+          // frontiere vers un Client Component.
+          photoLabels: build.images.map((_, i) =>
+            t.photoOf.replace('{n}', String(i + 1)).replace('{total}', String(build.images.length)),
+          ),
+        }}
+      />
+
       <section className="flex flex-col gap-4">
         <h2 className="font-mono text-xs font-semibold uppercase tracking-widest opacity-60">
           {t.geometry}
@@ -91,6 +112,24 @@ export default async function BuildPage({ params }: PageProps<'/[locale]/bikes/[
             source: t.source,
           }}
         />
+
+        {/* Le schema de geometrie illustre le tableau de cotes : il vit ici, et
+            jamais dans le carrousel produit. Toutes les marques n'en publient
+            pas — Specialized oui, Trek non. */}
+        {build.geometry_chart && (
+          <figure className="flex flex-col gap-2">
+            <figcaption className="font-mono text-[11px] uppercase tracking-widest opacity-50">
+              {t.geometryChart}
+            </figcaption>
+            <Image
+              src={sizeCatalogue(build.geometry_chart)}
+              alt={build.geometry_chart.alt}
+              width={build.geometry_chart.sizes.detail.w}
+              height={build.geometry_chart.sizes.detail.h}
+              className="h-auto w-full max-w-2xl border border-neutral-200 bg-white object-contain dark:border-neutral-800"
+            />
+          </figure>
+        )}
       </section>
 
       <section className="flex flex-col gap-4">
