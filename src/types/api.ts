@@ -4,6 +4,28 @@
  */
 
 export interface paths {
+    "/v1/{locale}/builds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Catalogue : liste paginee, filtree, avec ses facettes
+         * @description Pagination par CURSEUR et non par numero de page. Une application mobile
+         *     qui defile en continu verrait, avec des numeros, une carte se dupliquer
+         *     des qu'un velo est insere pendant le defilement.
+         */
+        get: operations["builds.index"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/{locale}/builds/{brand}/{slug}": {
         parameters: {
             query?: never;
@@ -29,6 +51,41 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** BuildCardResource */
+        BuildCardResource: {
+            slug: string;
+            model_name: string;
+            brand: {
+                slug: string;
+                name: string;
+            };
+            family: {
+                key: string;
+                name: string;
+            };
+            year: number | null;
+            /**
+             * @description Un millesime inconnu se declare. 48 velos sur 98 n'en ont pas :
+             *     Specialized ne le publie pas par fiche.
+             */
+            year_label: string;
+            /**
+             * @description Formate par Laravel, dans la locale demandee. Aucun montant n'est
+             *     mis en forme cote front.
+             */
+            msrp_formatted: string | null;
+            msrp_amount_minor: number | null;
+            msrp_currency: string | null;
+            /** @description Un prix absent porte son libelle plutot qu'un vide, et jamais zero. */
+            msrp_label: string | null;
+            image: components["schemas"]["MediaResource"] | null;
+            sizes: unknown[];
+            /**
+             * @description La chaine BRUTE : un mullet reste « 29"/27.5" », il ne devient pas
+             *     un 29 pouces qu'il n'est pas.
+             */
+            wheel_size: string | null;
+        };
         /** BuildResource */
         BuildResource: {
             slug: string;
@@ -131,6 +188,110 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    "builds.index": {
+        parameters: {
+            query?: {
+                sort?: string;
+            };
+            header?: never;
+            path: {
+                locale: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /**
+             * @description Une COLLECTION DE RESSOURCES, et non un `response()->json()` monte a
+             *     la main : Scramble lit le code pour ecrire `openapi.json`, et un
+             *     tableau assemble a la main sort en « tableau de n'importe quoi ». Le
+             *     front n'aurait alors plus le droit de s'en servir — reecrire un type
+             *     d'API a la main est interdit.
+             *
+             *
+             *
+             *     Array of `BuildCardResource`
+             */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["BuildCardResource"][];
+                        meta: {
+                            total: number;
+                            per_page: number;
+                            next_cursor: string | null;
+                            has_more: boolean;
+                        };
+                        facets: {
+                            brands: {
+                                key: string;
+                                label: string;
+                                count: number;
+                            }[];
+                            categories: {
+                                key: string;
+                                label: string;
+                                count: number;
+                            }[];
+                            wheel_sizes: {
+                                key: string;
+                                label: string;
+                                count: number;
+                            }[];
+                            price: {
+                                min_minor: number;
+                                max_minor: number;
+                                currency: string;
+                            } | null;
+                        };
+                    };
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        message: string;
+                        accepted: [
+                            "name",
+                            "price_asc",
+                            "price_desc",
+                            "year_desc"
+                        ];
+                    } | {
+                        message: string;
+                        accepted: {
+                            /** @constant */
+                            0?: "brand";
+                            /** @constant */
+                            1?: "category";
+                            /** @constant */
+                            2?: "wheel_size";
+                            /** @constant */
+                            3?: "price_min";
+                            /** @constant */
+                            4?: "price_max";
+                            /** @constant */
+                            5?: "year";
+                            /** @constant */
+                            ""?: "page";
+                        };
+                    } | {
+                        message: string;
+                        served: [
+                            "ar-sa",
+                            "en-sa"
+                        ];
+                    };
+                };
+            };
+        };
+    };
     "builds.show": {
         parameters: {
             query?: never;
