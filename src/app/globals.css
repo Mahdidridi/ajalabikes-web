@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+/*
+ * La variante `dark:` de Tailwind suit le CHOIX de l'utilisateur, pas le
+ * système : le script anti-flash du layout pose `data-theme` sur <html>
+ * avant le premier rendu (choix mémorisé, sinon préférence système).
+ */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -9,16 +16,34 @@
   --border: #e5e5e3;
   --muted: #6b6b68;
   --accent: #0f766e;
+  color-scheme: light;
+}
+
+/*
+ * Thème sombre, deux portes d'entrée pour UN SEUL bloc de valeurs :
+ * — data-theme="dark" : choix explicite de l'utilisateur (bouton, mémorisé) ;
+ * — préférence système, tant qu'aucun choix clair ne la contredit — c'est le
+ *   rendu sans JavaScript, le script du layout prenant le relais sinon.
+ */
+:root[data-theme="dark"] {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --surface: #17171a;
+  --border: #2a2a2e;
+  --muted: #9a9a97;
+  --accent: #2dd4bf;
+  color-scheme: dark;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --background: #0a0a0a;
     --foreground: #ededed;
     --surface: #17171a;
     --border: #2a2a2e;
     --muted: #9a9a97;
     --accent: #2dd4bf;
+    color-scheme: dark;
   }
 }
 

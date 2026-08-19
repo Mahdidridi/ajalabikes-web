@@ -128,16 +128,31 @@ test('un millesime inconnu est declare sur la carte', async ({ page }) => {
   await expect(page.getByText('Year not recorded').first()).toBeVisible();
 });
 
-test('voir plus reste un lien, donc partageable', async ({ page }) => {
-  // Sans JavaScript il fonctionne encore, et l'URL se partage.
+test('afficher plus allonge la liste, il ne la remplace jamais', async ({ page }) => {
+  // Le libellé promet « plus » : les cartes déjà vues restent, les suivantes
+  // s'ajoutent dessous. Et le bouton reste un lien — sans JavaScript il
+  // fonctionne encore, l'URL se partage et reproduit ce qui était à l'écran.
   await page.goto(EN);
 
+  const cartes = page.getByRole('link').filter({ has: page.locator('img') });
+  const premiere = await cartes.first().getAttribute('href');
+
   const suite = page.getByRole('link', { name: 'Show more' });
-  await expect(suite).toHaveAttribute('href', /cursor=/);
+  await expect(suite).toHaveAttribute('href', /per_page=48/);
 
   await suite.click();
-  await expect(page).toHaveURL(/cursor=/);
-  await expect(page.getByRole('link').filter({ has: page.locator('img') })).toHaveCount(24);
+  await expect(page).toHaveURL(/per_page=48/);
+  await expect(cartes).toHaveCount(48);
+  // La première carte du premier lot est toujours en tête : rien n'a disparu.
+  await expect(cartes.first()).toHaveAttribute('href', premiere!);
+});
+
+test('la liste entière se déroule et le bouton s efface à la fin', async ({ page }) => {
+  // Le défaut d'origine : la dernière « page » n'affichait que 2 vélos seuls.
+  await page.goto(`${EN}?per_page=120`);
+
+  await expect(page.getByRole('link').filter({ has: page.locator('img') })).toHaveCount(98);
+  await expect(page.getByRole('link', { name: 'Show more' })).toHaveCount(0);
 });
 
 test('le catalogue n est pas indexable', async ({ page }) => {

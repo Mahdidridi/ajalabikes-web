@@ -46,7 +46,23 @@ export default async function LocaleLayout({ children, params }: LayoutProps<'/[
       lang={locale.split('-')[0]}
       dir={direction(locale)}
       className={`${geistSans.variable} ${geistMono.variable} ${notoArabic.variable} h-full antialiased`}
+      // `data-theme` est posé par le script ci-dessous avant l'hydratation :
+      // React ne doit pas s'alarmer que le serveur ne l'ait pas rendu.
+      suppressHydrationWarning
     >
+      <head>
+        {/*
+         * Anti-flash : le thème (choix mémorisé, sinon préférence système) est
+         * posé sur <html> AVANT le premier rendu. En différé, une page sombre
+         * s'afficherait blanche un instant à chaque navigation.
+         */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){try{var t=localStorage.getItem('theme');if(t!=='light'&&t!=='dark'){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}document.documentElement.dataset.theme=t}catch(e){}})()",
+          }}
+        />
+      </head>
       <body className="flex min-h-full flex-col">{children}</body>
     </html>
   );
