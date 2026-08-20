@@ -21,8 +21,16 @@ type ShowResponse =
 type IndexResponse =
   operations['builds.index']['responses'][200]['content']['application/json'];
 
+type CompareResponse =
+  operations['compare.index']['responses'][200]['content']['application/json'];
+
 export type CatalogPage = IndexResponse;
 export type Facets = IndexResponse['facets'];
+
+/** La comparaison complète : cartes, tailles choisies, matrice. Types générés. */
+export type CompareData = CompareResponse['data'];
+export type CompareSection = CompareData['sections'][number];
+export type CompareRow = CompareSection['rows'][number];
 
 export function isLocale(value: string): value is Locale {
   return (LOCALES as readonly string[]).includes(value);
@@ -81,4 +89,30 @@ export async function getCatalog(
   if (!res.ok) throw new Error(`API ${res.status} sur le catalogue`);
 
   return res.json();
+}
+
+/**
+ * La comparaison. `bikes` : paires `marque/slug` jointes par des virgules,
+ * `sizes` : labels positionnels alignés — les DEUX viennent de l'URL de la
+ * page, telles quelles. L'API valide, le front ne re-vérifie pas.
+ */
+export async function getCompare(
+  locale: Locale,
+  bikes: string,
+  sizes?: string,
+): Promise<CompareData | null> {
+  const query = new URLSearchParams({ builds: bikes });
+  if (sizes) query.set('sizes', sizes);
+
+  const res = await fetch(`${BASE}/v1/${locale}/compare?${query}`, {
+    headers: { Accept: 'application/json' },
+    next: { tags: ['compare'] },
+  });
+
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`API ${res.status} sur la comparaison`);
+
+  const payload: CompareResponse = await res.json();
+
+  return payload.data;
 }

@@ -2,7 +2,6 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { BikeCard } from '@/components/BikeCard';
 import { CatalogFilters } from '@/components/CatalogFilters';
-import { ThemeToggle } from '@/components/ThemeToggle';
 import { getCatalog, isLocale, type Locale } from '@/lib/api';
 
 /**
@@ -20,7 +19,6 @@ const COPY = {
     reset: 'إزالة الفلاتر',
     empty: 'لا توجد دراجة تطابق هذا الاختيار.',
     more: 'عرض المزيد',
-    theme: 'تبديل المظهر',
     sortOptions: [
       { value: 'name', label: 'الاسم' },
       { value: 'price_asc', label: 'السعر تصاعديًا' },
@@ -38,7 +36,6 @@ const COPY = {
     reset: 'Clear filters',
     empty: 'No bike matches this selection.',
     more: 'Show more',
-    theme: 'Toggle theme',
     sortOptions: [
       { value: 'name', label: 'Name' },
       { value: 'price_asc', label: 'Price, low to high' },
@@ -79,17 +76,13 @@ export default async function CatalogPage({
 
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 sm:p-6">
-      <header className="flex flex-wrap items-center justify-between gap-3">
+      <header className="flex flex-wrap items-baseline justify-between gap-3">
         <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">{t.title}</h1>
-        <div className="flex items-center gap-3">
-          {/* Le compteur vient de l'API : il compte TOUS les resultats du
-              filtre, pas les cartes de la page courante. */}
-          <p className="font-mono text-xs text-muted">
-            {page.meta.total} {t.results}
-          </p>
-          {/* Place provisoire : le bouton migrera dans la barre de navigation. */}
-          <ThemeToggle label={t.theme} />
-        </div>
+        {/* Le compteur vient de l'API : il compte TOUS les resultats du
+            filtre, pas les cartes de la page courante. */}
+        <p className="font-mono text-xs text-muted">
+          {page.meta.total} {t.results}
+        </p>
       </header>
 
       <CatalogFilters

@@ -47,6 +47,34 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/{locale}/compare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Comparaison de 2 a 3 velos : cartes, tailles choisies, matrice
+         * @description GET et non POST : une lecture pure, sans effet de bord, dont l'URL se
+         *     partage et se met en cache. Le moteur reste independant de l'interface
+         *     (regle d'architecture n° 4) — il vit dans `App\Comparison\CompareMatrix`,
+         *     teste unitairement hors HTTP.
+         *
+         *     `builds` : 2-3 paires `marque/slug` separees par des virgules.
+         *     `sizes` : labels de taille alignes sur `builds`, cases vides permises
+         *     (`sizes=M,,L`) — la geometrie n'est comparee que si CHAQUE velo a sa
+         *     taille explicitement choisie, jamais par defaut silencieux.
+         */
+        get: operations["compare.index"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -79,7 +107,7 @@ export interface components {
             /** @description Un prix absent porte son libelle plutot qu'un vide, et jamais zero. */
             msrp_label: string | null;
             image: components["schemas"]["MediaResource"] | null;
-            sizes: unknown[];
+            sizes: string[];
             /**
              * @description La chaine BRUTE : un mullet reste « 29"/27.5" », il ne devient pas
              *     un 29 pouces qu'il n'est pas.
@@ -153,6 +181,31 @@ export interface components {
                 last_checked_at: string;
                 last_changed_at: string;
             };
+        };
+        /** CompareResource */
+        CompareResource: {
+            /**
+             * @description Les mêmes cartes que le catalogue : image de tête désignée par
+             *     l'API, tailles disponibles, prix formaté.
+             */
+            bikes: components["schemas"]["BuildCardResource"][];
+            sizes_selected: (string | null)[];
+            sections: {
+                key: string;
+                label: string;
+                requires_sizes: boolean;
+                hint: string | null;
+                rows: {
+                    key: string;
+                    label: string;
+                    cells: ({
+                        formatted: string;
+                        original: string | null;
+                    } | null)[];
+                    /** @enum {string} */
+                    status: "same" | "differs" | "partial";
+                }[];
+            }[];
         };
         /** ImageSizeResource */
         ImageSizeResource: {
@@ -333,6 +386,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
+                        message: string;
+                        served: [
+                            "ar-sa",
+                            "en-sa"
+                        ];
+                    };
+                };
+            };
+        };
+    };
+    "compare.index": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                locale: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description `CompareResource` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["CompareResource"];
+                    };
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        message: string;
+                    };
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        message: string;
+                        accepted: {
+                            [key: string]: unknown;
+                        };
+                    } | {
+                        /** @constant */
+                        message: "Un velo ne se compare pas a lui-meme : doublon dans builds.";
+                    } | {
+                        message: string;
+                        /** @constant */
+                        accepted: "builds=marque/slug,marque/slug[,marque/slug]";
+                    } | {
+                        message: string;
+                        accepted: [
+                            "builds",
+                            "sizes"
+                        ];
+                    } | {
                         message: string;
                         served: [
                             "ar-sa",
