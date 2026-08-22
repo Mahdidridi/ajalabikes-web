@@ -1,7 +1,9 @@
 import { expect, test } from '@playwright/test';
 
-const TREK = '/ar-sa/bikes/trek/fuel-mx-9-8-xt';
-const TREK_EN = '/en-sa/bikes/trek/fuel-mx-9-8-xt';
+// Trek a renomme la gamme en « Gen 7 » le 21 aout 2026 : meme velo (code
+// produit 81563), nouveau slug. L'ancien `fuel-mx-9-8-xt` n'existe plus.
+const TREK = '/ar-sa/bikes/trek/fuel-mx-9-8-xt-gen-7-81563';
+const TREK_EN = '/en-sa/bikes/trek/fuel-mx-9-8-xt-gen-7-81563';
 const SPECIALIZED = '/en-sa/bikes/specialized/allez-elite';
 
 test('la fiche arabe est en RTL et affiche le reach en millimetres', async ({ page }) => {
@@ -25,7 +27,7 @@ test('la meme fiche en anglais passe en LTR', async ({ page }) => {
 
 test('un prix ne devient jamais zero', async ({ page }) => {
   // Ce test visait le Trek quand il n'avait pas de prix. Depuis que le MSRP
-  // remonte du listing, AUCUN des 98 velos n'en est depourvu : le rendu de
+  // remonte du listing, AUCUN velo du catalogue n'en est depourvu : le rendu de
   // l'absence n'est plus atteignable depuis les donnees reelles.
   //
   // La regle elle-meme reste verrouillee cote API, sur fixture figee —

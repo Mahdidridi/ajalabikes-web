@@ -1,7 +1,8 @@
 import { expect, test } from '@playwright/test';
 
-const TREK = '/ar-sa/bikes/trek/fuel-mx-9-8-xt';
-const TREK_EN = '/en-sa/bikes/trek/fuel-mx-9-8-xt';
+// Meme velo que build-page.spec.ts : renomme « Gen 7 » par Trek le 21 aout.
+const TREK = '/ar-sa/bikes/trek/fuel-mx-9-8-xt-gen-7-81563';
+const TREK_EN = '/en-sa/bikes/trek/fuel-mx-9-8-xt-gen-7-81563';
 /** Specialized publie un schema de geometrie ; Trek non. */
 const SPECIALIZED = '/en-sa/bikes/specialized/allez-elite';
 
