@@ -125,8 +125,11 @@ test('seulement les differences masque les lignes identiques', async ({ page }) 
 });
 
 test('une donnee absente est declaree, jamais inventee', async ({ page }) => {
-  // Specialized ne publie pas de millésime. La ligne doit le DIRE.
-  await page.goto(`${EN}?bikes=${A},specialized/chisel`);
+  // Depuis le 25 août 2026, le listing searchProducts fournit le millésime à
+  // presque tout Specialized — le Chisel, ancien cobaye de ce test, est daté.
+  // L'Allez Elite, lui, a été retiré du catalogue AVANT cette découverte : son
+  // année est réellement inconnue, et la ligne doit le DIRE.
+  await page.goto(`${EN}?bikes=${A},specialized/allez-elite`);
 
   const ligne = page.getByRole('row').filter({ hasText: 'Model year' });
   await expect(ligne.getByText('2027')).toBeVisible();
