@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono, Noto_Sans_Arabic } from 'next/font/google';
 import { notFound } from 'next/navigation';
+import { SiteFooter } from '@/components/SiteFooter';
 import { SiteHeader } from '@/components/SiteHeader';
 import { direction, isLocale, LOCALES } from '@/lib/api';
 import '../globals.css';
@@ -67,6 +68,7 @@ export default async function LocaleLayout({ children, params }: LayoutProps<'/[
       <body className="flex min-h-full flex-col">
         <SiteHeader locale={locale} />
         {children}
+        <SiteFooter locale={locale} />
       </body>
     </html>
   );

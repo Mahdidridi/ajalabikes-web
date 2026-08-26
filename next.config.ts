@@ -1,6 +1,16 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+  /**
+   * La racine n'existe pas : tout vit sous une locale, et le layout racine —
+   * qui porte <html dir> — vit sous `[locale]`. L'arabe est la marque, il est
+   * donc la destination. En 307, pas en 308 : rien n'est grave en cache avant
+   * le lancement, et une future negociation de langue restera possible.
+   */
+  async redirects() {
+    return [{ source: '/', destination: '/ar-sa', permanent: false }];
+  },
+
   images: {
     /**
      * Les conversions sont generees par Laravel et servies par le CDN. Sans ce

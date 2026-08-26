@@ -21,7 +21,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
     <header className="border-b border-border">
       <nav className="mx-auto flex w-full max-w-7xl items-center gap-5 px-4 py-3 sm:px-6">
         {/* La marque : le nom arabe EST la marque, l'alphabet latin l'accompagne. */}
-        <Link href={`/${locale}/bikes`} className="flex items-baseline gap-1.5">
+        <Link href={`/${locale}`} className="flex items-baseline gap-1.5">
           <span className="text-lg font-extrabold tracking-tight">عجلة</span>
           <span className="text-xs font-medium uppercase tracking-[0.2em] text-muted">Ajala</span>
         </Link>
