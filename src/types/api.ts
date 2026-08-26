@@ -243,6 +243,19 @@ export interface components {
                     original_unit: string | null;
                 }[];
             }[];
+            /**
+             * @description Le resume specs cles de la tete de fiche (structure 99 Spokes) :
+             *     jusqu'a 5 lignes, choisies par groupes de cles candidates — le
+             *     premier composant present d'un groupe gagne. C'est une regle
+             *     metier, elle vit ici et jamais dans le front. La cle exposee est
+             *     celle du GROUPE (stable pour l'affichage) ; le libelle est celui
+             *     du composant reellement retenu, traduit.
+             */
+            highlights: ({
+                key: string;
+                label: string;
+                description: string;
+            } | null)[];
             components: {
                 key: string;
                 /**

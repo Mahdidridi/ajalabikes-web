@@ -18,6 +18,7 @@ const COPY = {
     inseam: 'طول الساق',
     wheels: 'العجلات',
     geometry: 'الهندسة',
+    highlights: 'المواصفات الرئيسية',
     geometryChart: 'مخطط الهندسة',
     components: 'المكونات',
     freshness: 'آخر تحديث',
@@ -32,6 +33,7 @@ const COPY = {
     inseam: 'Inseam',
     wheels: 'Wheels',
     geometry: 'Geometry',
+    highlights: 'Key specs',
     geometryChart: 'Geometry chart',
     components: 'Components',
     freshness: 'Last updated',
@@ -48,6 +50,9 @@ export default async function BuildPage({ params }: PageProps<'/[locale]/bikes/[
   if (!build) notFound();
 
   const t = COPY[locale];
+  // Le contrat marque les lignes nullable (filtrage cote API) : on ne garde
+  // que les lignes reelles, sans jamais en fabriquer.
+  const highlights = build.highlights.flatMap((h) => (h ? [h] : []));
 
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-col gap-8 p-6">
@@ -85,6 +90,20 @@ export default async function BuildPage({ params }: PageProps<'/[locale]/bikes/[
         </div>
       </header>
 
+      {/* Ancres de fiche (structure 99 Spokes) : la page est longue, le
+          lecteur saute a la section qui l'interesse. Liens purs, zero JS. */}
+      <nav className="sticky top-0 z-10 -mx-6 flex gap-5 border-b border-border bg-background px-6 py-2 font-mono text-xs uppercase tracking-widest">
+        <a href="#highlights" className="opacity-60 transition hover:opacity-100">
+          {t.highlights}
+        </a>
+        <a href="#geometry" className="opacity-60 transition hover:opacity-100">
+          {t.geometry}
+        </a>
+        <a href="#components" className="opacity-60 transition hover:opacity-100">
+          {t.components}
+        </a>
+      </nav>
+
       <BikeGallery
         images={build.images}
         labels={{
@@ -97,7 +116,23 @@ export default async function BuildPage({ params }: PageProps<'/[locale]/bikes/[
         }}
       />
 
-      <section className="flex flex-col gap-4">
+      {highlights.length > 0 && (
+        <section id="highlights" className="flex flex-col gap-3 scroll-mt-12">
+          <h2 className="font-mono text-xs font-semibold uppercase tracking-widest opacity-60">
+            {t.highlights}
+          </h2>
+          <dl className="grid gap-x-8 gap-y-2 sm:grid-cols-[auto_1fr]">
+            {highlights.map((h) => (
+              <div key={h.key} className="contents">
+                <dt className="text-sm font-semibold">{h.label}</dt>
+                <dd className="text-sm text-muted">{h.description}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      )}
+
+      <section id="geometry" className="flex flex-col gap-4 scroll-mt-12">
         <h2 className="font-mono text-xs font-semibold uppercase tracking-widest opacity-60">
           {t.geometry}
         </h2>
@@ -132,7 +167,7 @@ export default async function BuildPage({ params }: PageProps<'/[locale]/bikes/[
         )}
       </section>
 
-      <section className="flex flex-col gap-4">
+      <section id="components" className="flex flex-col gap-4 scroll-mt-12">
         <h2 className="font-mono text-xs font-semibold uppercase tracking-widest opacity-60">
           {t.components}
         </h2>
