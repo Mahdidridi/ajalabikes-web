@@ -94,10 +94,10 @@ test('le seau des velos sans categorie declare son unique occupant', async ({ pa
   await page.goto(EN);
 
   await expect(
-    page.getByLabel('Category').locator('option', { hasText: /Not categorised \(95\)/ }),
+    page.getByLabel('Category').locator('option', { hasText: /Not categorised \(2\)/ }),
   ).toHaveCount(1);
   await expect(
-    page.getByLabel('Category').locator('option', { hasText: /Electric mountain \(77\)/ }),
+    page.getByLabel('Category').locator('option', { hasText: /Electric mountain \(82\)/ }),
   ).toHaveCount(1);
 });
 

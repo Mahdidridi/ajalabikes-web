@@ -40,10 +40,10 @@ test('un exemple de requete mene au catalogue filtre par marque', async ({ page 
 test('une tuile de categorie mene au catalogue filtre', async ({ page }) => {
   await page.goto(EN);
 
-  await page.getByRole('link', { name: 'Road 112 bikes' }).click();
+  await page.getByRole('link', { name: 'Road 137 bikes' }).click();
 
   await expect(page).toHaveURL(/category=road/);
-  await expect(page.getByText('112 bikes')).toBeVisible();
+  await expect(page.getByText('137 bikes')).toBeVisible();
 });
 
 test('l apercu montre quatre cartes, les memes que le catalogue', async ({ page }) => {
