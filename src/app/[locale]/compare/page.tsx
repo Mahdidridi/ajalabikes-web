@@ -50,7 +50,7 @@ export default async function ComparePage({ params, searchParams }: PageProps<'/
 
   // Les 98 cartes alimentent le sélecteur ET les colonnes avant que la
   // comparaison existe (un seul vélo choisi). Un appel, celui du catalogue.
-  const catalogue = await getCatalog(locale, { per_page: '120' });
+  const catalogue = await getCatalog(locale, { per_page: '800' });
   const carteDe = new Map(catalogue.data.map((b) => [`${b.brand.slug}/${b.slug}`, b]));
 
   // La comparaison n'existe qu'à partir de deux vélos — l'API le garantit.

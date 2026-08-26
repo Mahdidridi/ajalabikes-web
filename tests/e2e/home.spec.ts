@@ -18,13 +18,13 @@ test('le hero porte le compteur du catalogue et mene a lui', async ({ page }) =>
     page.getByRole('heading', { name: 'Find your next bike', level: 1 }),
   ).toBeVisible();
 
-  // 477 vient de l'API — le meme total que le catalogue affiche.
-  const cta = page.getByRole('link', { name: 'Browse 477 bikes' });
+  // 634 vient de l'API — le meme total que le catalogue affiche.
+  const cta = page.getByRole('link', { name: 'Browse 634 bikes' });
   await expect(cta).toBeVisible();
   await cta.click();
 
   await expect(page).toHaveURL(/\/en-sa\/bikes$/);
-  await expect(page.getByText('477 bikes')).toBeVisible();
+  await expect(page.getByText('634 bikes')).toBeVisible();
 });
 
 test('un exemple de requete mene au catalogue filtre par marque', async ({ page }) => {
@@ -40,10 +40,10 @@ test('un exemple de requete mene au catalogue filtre par marque', async ({ page 
 test('une tuile de categorie mene au catalogue filtre', async ({ page }) => {
   await page.goto(EN);
 
-  await page.getByRole('link', { name: 'Road 90 bikes' }).click();
+  await page.getByRole('link', { name: 'Road 112 bikes' }).click();
 
   await expect(page).toHaveURL(/category=road/);
-  await expect(page.getByText('90 bikes')).toBeVisible();
+  await expect(page.getByText('112 bikes')).toBeVisible();
 });
 
 test('l apercu montre quatre cartes, les memes que le catalogue', async ({ page }) => {
@@ -55,7 +55,7 @@ test('l apercu montre quatre cartes, les memes que le catalogue', async ({ page 
   await expect(cartes).toHaveCount(4);
   await expect(cartes.first()).toHaveAttribute(
     'href',
-    /\/en-sa\/bikes\/(trek|specialized|giant)\//,
+    /\/en-sa\/bikes\/(trek|specialized|giant|canyon|scott)\//,
   );
 
   // « Voir tout » rouvre exactement le tri de l'apercu dans le catalogue :

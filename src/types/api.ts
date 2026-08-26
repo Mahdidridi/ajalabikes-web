@@ -4,6 +4,54 @@
  */
 
 export interface paths {
+    "/v1/{locale}/bikefinder/tree": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * L'arbre de questions, localise, dans sa version courante
+         * @description Le front l'affiche ecran par ecran et construit le chemin des reponses ;
+         *     aucun libelle, aucun critere, aucune regle ne vit cote interface.
+         */
+        get: operations["bikefinder.tree"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/{locale}/bikefinder/results": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * La shortlist du Bikefinder pour un chemin de reponses complet
+         * @description `path` : les cles choisies, de la racine a une option terminale, separees
+         *     par des virgules (`path=mountain,no-power,trails,budget-mid`). Un chemin
+         *     inconnu, incomplet ou trop long est un 422 qui nomme la question fautive
+         *     et les choix acceptes — jamais une interpretation.
+         *
+         *     La resolution vit dans `BikefinderTree`, la requete dans `CatalogQuery`
+         *     (reutilise, pas duplique), l'ordre dans `BikefinderShortlist` : MSRP
+         *     croissant, une entree par famille d'abord, prix absents en dernier.
+         */
+        get: operations["bikefinder.results"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/{locale}/builds": {
         parameters: {
             query?: never;
@@ -79,6 +127,34 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** BikefinderResultsResource */
+        BikefinderResultsResource: {
+            version: string;
+            choices: {
+                key: string;
+                label: string;
+            }[];
+            builds: components["schemas"]["BuildCardResource"][];
+            alternatives: components["schemas"]["BuildCardResource"][];
+            compare_url: string | null;
+        };
+        /** BikefinderTreeResource */
+        BikefinderTreeResource: {
+            version: string;
+            root: string;
+            questions: {
+                [key: string]: {
+                    /** @enum {string} */
+                    kind: "tiles" | "options";
+                    label: string;
+                    options: {
+                        key: string;
+                        label: string;
+                        next: string | null;
+                    }[];
+                };
+            };
+        };
         /** BuildCardResource */
         BuildCardResource: {
             slug: string;
@@ -241,6 +317,93 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    "bikefinder.tree": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                locale: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description `BikefinderTreeResource` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["BikefinderTreeResource"];
+                    };
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        message: string;
+                        accepted: string[];
+                    } | {
+                        message: string;
+                        served: [
+                            "ar-sa",
+                            "en-sa"
+                        ];
+                    };
+                };
+            };
+        };
+    };
+    "bikefinder.results": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                locale: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description `BikefinderResultsResource` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["BikefinderResultsResource"];
+                    };
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        message: string;
+                        accepted: string;
+                    } | {
+                        message: string;
+                        accepted: [
+                            "path"
+                        ];
+                    } | {
+                        message: string;
+                        served: [
+                            "ar-sa",
+                            "en-sa"
+                        ];
+                    };
+                };
+            };
+        };
+    };
     "builds.index": {
         parameters: {
             query?: {

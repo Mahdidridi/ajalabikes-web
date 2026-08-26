@@ -9,7 +9,7 @@ test('la grille charge les velos avec leurs photos', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Bikes', level: 1 })).toBeVisible();
   // 24 par page : le compteur, lui, annonce le total du catalogue.
   await expect(page.getByRole('link').filter({ has: page.locator('img') })).toHaveCount(24);
-  await expect(page.getByText('477 bikes')).toBeVisible();
+  await expect(page.getByText('634 bikes')).toBeVisible();
 });
 
 test('chaque carte reserve la place de sa photo', async ({ page }) => {
@@ -82,20 +82,22 @@ test('les seaux de facettes portent leur decompte', async ({ page }) => {
   await expect(marque.locator('option', { hasText: /Trek \(196\)/ })).toHaveCount(1);
   await expect(marque.locator('option', { hasText: /Specialized \(205\)/ })).toHaveCount(1);
   await expect(marque.locator('option', { hasText: /Giant \(76\)/ })).toHaveCount(1);
+  await expect(marque.locator('option', { hasText: /Canyon \(63\)/ })).toHaveCount(1);
+  await expect(marque.locator('option', { hasText: /Scott \(94\)/ })).toHaveCount(1);
 });
 
-test('le seau des velos sans categorie a disparu avec sa cause', async ({ page }) => {
-  // Depuis le 22 aout 2026, tous les velos portent leur categorie (le
-  // breadcrumb Specialized et le defaultCategory Trek sont collectes). Le
-  // seau « Not categorised » ne doit reapparaitre que si un velo le justifie —
-  // il etait declare quand il existait, il serait mensonger vide.
+test('le seau des velos sans categorie declare son unique occupant', async ({ page }) => {
+  // Le seau « Not categorised » n'existe que si un velo le justifie. Depuis le
+  // 26 aout 2026 il en a UN : le Canyon dont le breadcrumb passe par
+  // « Outlet|Road Outlet » et les 94 Scott (codes OCC en sac, canonisation a venir) — volontairement non mappes
+  // plutot que range dans un seau proche (CategoryTaxonomy).
   await page.goto(EN);
 
   await expect(
-    page.getByLabel('Category').locator('option', { hasText: /Not categorised/ }),
-  ).toHaveCount(0);
+    page.getByLabel('Category').locator('option', { hasText: /Not categorised \(95\)/ }),
+  ).toHaveCount(1);
   await expect(
-    page.getByLabel('Category').locator('option', { hasText: /Electric mountain \(73\)/ }),
+    page.getByLabel('Category').locator('option', { hasText: /Electric mountain \(77\)/ }),
   ).toHaveCount(1);
 });
 
@@ -104,7 +106,7 @@ test('effacer les filtres revient au catalogue entier', async ({ page }) => {
 
   await page.getByRole('button', { name: 'Clear filters' }).click();
 
-  await expect(page.getByText('477 bikes')).toBeVisible();
+  await expect(page.getByText('634 bikes')).toBeVisible();
   await expect(page).not.toHaveURL(/brand=/);
 });
 
@@ -155,10 +157,10 @@ test('afficher plus allonge la liste, il ne la remplace jamais', async ({ page }
 
 test('la liste entière se déroule et le bouton s efface à la fin', async ({ page }) => {
   // Le défaut d'origine : la dernière « page » n'affichait que 2 vélos seuls.
-  // 600 est le PAR_PAGE_MAX de l'API — assez pour les 401 du catalogue.
-  await page.goto(`${EN}?per_page=600`);
+  // 800 est le PAR_PAGE_MAX de l'API — assez pour les 634 du catalogue.
+  await page.goto(`${EN}?per_page=800`);
 
-  await expect(page.getByRole('link').filter({ has: page.locator('img') })).toHaveCount(477);
+  await expect(page.locator('main a.rounded-xl')).toHaveCount(634);
   await expect(page.getByRole('link', { name: 'Show more' })).toHaveCount(0);
 });
 
