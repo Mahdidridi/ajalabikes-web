@@ -91,6 +91,51 @@ export async function getCatalog(
   return res.json();
 }
 
+type FinderTreeResponse =
+  operations['bikefinder.tree']['responses'][200]['content']['application/json'];
+
+type FinderResultsResponse =
+  operations['bikefinder.results']['responses'][200]['content']['application/json'];
+
+export type FinderTree = FinderTreeResponse['data'];
+export type FinderQuestion = FinderTree['questions'][string];
+export type FinderResults = FinderResultsResponse['data'];
+
+/** L'arbre du bikefinder, localise par l'API — aucun libelle en dur ici. */
+export async function getFinderTree(locale: Locale): Promise<FinderTree> {
+  const res = await fetch(`${BASE}/v1/${locale}/bikefinder/tree`, {
+    headers: { Accept: 'application/json' },
+    next: { tags: ['bikefinder'] },
+  });
+
+  if (!res.ok) throw new Error(`API ${res.status} sur l'arbre du bikefinder`);
+
+  const payload: FinderTreeResponse = await res.json();
+
+  return payload.data;
+}
+
+/**
+ * Les resultats d'un chemin complet. Le chemin vient de l'URL, tel quel :
+ * l'API valide (422 sur un chemin inconnu), le front ne re-verifie pas.
+ */
+export async function getFinderResults(
+  locale: Locale,
+  path: string,
+): Promise<FinderResults | null> {
+  const res = await fetch(
+    `${BASE}/v1/${locale}/bikefinder/results?path=${encodeURIComponent(path)}`,
+    { headers: { Accept: 'application/json' }, next: { tags: ['bikefinder'] } },
+  );
+
+  if (res.status === 422 || res.status === 404) return null;
+  if (!res.ok) throw new Error(`API ${res.status} sur les resultats du bikefinder`);
+
+  const payload: FinderResultsResponse = await res.json();
+
+  return payload.data;
+}
+
 /**
  * La comparaison. `bikes` : paires `marque/slug` jointes par des virgules,
  * `sizes` : labels positionnels alignés — les DEUX viennent de l'URL de la
