@@ -81,7 +81,7 @@ test('la version arabe est en RTL avec les libelles traduits', async ({ page }) 
 test('le logo de la navbar mene a l accueil', async ({ page }) => {
   await page.goto(`${EN}/bikes`);
 
-  await page.locator('header nav').getByRole('link', { name: 'Ajala' }).click();
+  await page.locator('header nav').getByRole('link', { name: 'Darraja Bikes' }).click();
 
   await expect(page).toHaveURL(/\/en-sa$/);
   await expect(

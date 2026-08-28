@@ -140,11 +140,11 @@ test('la navbar est sur toutes les pages et mene au comparateur', async ({ page 
   await page.goto('/en-sa/bikes');
 
   const nav = page.locator('header nav');
-  await expect(nav.getByRole('link', { name: 'Bikes' })).toBeVisible();
+  await expect(nav.getByRole('link', { name: 'Bikes', exact: true })).toBeVisible();
   await nav.getByRole('link', { name: 'Compare' }).click();
 
   await expect(page).toHaveURL(/\/en-sa\/compare/);
-  await expect(page.locator('header nav').getByRole('link', { name: 'Bikes' })).toBeVisible();
+  await expect(page.locator('header nav').getByRole('link', { name: 'Bikes', exact: true })).toBeVisible();
 });
 
 test('la bascule de langue conserve la page ET la comparaison en cours', async ({ page }) => {
