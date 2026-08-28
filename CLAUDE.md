@@ -2,6 +2,12 @@
 
 **Next.js 16 (App Router) + React 19 + TypeScript — affichage uniquement.**
 
+**Projet : Darraja Bikes** (دراجة) — nom technique `darrajabikes`, domaine `darrajabikes.com`
+(décision du 28 août 2026). Le dépôt garde son nom historique, comme `package.json` (`ajala-web`) et
+`ajalaImageLoader` : seul le nom affiché change (header, footer, métadonnées — issue #6).
+**Aucune indexation ni sitemap tant que les URL ne sont pas figées** : `robots: { index: false, follow: false }`
+reste global dans `src/app/[locale]/layout.tsx` ; pas de `sitemap.ts`, rien n'est soumis à Search Console.
+
 > L'architecture, les règles de données et le périmètre du projet sont définis dans `../CLAUDE.md`.
 > **Le lire avant toute tâche non triviale.** Ce fichier ne couvre que ce dépôt.
 
