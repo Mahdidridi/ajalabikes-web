@@ -3,7 +3,7 @@ import { Geist, Geist_Mono, Noto_Sans_Arabic } from 'next/font/google';
 import { notFound } from 'next/navigation';
 import { SiteFooter } from '@/components/SiteFooter';
 import { SiteHeader } from '@/components/SiteHeader';
-import { direction, isLocale, LOCALES } from '@/lib/api';
+import { direction, isLocale, LOCALES, type Locale } from '@/lib/api';
 import '../globals.css';
 
 const geistSans = Geist({ variable: '--font-sans', subsets: ['latin'] });
@@ -13,22 +13,35 @@ const geistMono = Geist_Mono({ variable: '--font-mono', subsets: ['latin'] });
 // une substitution systeme differente d'une machine a l'autre.
 const notoArabic = Noto_Sans_Arabic({ variable: '--font-arabic', subsets: ['arabic'] });
 
-export const metadata: Metadata = {
-  title: 'Ajala',
-  description: 'منصة عربية لاكتشاف الدراجات ومقارنتها',
-  /*
-   * NOINDEX SUR TOUT LE SITE, decision du 11 aout 2026.
-   *
-   * Le catalogue est incomplet et les droits d'image ne sont pas encore
-   * accordes : une page indexee aujourd'hui serait vue par Google avant
-   * d'etre prete, et une premiere impression de qualite ne se rejoue pas.
-   *
-   * A RETIRER quand la strategie d'indexation sera decidee — canonical,
-   * hreflang, sitemaps et liste blanche des comparaisons. Ne pas le retirer
-   * page par page en passant.
-   */
-  robots: { index: false, follow: false },
+/** La signature suit la locale ; c'est la meme que celle du pied de page. */
+const SIGNATURE: Record<Locale, string> = {
+  'ar-sa': 'منصة عربية لاكتشاف الدراجات ومقارنتها',
+  'en-sa': "The Gulf's bike comparison platform",
 };
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  const description = isLocale(locale) ? SIGNATURE[locale] : SIGNATURE['en-sa'];
+
+  return {
+    title: 'Darraja Bikes',
+    description,
+    openGraph: { siteName: 'Darraja Bikes', title: 'Darraja Bikes', description },
+    /*
+     * NOINDEX SUR TOUT LE SITE, decision du 11 aout 2026, reaffirmee le 28 aout :
+     * aucune indexation ni sitemap tant que les URL ne sont pas figees.
+     *
+     * Le catalogue est incomplet et les droits d'image ne sont pas encore
+     * accordes : une page indexee aujourd'hui serait vue par Google avant
+     * d'etre prete, et une premiere impression de qualite ne se rejoue pas.
+     *
+     * A RETIRER quand la strategie d'indexation sera decidee — canonical,
+     * hreflang, sitemaps et liste blanche des comparaisons. Ne pas le retirer
+     * page par page en passant.
+     */
+    robots: { index: false, follow: false },
+  };
+}
 
 /** Les deux locales servies sont prerendues. */
 export function generateStaticParams() {

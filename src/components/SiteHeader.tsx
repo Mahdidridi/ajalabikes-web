@@ -20,10 +20,17 @@ export function SiteHeader({ locale }: { locale: Locale }) {
   return (
     <header className="border-b border-border">
       <nav className="mx-auto flex w-full max-w-7xl items-center gap-5 px-4 py-3 sm:px-6">
-        {/* La marque : le nom arabe EST la marque, l'alphabet latin l'accompagne. */}
+        {/*
+         * La marque : le nom arabe EST la marque, l'alphabet latin l'accompagne.
+         * Sur téléphone la nav n'a pas la place des deux : « Darraja Bikes » passe
+         * en sr-only — l'arabe seul reste à l'écran, le nom complet reste lu par
+         * les lecteurs d'écran et par Playwright.
+         */}
         <Link href={`/${locale}`} className="flex items-baseline gap-1.5">
-          <span className="text-lg font-extrabold tracking-tight">عجلة</span>
-          <span className="text-xs font-medium uppercase tracking-[0.2em] text-muted">Ajala</span>
+          <span className="text-lg font-extrabold tracking-tight">درّاجة</span>
+          <span className="max-sm:sr-only text-xs font-medium uppercase tracking-[0.2em] text-muted">
+            Darraja Bikes
+          </span>
         </Link>
 
         <div className="flex items-center gap-4 text-sm font-medium">

@@ -25,9 +25,9 @@ export function SiteFooter({ locale }: { locale: Locale }) {
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-1.5 px-4 py-8 sm:px-6">
         {/* Le même duo que la navbar : le nom arabe EST la marque. */}
         <p className="flex items-baseline gap-1.5">
-          <span className="text-base font-extrabold tracking-tight">عجلة</span>
+          <span className="text-base font-extrabold tracking-tight">درّاجة</span>
           <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-muted">
-            Ajala
+            Darraja Bikes
           </span>
         </p>
         <p className="text-sm text-muted">{t.tagline}</p>
