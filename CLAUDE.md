@@ -80,12 +80,33 @@ Comparaisons : liste blanche uniquement, jamais les permutations d'un même ense
 
 **7. Jamais de `aggregateRating` fabriqué** dans les données structurées.
 
+## Routes — pages marque et catégorie (2 septembre 2026)
+
+Décision du 2 septembre 2026 (rapport SEO `../notes/seo-strategie-2026-09-02.md`, § 1) : une marque et une catégorie
+ont chacune une page à chemin propre. Les chemins sont construits par `src/lib/routes.ts`, jamais à la main.
+
+| Page | Chemin | Données |
+|---|---|---|
+| Marque | `/{locale}/bikes/{brand}` — `/ar-sa/bikes/trek` | `getBrandPage` (`src/lib/api-pages.ts`) : catalogue `brand=`, tri `year_desc` ; nom = facette `brands` |
+| Catégorie | `/{locale}/{clé}-bikes` — `road` → `/en-sa/road-bikes`, `e_mtb` → `/ar-sa/e-mtb-bikes` | `getCategoryPage` : catalogue `category=` ; libellé = facette `categories`, dans la langue de la page |
+
+- **Slug de catégorie PROVISOIRE**, dérivé de la clé API (`_` → `-`, suffixe `-bikes`) tant que l'API n'en publie pas un.
+  La page n'existe que si la clé reconstituée est dans la facette `categories` ; `uncategorized` n'a pas de page (404) —
+  c'est un état de la donnée, et sa tuile d'accueil garde le catalogue filtré.
+- **Collisions** : `[category]` vit à la racine de la locale. Les dossiers statiques `bikes`, `compare`, `finder` gagnent
+  (Next préfère un segment littéral — vérifié par `tests/e2e/brand-category.spec.ts`) ; tout autre segment rend 404.
+  Une nouvelle page à la racine de la locale doit être un dossier statique, jamais un second segment dynamique.
+- Marque ou catégorie inconnue → `notFound()`. Métadonnées minimales (`title`, `description`, noindex) en attendant le
+  helper SEO. Même schéma de cache que la fiche (voir « Cache »), tag `catalog`.
+- Liens entrants : tuiles de l'accueil (`HomeBrands`, `HomeCategories`) et nom de la marque sur la fiche. Les tuiles des
+  pages elles-mêmes mènent au catalogue filtré (`/bikes?brand=…&category=…`), un résultat réel.
+
 ## Cache — rendre une fois, invalider au changement
 
 Contrat partagé avec l'API : `../tasks/2026-09-02-cache-contrat.md`. Les tags y sont la référence ; aucun autre n'est inventé sans le mettre à jour.
 
 - **Lectures API** (`src/lib/api.ts`) : `cache: 'force-cache'` + `next: { tags, revalidate: 86400 }`. Les 24 h sont un filet, l'invalidation par tag est le mécanisme. `getBuild` → `build:{brand}:{slug}` · `getCatalog` → `catalog` · `getFinderTree` / `getFinderResults` → `bikefinder` · `getCompare` → `compare`.
-- **Pages** : fiche vélo et étapes du finder sont rendues au premier appel puis servies du cache (`revalidate = 86400`, `dynamicParams = true`, `generateStaticParams` vide — sans lui, même vide, Next rend la route à chaque requête). Accueil et racine du finder sont prérendus par locale avec le même `revalidate`. Catalogue et comparateur restent dynamiques (`searchParams`), mais leurs appels API sont cachés.
+- **Pages** : fiche vélo, pages marque et catégorie, étapes du finder sont rendues au premier appel puis servies du cache (`revalidate = 86400`, `dynamicParams = true`, `generateStaticParams` vide — sans lui, même vide, Next rend la route à chaque requête). Accueil et racine du finder sont prérendus par locale avec le même `revalidate`. Catalogue et comparateur restent dynamiques (`searchParams`), mais leurs appels API sont cachés.
 - **Route `POST /api/revalidate`** (`src/app/api/revalidate/route.ts`) : `Authorization: Bearer $REVALIDATE_SECRET` (comparaison en temps constant, secret absent = tout refusé), corps `{ "tags": [...], "reason": "..." }`. Réponses : `200 { revalidated, reason, at }` · `401 { "error": "unauthorized" }` · `422 { "error": "tags required" }`. Chaque tag expire immédiatement (`revalidateTag(tag, { expire: 0 })` : la requête suivante re-rend, jamais de page périmée servie après un import) ; `all` = `revalidatePath('/', 'layout')`. Une ligne `[revalidate] {"status","tags","reason","ms"}` par appel dans la sortie du serveur.
 - **Preuve** : l'en-tête `x-nextjs-cache` sur toute page cachée — `MISS` au premier rendu, `HIT` ensuite, de nouveau `MISS` après le tag. Uniquement sous `npm run build && npm start` : `next dev` ne cache rien. Vérifié par `tests/e2e/cache.spec.ts`.
 - **Purger en local** (secret de `.env.local`, jamais commité — `REVALIDATE_SECRET=secret-local-de-test` est la valeur par défaut du spec, surchargeable par la variable d'environnement) :
