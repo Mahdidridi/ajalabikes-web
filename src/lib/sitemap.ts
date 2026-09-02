@@ -80,7 +80,8 @@ export function sitemapEntries(locked: boolean, data: SitemapData): MetadataRout
     '/bikes',
     '/finder',
     ...data.brands.map((b) => `/bikes/${b.key}`),
-    ...data.categories.filter((c) => hasCategoryPage(c.key)).map((c) => `/${categorySlug(c.key)}`),
+    // Seules les categories qui ont une page : la table de `routes.ts`, jamais un slug derive.
+    ...data.categories.flatMap((c) => (hasCategoryPage(c.key) ? [`/${categorySlug(c.key)}`] : [])),
     ...data.builds.map((b) => `/bikes/${b.brand.slug}/${b.slug}`),
   ];
 

@@ -1,11 +1,13 @@
 import { expect, test } from '@playwright/test';
+import { CATEGORY_SLUGS, categoryKeyOf, categorySlug, hasCategoryPage } from '@/lib/routes';
 
 /**
  * Pages marque et catégorie — décision du 2 septembre 2026 (rapport SEO, § 1) :
  * deux pages à chemin propre, bilingues, rendues une fois puis servies du cache.
  *
- *   /{locale}/bikes/{brand}          ex. /ar-sa/bikes/trek
- *   /{locale}/{category_key}-bikes   ex. /en-sa/road-bikes, e_mtb → /en-sa/e-mtb-bikes
+ *   /{locale}/bikes/{brand}   ex. /ar-sa/bikes/trek
+ *   /{locale}/{slug}          ex. /en-sa/road-bikes, e_mtb → /en-sa/electric-mountain-bikes
+ *                             (slugs parlants, table de `routes.ts` — décision du 3 septembre 2026)
  *
  * Nom, libellés, décomptes, tuiles et cartes viennent tous de l'API. Les
  * chiffres écrits ici sont ceux du catalogue réel — les mêmes que `home.spec`
@@ -79,18 +81,39 @@ test('la page catégorie anglaise porte le libellé de l API, ses marques et ses
   );
 });
 
-test('le slug de catégorie est dérivé de la clé et vaut dans les deux langues', async ({ page }) => {
-  // `e_mtb` → `e-mtb-bikes` : le tiret de l'URL, le souligné de la clé API.
-  await page.goto('/en-sa/e-mtb-bikes');
+test('le slug de catégorie est parlant, lu dans la table, et vaut dans les deux langues', async ({ page }) => {
+  // `e_mtb` → `electric-mountain-bikes` : le mot que l'on cherche, pas la clé de l'API.
+  await page.goto('/en-sa/electric-mountain-bikes');
   await expect(page.getByRole('heading', { name: 'Electric mountain', level: 1 })).toBeVisible();
   await expect(page.getByText('82 bikes')).toBeVisible();
 
   // La même adresse en arabe : le libellé change, le chemin non — la bascule
   // de langue de la navbar mène à LA MÊME page.
   await page.getByRole('link', { name: 'العربية' }).click();
-  await expect(page).toHaveURL(/\/ar-sa\/e-mtb-bikes$/);
+  await expect(page).toHaveURL(/\/ar-sa\/electric-mountain-bikes$/);
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
   await expect(page.getByRole('heading', { name: 'جبلية كهربائية', level: 1 })).toBeVisible();
+});
+
+test('la table des slugs est une bijection stricte sur les seize catégories', () => {
+  // Chaque clé de l'API a son slug, chaque slug rend sa clé — et rien d'autre.
+  const cles = Object.keys(CATEGORY_SLUGS);
+  expect(cles).toHaveLength(16);
+  for (const cle of cles) {
+    expect(hasCategoryPage(cle), cle).toBe(true);
+    expect(categoryKeyOf(categorySlug(cle as keyof typeof CATEGORY_SLUGS)), cle).toBe(cle);
+  }
+  expect(categorySlug('e_mtb')).toBe('electric-mountain-bikes');
+  expect(categorySlug('e_city')).toBe('electric-city-bikes');
+  expect(categorySlug('cross_country')).toBe('cross-country-bikes');
+
+  // L'inverse est strict : ni la clé brute, ni l'ancien slug dérivé, ni un
+  // état de la donnée, ni une propriété héritée d'`Object`.
+  for (const segment of ['e_mtb', 'e-mtb-bikes', 'e_mtb-bikes', 'uncategorized-bikes', 'bikes', 'constructor', '']) {
+    expect(categoryKeyOf(segment), segment).toBeNull();
+  }
+  expect(hasCategoryPage('uncategorized')).toBe(false);
+  expect(hasCategoryPage('constructor')).toBe(false);
 });
 
 test('le seau des vélos sans catégorie n a pas de page', async ({ page }) => {
@@ -101,7 +124,15 @@ test('le seau des vélos sans catégorie n a pas de page', async ({ page }) => {
 });
 
 test('un segment inconnu à la racine de la locale rend 404', async ({ page }) => {
-  for (const chemin of ['/en-sa/nimportequoi', '/en-sa/nimportequoi-bikes', '/ar-sa/-bikes']) {
+  // `e-mtb-bikes` : l'ancien slug dérivé de la clé, en ligne quelques heures
+  // et jamais indexé — 404, pas de redirection.
+  for (const chemin of [
+    '/en-sa/nimportequoi',
+    '/en-sa/nimportequoi-bikes',
+    '/ar-sa/-bikes',
+    '/en-sa/e-mtb-bikes',
+    '/en-sa/e_mtb',
+  ]) {
     const reponse = await page.goto(chemin);
 
     expect(reponse?.status(), chemin).toBe(404);
@@ -148,7 +179,7 @@ test('l accueil mène aux pages marque et catégorie', async ({ page }) => {
   );
   await expect(page.getByRole('link', { name: 'Electric mountain 82 bikes' })).toHaveAttribute(
     'href',
-    '/en-sa/e-mtb-bikes',
+    '/en-sa/electric-mountain-bikes',
   );
   // Le seau « non catégorisé » n'a pas de page : sa tuile garde le catalogue
   // filtré — un résultat réel, jamais un 404 depuis l'accueil.

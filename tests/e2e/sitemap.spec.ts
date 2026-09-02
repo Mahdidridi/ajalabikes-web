@@ -49,7 +49,9 @@ test.describe('politique cible, verrou simule', () => {
   const FIXTURE: SitemapData = {
     brands: [{ key: 'trek' }, { key: 'specialized' }],
     // `uncategorized` est un etat de la donnee, pas une categorie : pas de page.
-    categories: [{ key: 'road' }, { key: 'e_mtb' }, { key: 'uncategorized' }],
+    // `unicycle` : une cle que l'API ajouterait avant la table des slugs — pas
+    // de page tant qu'on ne lui a pas choisi un slug, jamais un segment invente.
+    categories: [{ key: 'road' }, { key: 'e_mtb' }, { key: 'uncategorized' }, { key: 'unicycle' }],
     builds: [
       { slug: 'fuel-mx-9-8-xt-gen-7-81563', brand: { slug: 'trek', name: 'Trek' } },
       { slug: 'allez-elite', brand: { slug: 'specialized', name: 'Specialized' } },
@@ -64,7 +66,7 @@ test.describe('politique cible, verrou simule', () => {
     const entrees = sitemapEntries(false, FIXTURE);
     const urls = entrees.map((e) => e.url);
 
-    // 3 pages fixes + 2 marques + 2 categories + 2 fiches = 9 pages, en 2 locales.
+    // 3 pages fixes + 2 marques + 2 categories a page + 2 fiches = 9 pages, en 2 locales.
     expect(urls).toHaveLength(18);
     expect(new Set(urls).size).toBe(urls.length);
     expect(urls).toEqual(
@@ -76,12 +78,14 @@ test.describe('politique cible, verrou simule', () => {
         `${SITE}/en-sa/bikes/trek`,
         `${SITE}/ar-sa/bikes/specialized`,
         `${SITE}/en-sa/road-bikes`,
-        `${SITE}/ar-sa/e-mtb-bikes`,
+        // Le slug parlant de la table, pas la cle de l'API.
+        `${SITE}/ar-sa/electric-mountain-bikes`,
         `${SITE}/en-sa/bikes/trek/fuel-mx-9-8-xt-gen-7-81563`,
         `${SITE}/ar-sa/bikes/specialized/allez-elite`,
       ]),
     );
-    expect(urls.filter((u) => u.includes('uncategorized'))).toEqual([]);
+    expect(urls.filter((u) => u.includes('uncategorized') || u.includes('unicycle'))).toEqual([]);
+    expect(urls.filter((u) => u.includes('e-mtb') || u.includes('e_mtb'))).toEqual([]);
 
     // Le meme groupe que le <head> de la page : ar-SA, en-SA, x-default vers l'anglais.
     const fiche = entrees.find((e) => e.url === `${SITE}/ar-sa/bikes/trek/fuel-mx-9-8-xt-gen-7-81563`);

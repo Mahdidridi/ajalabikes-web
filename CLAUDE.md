@@ -89,11 +89,16 @@ ont chacune une page à chemin propre. Les chemins sont construits par `src/lib/
 | Page | Chemin | Données |
 |---|---|---|
 | Marque | `/{locale}/bikes/{brand}` — `/ar-sa/bikes/trek` | `getBrandPage` (`src/lib/api-pages.ts`) : catalogue `brand=`, tri `year_desc` ; nom = facette `brands` |
-| Catégorie | `/{locale}/{clé}-bikes` — `road` → `/en-sa/road-bikes`, `e_mtb` → `/ar-sa/e-mtb-bikes` | `getCategoryPage` : catalogue `category=` ; libellé = facette `categories`, dans la langue de la page |
+| Catégorie | `/{locale}/{slug}` — `road` → `/en-sa/road-bikes`, `e_mtb` → `/ar-sa/electric-mountain-bikes` | `getCategoryPage` : catalogue `category=` ; libellé = facette `categories`, dans la langue de la page |
 
-- **Slug de catégorie PROVISOIRE**, dérivé de la clé API (`_` → `-`, suffixe `-bikes`) tant que l'API n'en publie pas un.
-  La page n'existe que si la clé reconstituée est dans la facette `categories` ; `uncategorized` n'a pas de page (404) —
-  c'est un état de la donnée, et sa tuile d'accueil garde le catalogue filtré.
+- **Slug de catégorie PARLANT, table explicite clé ↔ slug `CATEGORY_SLUGS` dans `routes.ts`** (décision du 3 septembre
+  2026 d'après les mesures de `../notes/seo-vocabulaire-golfe-2026-09-03.md`, § 6 : on cherche « electric mountain
+  bike », personne ne tape « e-mtb »). C'est la référence tant que l'API ne porte pas le slug ; le jour où elle le
+  publiera, la table devient sa copie puis disparaît. `categoryKeyOf(segment)` est l'inverse strict : tout segment hors
+  table rend 404, les anciens slugs dérivés (`e-mtb-bikes`) compris — jamais indexés, pas de redirection. La page
+  n'existe que si la clé est aussi dans la facette `categories` ; `uncategorized` n'a pas de page (404) — c'est un état
+  de la donnée, et sa tuile d'accueil garde le catalogue filtré. Une clé que l'API ajouterait avant la table n'a pas de
+  page non plus : sa tuile garde le catalogue filtré jusqu'à ce qu'on lui choisisse un slug.
 - **Collisions** : `[category]` vit à la racine de la locale. Les dossiers statiques `bikes`, `compare`, `finder` gagnent
   (Next préfère un segment littéral — vérifié par `tests/e2e/brand-category.spec.ts`) ; tout autre segment rend 404.
   Une nouvelle page à la racine de la locale doit être un dossier statique, jamais un second segment dynamique.

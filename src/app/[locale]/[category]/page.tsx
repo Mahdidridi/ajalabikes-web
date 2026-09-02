@@ -11,11 +11,12 @@ import { catalogPath, categoryKeyOf, categorySlug } from '@/lib/routes';
 import { seoFor } from '@/lib/seo';
 
 /**
- * La page d'une catégorie : `/{locale}/{category}-bikes` (`road` →
- * `/en-sa/road-bikes`, `e_mtb` → `/ar-sa/e-mtb-bikes`) — décision du
- * 2 septembre 2026 (rapport SEO, § 1), à la racine de la locale pour ne jamais
- * entrer en collision avec un slug de marque. Le slug est PROVISOIRE, dérivé
- * de la clé API dans `src/lib/routes.ts`.
+ * La page d'une catégorie : `/{locale}/{slug}` (`road` → `/en-sa/road-bikes`,
+ * `e_mtb` → `/ar-sa/electric-mountain-bikes`) — décision du 2 septembre 2026
+ * (rapport SEO, § 1), à la racine de la locale pour ne jamais entrer en
+ * collision avec un slug de marque. Le slug est PARLANT, lu dans la table
+ * clé ↔ slug de `src/lib/routes.ts` (décision du 3 septembre 2026), jamais
+ * dérivé de la clé.
  *
  * Ce segment dynamique est servi en dernier : `bikes`, `compare` et `finder`
  * gagnent parce que Next préfère un segment littéral (vérifié par
@@ -56,8 +57,8 @@ type Props = PageProps<'/[locale]/[category]'>;
 
 /**
  * Résout le segment en catégorie, ou rend 404 — partagé par la page et ses
- * métadonnées. Un segment qui n'a pas la forme `{clé}-bikes` ne coûte aucun
- * appel à l'API.
+ * métadonnées. Un segment absent de la table des slugs ne coûte aucun appel à
+ * l'API.
  */
 async function resolve(params: Props['params']) {
   const { locale, category } = await params;

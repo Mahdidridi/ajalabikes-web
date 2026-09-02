@@ -5,8 +5,9 @@ import { catalogPath, categoryPath, hasCategoryPage } from '@/lib/routes';
 /**
  * Les tuiles de catégories : libellés ET décomptes viennent des facettes de
  * l'API, déjà traduits. Chaque tuile ouvre la page de sa catégorie
- * (`/{category}-bikes`) — sauf le seau « non catégorisé », qui n'en a pas
- * et garde le catalogue filtré : un résultat réel, jamais une page vide.
+ * (`/{slug}`, table de `routes.ts`) — sauf le seau « non catégorisé », qui
+ * n'en a pas et garde le catalogue filtré : un résultat réel, jamais une
+ * page vide.
  */
 const COPY = {
   'ar-sa': { title: 'تصفح حسب الفئة', results: 'دراجة' },
