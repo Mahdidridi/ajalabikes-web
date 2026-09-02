@@ -11,6 +11,20 @@ const nextConfig: NextConfig = {
     return [{ source: '/', destination: '/ar-sa', permanent: false }];
   },
 
+  /**
+   * Aucune indexation tant que les URL ne sont pas figees (decision du
+   * 28 aout 2026). L'en-tete double le <meta name="robots"> du layout : il
+   * couvre aussi ce qui n'a pas de <head> (robots.txt, 404, redirections).
+   */
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
+      },
+    ];
+  },
+
   images: {
     /**
      * Les conversions sont generees par Laravel et servies par le CDN. Sans ce

@@ -7,7 +7,8 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './tests/e2e',
   timeout: 60_000,
-  use: { baseURL: 'http://127.0.0.1:3000', locale: 'ar-SA' },
+  // PLAYWRIGHT_BASE_URL permet de rejouer la suite contre un deploiement (ex. la prod).
+  use: { baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'http://127.0.0.1:3000', locale: 'ar-SA' },
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'] } },
     { name: 'mobile', use: { ...devices['Pixel 7'] } },
