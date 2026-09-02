@@ -19,7 +19,7 @@ const VIVANT = '/en-sa/bikes/trek/fuel-mx-9-8-xt-gen-7-81563';
  * est en place — verifie contre une API simulee. A reactiver (`test.fixme` →
  * `test`) des que la semence est en base.
  */
-test.fixme('un ancien slug redirige en permanent vers le slug vivant', async ({ request }) => {
+test('un ancien slug redirige en permanent vers le slug vivant', async ({ request }) => {
   const res = await request.get(ANCIEN, { maxRedirects: 0 });
 
   expect([301, 308]).toContain(res.status());

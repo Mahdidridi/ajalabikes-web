@@ -215,7 +215,7 @@ export default async function BuildPage({ params }: Props) {
             pas — Specialized oui, Trek non. */}
         {build.geometry_chart && (
           <figure className="flex flex-col gap-2">
-            <figcaption className="font-mono text-[11px] uppercase tracking-widest opacity-50">
+            <figcaption className="font-mono text-[11px] uppercase tracking-widest opacity-75">
               {t.geometryChart}
             </figcaption>
             <Image
@@ -248,7 +248,7 @@ export default async function BuildPage({ params }: Props) {
         </dl>
       </section>
 
-      <footer className="border-t border-neutral-200 pt-4 font-mono text-xs opacity-50 dark:border-neutral-800">
+      <footer className="border-t border-neutral-200 pt-4 font-mono text-xs opacity-75 dark:border-neutral-800">
         {t.freshness} : {build.freshness.last_changed_at}
       </footer>
     </main>

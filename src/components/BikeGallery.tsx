@@ -95,7 +95,7 @@ export function BikeGallery({ images, labels }: { images: Media[]; labels: Label
 
       {image.attribution && (
         // L'attribution accompagne la photo. Discrete, jamais absente.
-        <figcaption className="font-mono text-[11px] opacity-50">© {image.attribution}</figcaption>
+        <figcaption className="font-mono text-[11px] opacity-75">© {image.attribution}</figcaption>
       )}
     </figure>
   );

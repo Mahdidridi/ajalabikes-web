@@ -39,7 +39,7 @@ export function SizePicker({
             className="border border-neutral-300 px-4 py-2 text-sm leading-tight transition-colors aria-pressed:border-emerald-700 aria-pressed:bg-emerald-700 aria-pressed:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 dark:border-neutral-700 dark:aria-pressed:border-emerald-500 dark:aria-pressed:bg-emerald-600"
           >
             <span className="block font-mono font-semibold">{s.label}</span>
-            {s.label_alt && <span className="block font-mono text-xs opacity-70">{s.label_alt}</span>}
+            {s.label_alt && <span className="block font-mono text-xs">{s.label_alt}</span>}
           </button>
         ))}
       </div>
