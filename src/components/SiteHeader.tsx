@@ -6,12 +6,26 @@ import { ThemeToggle } from './ThemeToggle';
 
 /**
  * La barre de navigation, présente sur toutes les pages : marque, Vélos,
- * Comparer, langue, thème. Deux liens seulement — pas de menu hamburger.
+ * Comparer, Bikefinder, langue, thème. Trois liens — pas de menu hamburger.
  * RTL natif : `ms-auto` et l'ordre du flux suffisent, rien n'est « retourné ».
  */
 const COPY = {
-  'ar-sa': { bikes: 'الدراجات', compare: 'قارن', theme: 'تبديل المظهر', lang: 'English' },
-  'en-sa': { bikes: 'Bikes', compare: 'Compare', theme: 'Toggle theme', lang: 'العربية' },
+  'ar-sa': {
+    bikes: 'الدراجات',
+    compare: 'قارن',
+    finder: 'دليل اختيار الدراجة',
+    finderShort: 'الدليل',
+    theme: 'تبديل المظهر',
+    lang: 'English',
+  },
+  'en-sa': {
+    bikes: 'Bikes',
+    compare: 'Compare',
+    finder: 'Bike finder',
+    finderShort: 'Finder',
+    theme: 'Toggle theme',
+    lang: 'العربية',
+  },
 } as const;
 
 export function SiteHeader({ locale }: { locale: Locale }) {
@@ -39,6 +53,17 @@ export function SiteHeader({ locale }: { locale: Locale }) {
           </Link>
           <Link href={`/${locale}/compare`} className="text-muted transition hover:text-foreground">
             {t.compare}
+          </Link>
+          {/*
+           * Le bikefinder porte le nom du pied de page dès `sm`. Sur téléphone
+           * (412 px), trois liens, la bascule de langue et « دليل اختيار الدراجة »
+           * ne tiennent pas : la forme courte du pilier de l'accueil (« الدليل »,
+           * « Finder ») prend le relais. Un seul lien, deux libellés — le nom
+           * accessible est toujours celui qui s'affiche.
+           */}
+          <Link href={`/${locale}/finder`} className="text-muted transition hover:text-foreground">
+            <span className="sm:hidden">{t.finderShort}</span>
+            <span className="max-sm:hidden">{t.finder}</span>
           </Link>
         </div>
 

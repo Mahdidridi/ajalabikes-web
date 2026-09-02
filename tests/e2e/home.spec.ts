@@ -175,6 +175,30 @@ test('le logo de la navbar mene a l accueil', async ({ page }) => {
   await expect(page.getByRole('heading', { name: SIGNATURE_EN, level: 1 })).toBeVisible();
 });
 
+test('la navbar mene au catalogue, au comparateur et au bikefinder', async ({ page, isMobile }) => {
+  await page.goto(EN);
+  const nav = page.locator('header nav');
+
+  // `exact` : le logo, lui aussi un lien, contient « Bikes ».
+  await expect(nav.getByRole('link', { name: 'Bikes', exact: true })).toHaveAttribute(
+    'href',
+    '/en-sa/bikes',
+  );
+  await expect(nav.getByRole('link', { name: 'Compare', exact: true })).toHaveAttribute(
+    'href',
+    '/en-sa/compare',
+  );
+  // Le nom du pied de page des `sm` ; sur telephone, la forme courte du pilier de l'accueil.
+  await expect(
+    nav.getByRole('link', { name: isMobile ? 'Finder' : 'Bike finder', exact: true }),
+  ).toHaveAttribute('href', '/en-sa/finder');
+
+  await page.goto(AR);
+  await expect(
+    nav.getByRole('link', { name: isMobile ? 'الدليل' : 'دليل اختيار الدراجة', exact: true }),
+  ).toHaveAttribute('href', '/ar-sa/finder');
+});
+
 test('le pied de page porte les liens du site, la signature et la provenance', async ({ page }) => {
   await page.goto(EN);
 

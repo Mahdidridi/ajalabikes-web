@@ -122,7 +122,8 @@ test('les segments statiques gardent la main sur la page catégorie', async ({ p
   const finder = await page.goto('/en-sa/finder');
   expect(finder?.status()).toBe(200);
   await expect(page).toHaveURL(/\/en-sa\/finder$/);
-  await expect(page.getByText('Bike finder').first()).toBeVisible();
+  // Dans `main` : la navbar porte aussi « Bike finder », masqué sur téléphone.
+  await expect(page.locator('main').getByText('Bike finder').first()).toBeVisible();
 });
 
 test('la fiche mène à la page de sa marque', async ({ page }) => {
