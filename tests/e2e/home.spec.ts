@@ -3,6 +3,10 @@ import { expect, test } from '@playwright/test';
 const AR = '/ar-sa';
 const EN = '/en-sa';
 
+/** Les signatures de marque, titres h1 de l'accueil — les mêmes que le layout. */
+const SIGNATURE_EN = "The Gulf's bike comparison platform";
+const SIGNATURE_AR = 'منصة عربية لاكتشاف الدراجات ومقارنتها';
+
 test('la racine redirige vers la locale par defaut', async ({ page }) => {
   // L'arabe est la marque : `/` n'existe pas, il mene a `/ar-sa`.
   await page.goto('/');
@@ -11,12 +15,12 @@ test('la racine redirige vers la locale par defaut', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 });
 
-test('le hero porte le compteur du catalogue et mene a lui', async ({ page }) => {
+test('le hero porte la signature, le compteur du catalogue et mene a lui', async ({ page }) => {
   await page.goto(EN);
 
-  await expect(
-    page.getByRole('heading', { name: 'Find your next bike', level: 1 }),
-  ).toBeVisible();
+  // Un seul h1, et c'est la signature de la marque.
+  await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
+  await expect(page.getByRole('heading', { name: SIGNATURE_EN, level: 1 })).toBeVisible();
 
   // 634 vient de l'API — le meme total que le catalogue affiche.
   const cta = page.getByRole('link', { name: 'Browse 634 bikes' });
@@ -27,11 +31,19 @@ test('le hero porte le compteur du catalogue et mene a lui', async ({ page }) =>
   await expect(page.getByText('634 bikes')).toBeVisible();
 });
 
-test('un exemple de requete mene au catalogue filtre par marque', async ({ page }) => {
+test('la pastille du hero annonce le bikefinder et y mene', async ({ page }) => {
   await page.goto(EN);
 
-  // Le decompte du chip vient des facettes, pas d'une liste codee en dur.
-  await page.getByRole('link', { name: 'Trek 196' }).click();
+  await page.getByRole('link', { name: 'Try it' }).click();
+
+  await expect(page).toHaveURL(/\/en-sa\/finder$/);
+});
+
+test('une marque mene au catalogue filtre par marque', async ({ page }) => {
+  await page.goto(EN);
+
+  // Le decompte vient des facettes, pas d'une liste codee en dur.
+  await page.getByRole('link', { name: 'Trek 196 bikes' }).click();
 
   await expect(page).toHaveURL(/\/en-sa\/bikes\?brand=trek$/);
   await expect(page.getByText('196 bikes')).toBeVisible();
@@ -66,16 +78,88 @@ test('l apercu montre quatre cartes, les memes que le catalogue', async ({ page 
   );
 });
 
+test('les trois piliers menent au catalogue, au comparateur et au bikefinder', async ({ page }) => {
+  await page.goto(EN);
+
+  const piliers = page.getByRole('list').filter({
+    has: page.getByRole('heading', { name: 'Choose with the bike finder', level: 3 }),
+  });
+  await expect(piliers.getByRole('heading', { level: 3 })).toHaveText([
+    'Discover',
+    'Compare',
+    'Choose with the bike finder',
+  ]);
+
+  await expect(piliers.getByRole('link', { name: 'Browse the catalogue' })).toHaveAttribute(
+    'href',
+    '/en-sa/bikes',
+  );
+  await expect(piliers.getByRole('link', { name: 'Compare bikes' })).toHaveAttribute(
+    'href',
+    '/en-sa/compare',
+  );
+  await expect(piliers.getByRole('link', { name: 'Start the bike finder' })).toHaveAttribute(
+    'href',
+    '/en-sa/finder',
+  );
+});
+
+test('les chiffres sont ceux de l API : total et facettes', async ({ page }) => {
+  await page.goto(EN);
+
+  const chiffres = page.locator('dl').filter({ hasText: 'Wheel sizes' });
+  const tuiles = chiffres.locator('div');
+  await expect(tuiles).toHaveCount(4);
+
+  // Le total du catalogue, puis les cinq marques — les memes que la bande des marques.
+  await expect(tuiles.nth(0)).toContainText('634');
+  await expect(tuiles.nth(0)).toContainText('Bikes');
+  await expect(tuiles.nth(1)).toContainText('5');
+  await expect(tuiles.nth(1)).toContainText('Brands');
+  await expect(tuiles.nth(2)).toContainText('Categories');
+  await expect(tuiles.nth(3)).toContainText('Wheel sizes');
+
+  // Aucun chiffre qui ne soit pas dans l'API : ni avis, ni note, ni utilisateurs.
+  await expect(page.getByText(/testimonial|review|rating|users/i)).toHaveCount(0);
+});
+
+test('l appel final mene au bikefinder', async ({ page }) => {
+  await page.goto(EN);
+
+  const cta = page.getByRole('link', { name: 'Start the bike finder' }).last();
+  await cta.scrollIntoViewIfNeeded();
+  await cta.click();
+
+  await expect(page).toHaveURL(/\/en-sa\/finder$/);
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+});
+
 test('la version arabe est en RTL avec les libelles traduits', async ({ page }) => {
   await page.goto(AR);
 
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
-  await expect(
-    page.getByRole('heading', { name: 'اعثر على دراجتك القادمة', level: 1 }),
-  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: SIGNATURE_AR, level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'اكتشف، قارن، ثم اختر', level: 2 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'الكتالوج بالأرقام', level: 2 })).toBeVisible();
   // Les libelles des tuiles arrivent traduits de l'API, pas du front.
   await expect(page.getByRole('link', { name: 'مدينة ولياقة' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Trek 196' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Trek 196 دراجة' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'ابدأ دليل اختيار الدراجة' })).toHaveAttribute(
+    'href',
+    '/ar-sa/finder',
+  );
+});
+
+test('en arabe, les fleches « vers la suite » pointent vers la gauche', async ({ page }) => {
+  // Le miroir est fait par la variante `rtl:` sur le SVG, jamais par le texte :
+  // la meme fleche pointe a droite en anglais, a gauche en arabe.
+  await page.goto(AR);
+  const fleche = page.getByRole('link', { name: 'عرض الكل' }).locator('svg');
+  await expect(fleche).toHaveCSS('scale', '-1 1');
+
+  await page.goto(EN);
+  const arrow = page.getByRole('link', { name: 'View all' }).locator('svg');
+  await expect(arrow).not.toHaveCSS('scale', '-1 1');
 });
 
 test('le logo de la navbar mene a l accueil', async ({ page }) => {
@@ -84,19 +168,38 @@ test('le logo de la navbar mene a l accueil', async ({ page }) => {
   await page.locator('header nav').getByRole('link', { name: 'Darraja Bikes' }).click();
 
   await expect(page).toHaveURL(/\/en-sa$/);
-  await expect(
-    page.getByRole('heading', { name: 'Find your next bike', level: 1 }),
-  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: SIGNATURE_EN, level: 1 })).toBeVisible();
 });
 
-test('le pied de page porte la signature et la provenance des donnees', async ({ page }) => {
+test('le pied de page porte les liens du site, la signature et la provenance', async ({ page }) => {
   await page.goto(EN);
 
   const pied = page.locator('footer');
-  await expect(pied.getByText("The Gulf's bike comparison platform")).toBeVisible();
+  await expect(pied.getByRole('link', { name: 'Bikes' })).toHaveAttribute('href', '/en-sa/bikes');
+  await expect(pied.getByRole('link', { name: 'Compare' })).toHaveAttribute(
+    'href',
+    '/en-sa/compare',
+  );
+  await expect(pied.getByRole('link', { name: 'Bike finder' })).toHaveAttribute(
+    'href',
+    '/en-sa/finder',
+  );
+  await expect(pied.getByText(SIGNATURE_EN)).toBeVisible();
   await expect(
     pied.getByText("Specifications from manufacturers' official websites."),
   ).toBeVisible();
+  await expect(pied.getByText(/© \d{4} Darraja Bikes/)).toBeVisible();
+});
+
+test('la page ne deborde pas horizontalement, meme avec les halos du hero', async ({ page }) => {
+  for (const chemin of [EN, AR]) {
+    await page.goto(chemin);
+
+    const deborde = await page.evaluate(
+      () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+    );
+    expect(deborde, chemin).toBe(false);
+  }
 });
 
 test('l accueil n est pas indexable', async ({ page }) => {
