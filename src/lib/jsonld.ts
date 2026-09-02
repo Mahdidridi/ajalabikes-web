@@ -22,9 +22,13 @@ const WEBSITE_ID = `${SITE_URL}/#website`;
 /** `ar-sa` → `ar` : la langue seule, forme attendue par `inLanguage`. */
 const language = (locale: Locale) => locale.split('-')[0];
 
-/** Libelles du fil d'Ariane — les seuls textes de ce module qui ne viennent pas de l'API. */
+/**
+ * Libelles du fil d'Ariane — les seuls textes de ce module qui ne viennent pas
+ * de l'API. « السياكل » : le mot mesure du Golfe (`src/lib/vocabulary.ts`),
+ * celui que Google affiche a la place de l'URL.
+ */
 const TRAIL_COPY = {
-  'ar-sa': { home: 'الرئيسية', bikes: 'الدراجات' },
+  'ar-sa': { home: 'الرئيسية', bikes: 'السياكل' },
   'en-sa': { home: 'Home', bikes: 'Bikes' },
 } as const satisfies Record<Locale, { home: string; bikes: string }>;
 

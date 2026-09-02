@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { Facets, Locale } from '@/lib/api';
 import { brandPath } from '@/lib/routes';
+import { bikesCount } from '@/lib/vocabulary';
 
 /**
  * Les marques du catalogue. Bloc Tailwind Plus « Simple with heading »
@@ -11,8 +12,8 @@ import { brandPath } from '@/lib/routes';
  * page (`/bikes/{brand}`). Alphabet latin canonique, comme partout.
  */
 const COPY = {
-  'ar-sa': { title: 'الماركات في الكتالوج', results: 'دراجة' },
-  'en-sa': { title: 'Brands in the catalogue', results: 'bikes' },
+  'ar-sa': { title: 'الماركات في الكتالوج' },
+  'en-sa': { title: 'Brands in the catalogue' },
 } as const;
 
 export function HomeBrands({ locale, brands }: { locale: Locale; brands: Facets['brands'] }) {
@@ -30,9 +31,7 @@ export function HomeBrands({ locale, brands }: { locale: Locale; brands: Facets[
                 className="flex flex-col items-center gap-0.5 rounded-xl px-3 py-3 transition hover:bg-background focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
               >
                 <span className="text-2xl font-extrabold tracking-tight">{b.label}</span>
-                <span className="font-mono text-xs text-muted">
-                  {b.count} {t.results}
-                </span>
+                <span className="font-mono text-xs text-muted">{bikesCount(locale, b.count)}</span>
               </Link>
             </li>
           ))}

@@ -9,6 +9,7 @@ import { getCategoryPage } from '@/lib/api-pages';
 import { categoryBreadcrumbJsonLd } from '@/lib/jsonld';
 import { catalogPath, categoryKeyOf, categorySlug } from '@/lib/routes';
 import { seoFor } from '@/lib/seo';
+import { bikesCount } from '@/lib/vocabulary';
 
 /**
  * La page d'une catégorie : `/{locale}/{slug}` (`road` → `/en-sa/road-bikes`,
@@ -31,25 +32,29 @@ export function generateStaticParams() {
   return [];
 }
 
-/** Libellés d'interface : rien ici ne décrit une donnée, tout arrive traduit de l'API. */
+/**
+ * Libellés d'interface : rien ici ne décrit une donnée, tout arrive traduit de
+ * l'API. En arabe, le générique est « سيكل / سياكل » (`src/lib/vocabulary.ts`) ;
+ * la description garde le registre formel en second, jamais « دراجة » nue.
+ * `{count}` est le total accordé (`bikesCount`), `{name}` le libellé de l'API.
+ */
 const COPY = {
   'ar-sa': {
     eyebrow: 'الفئة',
-    results: 'دراجة',
     brands: 'تصفح حسب الماركة',
     newest: 'أحدث الموديلات',
-    all: 'كل الدراجات في هذه الفئة',
-    title: 'دراجات {name}',
-    description: '{total} دراجة في فئة {name}: المواصفات والهندسة والمقارنة.',
+    all: 'كل السياكل في هذه الفئة',
+    title: 'سياكل {name}',
+    description:
+      '{count} في فئة {name}: المواصفات الكاملة والهندسة حسب المقاس ومقارنة الدراجات الهوائية جنبًا إلى جنب.',
   },
   'en-sa': {
     eyebrow: 'Category',
-    results: 'bikes',
     brands: 'Browse by brand',
     newest: 'Newest models',
     all: 'All {name} bikes',
     title: '{name} bikes',
-    description: '{total} {name} bikes: specifications, geometry and comparison.',
+    description: '{count} in the {name} category: specifications, geometry and side-by-side comparison.',
   },
 } as const satisfies Record<Locale, Record<string, string>>;
 
@@ -85,7 +90,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     locale,
     path: `/${categorySlug(key)}`,
     title: t.title.replace('{name}', bucket.label),
-    description: t.description.replace('{name}', bucket.label).replace('{total}', String(page.meta.total)),
+    description: t.description
+      .replace('{name}', bucket.label)
+      .replace('{count}', bikesCount(locale, page.meta.total)),
   });
 }
 
@@ -96,18 +103,13 @@ export default async function CategoryPage({ params }: Props) {
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-col gap-10 px-4 py-8 sm:px-6 sm:py-12">
       <JsonLd data={categoryBreadcrumbJsonLd(locale, { name: bucket.label, path: `/${categorySlug(key)}` })} />
-      <CollectionHeader
-        eyebrow={t.eyebrow}
-        title={bucket.label}
-        total={page.meta.total}
-        results={t.results}
-      />
+      <CollectionHeader locale={locale} eyebrow={t.eyebrow} title={bucket.label} total={page.meta.total} />
 
       {/* Les marques présentes DANS la catégorie, comptées dans la catégorie :
           chaque tuile ouvre le catalogue filtré marque + catégorie. */}
       <FacetTiles
+        locale={locale}
         title={t.brands}
-        results={t.results}
         tiles={page.facets.brands.map((b) => ({
           ...b,
           href: catalogPath(locale, { brand: b.key, category: key }),

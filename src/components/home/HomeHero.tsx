@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { Locale } from '@/lib/api';
+import { bikesCount } from '@/lib/vocabulary';
 import { ArrowIcon } from './icons';
 
 /**
@@ -9,19 +10,20 @@ import { ArrowIcon } from './icons';
  * `start-` et `rtl:` — pour que l'arabe soit un miroir, pas un retournement.
  *
  * Le titre est la signature de la marque : la même que les métadonnées et le
- * pied de page. Le compteur du bouton vient de l'API, jamais écrit en dur.
- * La pastille annonce la seule nouveauté réelle : le bikefinder.
+ * pied de page — elle ne suit pas le vocabulaire mesuré, le reste du texte
+ * si (« سيكل / سياكل », `src/lib/vocabulary.ts`). Le compteur du bouton
+ * vient de l'API, jamais écrit en dur. La pastille annonce la seule
+ * nouveauté réelle : le bikefinder.
  */
 const COPY = {
   'ar-sa': {
-    pill: 'جديد: دليل اختيار الدراجة',
+    pill: 'جديد: دليل اختيار السيكل',
     pillLink: 'جرّبه',
     title: 'منصة عربية لاكتشاف الدراجات ومقارنتها',
     subtitle:
-      'مواصفات كاملة وهندسة موحّدة بالمليمتر من المواقع الرسمية للشركات المصنعة. قارن الدراجات جنبًا إلى جنب، مقاسًا بمقاس.',
+      'مواصفات كاملة وهندسة موحّدة بالمليمتر من المواقع الرسمية للشركات المصنعة. قارن السياكل جنبًا إلى جنب، مقاسًا بمقاس.',
     browse: 'تصفح',
-    results: 'دراجة',
-    compare: 'قارن الدراجات',
+    compare: 'قارن السياكل',
   },
   'en-sa': {
     pill: 'New: the bike finder',
@@ -30,7 +32,6 @@ const COPY = {
     subtitle:
       'Full specifications and geometry normalised to millimetres, from the manufacturers’ official websites. Compare bikes side by side, size by size.',
     browse: 'Browse',
-    results: 'bikes',
     compare: 'Compare bikes',
   },
 } as const;
@@ -90,8 +91,8 @@ export function HomeHero({ locale, total }: { locale: Locale; total: number }) {
             href={`/${locale}/bikes`}
             className="rounded-lg bg-accent px-6 py-3 text-sm font-semibold text-background shadow-xs transition hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           >
-            {/* Le total vient de l'API — jamais écrit en dur. */}
-            {t.browse} {total} {t.results}
+            {/* Le total vient de l'API — jamais écrit en dur ; seul son mot s'accorde ici. */}
+            {t.browse} {bikesCount(locale, total)}
           </Link>
           <Link
             href={`/${locale}/compare`}

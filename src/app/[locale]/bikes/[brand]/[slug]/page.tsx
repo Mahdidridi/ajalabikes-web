@@ -41,7 +41,7 @@ const COPY = {
     geometryChart: 'مخطط الهندسة',
     components: 'المكونات',
     freshness: 'آخر تحديث',
-    thumbnails: 'صور الدراجة',
+    thumbnails: 'صور السيكل',
     photoOf: 'صورة {n} من {total}',
   },
   'en-sa': {

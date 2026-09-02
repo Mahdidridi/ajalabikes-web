@@ -174,11 +174,13 @@ test.describe('JSON-LD', () => {
       `${SITE}${FUEL_EN}`,
     ]);
 
-    // Une langue par page : les libelles suivent la locale, les noms restent latins.
+    // Une langue par page : les libelles suivent la locale, les noms restent
+    // latins. « السياكل » : le mot mesure du Golfe, que Google affiche a la
+    // place de l'URL (decision du 3 septembre 2026).
     await page.goto(FUEL_AR);
     const filAr = bloc(await jsonLd(page), 'BreadcrumbList');
     const nomsAr = (filAr!.itemListElement as { name: string }[]).map((m) => m.name);
-    expect(nomsAr).toEqual(['الرئيسية', 'الدراجات', 'Trek', 'Fuel MX 9.8 XT Gen 7']);
+    expect(nomsAr).toEqual(['الرئيسية', 'السياكل', 'Trek', 'Fuel MX 9.8 XT Gen 7']);
   });
 
   test('le catalogue nu porte un ItemList des cartes de la page, le filtre non', async ({ page }) => {
@@ -252,7 +254,12 @@ test.describe('pages marque et categorie', () => {
     expect(liens['ar-SA']).toBe(`${SITE}/ar-sa/bikes/trek`);
     expect(liens['en-SA']).toBe(`${SITE}/en-sa/bikes/trek`);
     expect(liens['x-default']).toBe(`${SITE}/en-sa/bikes/trek`);
-    await expect(page).toHaveTitle(/Trek.*Darraja Bikes/);
+    // « سياكل Trek », le mot mesure du Golfe en tete du titre — jamais « دراجات Trek ».
+    await expect(page).toHaveTitle('سياكل Trek · Darraja Bikes');
+    await expect(page.locator('meta[name="description"]')).toHaveAttribute(
+      'content',
+      /^196 سيكل من Trek: .*الدراجات الهوائية/,
+    );
 
     const fil = bloc(await jsonLd(page), 'BreadcrumbList');
     const maillons = fil!.itemListElement as { item: string }[];

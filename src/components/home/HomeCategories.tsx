@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { Facets, Locale } from '@/lib/api';
 import { catalogPath, categoryPath, hasCategoryPage } from '@/lib/routes';
+import { bikesCount } from '@/lib/vocabulary';
 
 /**
  * Les tuiles de catégories : libellés ET décomptes viennent des facettes de
@@ -10,8 +11,8 @@ import { catalogPath, categoryPath, hasCategoryPage } from '@/lib/routes';
  * page vide.
  */
 const COPY = {
-  'ar-sa': { title: 'تصفح حسب الفئة', results: 'دراجة' },
-  'en-sa': { title: 'Browse by category', results: 'bikes' },
+  'ar-sa': { title: 'تصفح حسب الفئة' },
+  'en-sa': { title: 'Browse by category' },
 } as const;
 
 export function HomeCategories({
@@ -38,9 +39,7 @@ export function HomeCategories({
               className="flex flex-col gap-0.5 rounded-xl border border-border p-4 transition hover:border-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
             >
               <span className="text-sm font-semibold">{c.label}</span>
-              <span className="font-mono text-xs text-muted">
-                {c.count} {t.results}
-              </span>
+              <span className="font-mono text-xs text-muted">{bikesCount(locale, c.count)}</span>
             </Link>
           </li>
         ))}

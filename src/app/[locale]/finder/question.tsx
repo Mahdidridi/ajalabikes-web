@@ -10,7 +10,7 @@ import type { FinderQuestion, Locale } from '@/lib/api';
  */
 const COPY = {
   'ar-sa': {
-    eyebrow: 'دليل اختيار الدراجة',
+    eyebrow: 'دليل اختيار السيكل',
     back: 'رجوع',
     restart: 'ابدأ من جديد',
     step: 'خطوة',

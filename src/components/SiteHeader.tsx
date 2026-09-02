@@ -11,9 +11,9 @@ import { ThemeToggle } from './ThemeToggle';
  */
 const COPY = {
   'ar-sa': {
-    bikes: 'الدراجات',
+    bikes: 'السياكل',
     compare: 'قارن',
-    finder: 'دليل اختيار الدراجة',
+    finder: 'دليل اختيار السيكل',
     finderShort: 'الدليل',
     theme: 'تبديل المظهر',
     lang: 'English',
@@ -56,7 +56,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
           </Link>
           {/*
            * Le bikefinder porte le nom du pied de page dès `sm`. Sur téléphone
-           * (412 px), trois liens, la bascule de langue et « دليل اختيار الدراجة »
+           * (412 px), trois liens, la bascule de langue et « دليل اختيار السيكل »
            * ne tiennent pas : la forme courte du pilier de l'accueil (« الدليل »,
            * « Finder ») prend le relais. Un seul lien, deux libellés — le nom
            * accessible est toujours celui qui s'affiche.

@@ -1,19 +1,22 @@
+import type { Locale } from '@/lib/api';
+import { bikesCount } from '@/lib/vocabulary';
+
 /**
  * L'en-tête d'une page de collection — marque ou catégorie : le type de page
  * en surtitre, le NOM tel que l'API le rend en h1, le total du filtre en
- * compteur. Le compteur compte tous les vélos de la collection, pas les
- * cartes de la page.
+ * compteur, accordé dans la langue de la page. Le compteur compte tous les
+ * vélos de la collection, pas les cartes de la page.
  */
 export function CollectionHeader({
+  locale,
   eyebrow,
   title,
   total,
-  results,
 }: {
+  locale: Locale;
   eyebrow: string;
   title: string;
   total: number;
-  results: string;
 }) {
   return (
     <header className="flex flex-wrap items-end justify-between gap-3 border-b border-border pb-5">
@@ -23,9 +26,7 @@ export function CollectionHeader({
           {title}
         </h1>
       </div>
-      <p className="font-mono text-sm text-muted">
-        {total} {results}
-      </p>
+      <p className="font-mono text-sm text-muted">{bikesCount(locale, total)}</p>
     </header>
   );
 }
