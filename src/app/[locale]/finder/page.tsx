@@ -2,6 +2,9 @@ import { notFound } from 'next/navigation';
 import { getFinderTree, isLocale } from '@/lib/api';
 import { FinderQuestionScreen, finderCopy } from './question';
 
+/** Prérendue par locale, re-rendue sur le tag `bikefinder` ; 24 h de filet. */
+export const revalidate = 86400;
+
 /**
  * L'entrée du bikefinder : la première question EST l'accueil du parcours
  * (mécanique du bikefinder Canyon — pas d'écran d'introduction superflu).

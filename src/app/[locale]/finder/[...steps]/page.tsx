@@ -5,6 +5,18 @@ import { getFinderResults, getFinderTree, isLocale } from '@/lib/api';
 import { FinderQuestionScreen, finderCopy } from '../question';
 
 /**
+ * Chaque étape est rendue au premier appel, puis servie du cache : le tag
+ * `bikefinder` la fait re-rendre quand l'API le demande, les 24 h sont un
+ * filet. Sans `generateStaticParams` — même vide — Next rendrait la route à
+ * chaque requête (doc `generate-static-params`, « All paths at runtime »).
+ */
+export const revalidate = 86400;
+export const dynamicParams = true;
+export function generateStaticParams() {
+  return [];
+}
+
+/**
  * Le parcours du bikefinder, un segment d'URL par réponse
  * (`/finder/mountain/no-power/trails/budget-mid`) — mécanique du bikefinder
  * Canyon : retour navigateur naturel, parcours partageable.

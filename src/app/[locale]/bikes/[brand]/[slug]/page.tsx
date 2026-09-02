@@ -6,6 +6,19 @@ import { getBuild, isLocale, type Locale } from '@/lib/api';
 import { sizeCatalogue } from '@/lib/images';
 
 /**
+ * Rendue au premier appel, puis servie du cache : le tag `build:…` porte par
+ * `getBuild` la fait re-rendre quand l'API le demande, les 24 h sont un filet.
+ * `generateStaticParams` vide : aucune fiche n'est rendue au build, mais sans
+ * lui Next rendrait la route a CHAQUE requete (doc `generate-static-params`,
+ * « All paths at runtime »).
+ */
+export const revalidate = 86400;
+export const dynamicParams = true;
+export function generateStaticParams() {
+  return [];
+}
+
+/**
  * Libelles d'interface. Ils ne decrivent aucune donnee : tout ce qui vient de
  * l'API arrive deja traduit et mis en forme.
  */

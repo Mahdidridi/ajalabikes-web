@@ -71,6 +71,8 @@ const COPY = {
   },
 } as const;
 
+export const revalidate = 86400; // Re-rendue sur le tag `catalog`, 24 h de filet — voir CLAUDE.md, « Cache ».
+
 export default async function HomePage({ params }: PageProps<'/[locale]'>) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
