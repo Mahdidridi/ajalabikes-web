@@ -132,10 +132,14 @@ test.describe('une fiche est rendue une fois, puis servie du cache', () => {
 
     const res = await revalidate(request, { tags: ['all'], reason: 'test e2e : purge totale' });
     expect(res.status()).toBe(200);
-    expect((await res.json()).revalidated).toEqual(['all']);
 
-    expect(await cacheStatus(request, path)).not.toBe('HIT');
+    // L'accueil D'ABORD, dans la foulee de la purge : d'autres specs le
+    // visitent en parallele, et une seule visite pendant le re-rendu de la
+    // fiche (ci-dessous) suffirait a le remettre en cache avant qu'on ne
+    // l'observe. La fiche, elle, n'est visitee que par ce projet.
     expect(await cacheStatus(request, '/en-sa')).not.toBe('HIT');
+    expect((await res.json()).revalidated).toEqual(['all']);
+    expect(await cacheStatus(request, path)).not.toBe('HIT');
     await attendreHit(request, path);
     await attendreHit(request, '/en-sa');
   });
