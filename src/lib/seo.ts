@@ -1,5 +1,6 @@
 import type { Metadata, MetadataRoute } from 'next';
 import { LOCALES, type Build, type Locale } from '@/lib/api';
+import { sizesCount } from '@/lib/vocabulary';
 
 /**
  * SEO — canonical, hreflang, Open Graph et robots, depuis UN SEUL endroit.
@@ -115,8 +116,55 @@ export function bikeName({ brand, model_name }: Pick<Build, 'brand' | 'model_nam
  * libelle — et seulement s'il est connu. Un millesime absent n'apparait pas
  * dans un titre, il reste « non renseigne » sur la page.
  */
-export function bikeTitle(build: Build): string {
+export function bikeTitle(build: Pick<Build, 'brand' | 'model_name' | 'year' | 'year_label'>): string {
   return build.year === null ? bikeName(build) : `${bikeName(build)} ${build.year_label}`;
+}
+
+/**
+ * La longueur visee d'une meta description : au-dela, Google la coupe
+ * lui-meme, au milieu d'un mot. On coupe avant lui, au dernier mot entier.
+ */
+const DESCRIPTION_MAX = 160;
+
+/**
+ * Le patron de la description d'une fiche, par langue : le nom titre (marque,
+ * modele, millesime s'il est connu), puis ce que la page offre. `sizes` est le
+ * decompte de tailles deja accorde, ou `null` quand la fiche n'en publie
+ * aucune — la parenthese disparait, rien n'est estime. En arabe, « سيكل » en
+ * tete (le mot mesure du Golfe, `src/lib/vocabulary.ts`).
+ */
+const BIKE_DESCRIPTION: Record<Locale, (name: string, sizes: string | null) => string> = {
+  'ar-sa': (name, sizes) =>
+    `سيكل ${name}: المواصفات الكاملة، الهندسة حسب المقاس${sizes ? ` (${sizes})` : ''}، المكونات، والمقارنة مع سياكل أخرى.`,
+  'en-sa': (name, sizes) =>
+    `${name}: full specs, geometry by size${sizes ? ` (${sizes})` : ''}, components and side-by-side comparison.`,
+};
+
+/** Coupe au dernier mot entier sous la longueur visee, sans laisser une ponctuation orpheline. */
+function clamp(text: string): string {
+  if (text.length <= DESCRIPTION_MAX) return text;
+
+  const coupe = text.slice(0, DESCRIPTION_MAX - 1);
+  const dernierEspace = coupe.lastIndexOf(' ');
+  const entier = dernierEspace > 0 ? coupe.slice(0, dernierEspace) : coupe;
+
+  return `${entier.replace(/[\s،,:;(]+$/, '')}…`;
+}
+
+/**
+ * La description d'une fiche — UNE par velo, la ou toutes partageaient la
+ * signature. Batie sur les champs que l'API rend deja : marque, modele,
+ * millesime s'il est connu, nombre de tailles publiees. Rien n'est calcule,
+ * rien n'est invente : un champ absent est omis. La categorie n'y entre pas
+ * tant que `BuildResource` ne l'expose pas.
+ */
+export function bikeDescription(
+  locale: Locale,
+  build: Pick<Build, 'brand' | 'model_name' | 'year' | 'year_label'> & { sizes: readonly unknown[] },
+): string {
+  const sizes = build.sizes.length > 0 ? sizesCount(locale, build.sizes.length) : null;
+
+  return clamp(BIKE_DESCRIPTION[locale](bikeTitle(build), sizes));
 }
 
 function robotsFor(indexable: boolean): Metadata['robots'] {

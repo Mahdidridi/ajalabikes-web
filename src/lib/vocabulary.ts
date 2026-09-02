@@ -31,6 +31,12 @@ const BIKE: Record<Locale, Forms> = {
   'en-sa': { one: 'bike', other: 'bikes' },
 };
 
+/** « مقاس » : 3 à 10 → « مقاسات », 11 à 99 → « مقاسًا » (singulier accusatif), le reste → « مقاس ». */
+const SIZE: Record<Locale, Forms> = {
+  'ar-sa': { few: 'مقاسات', many: 'مقاسًا', other: 'مقاس' },
+  'en-sa': { one: 'size', other: 'sizes' },
+};
+
 function counted(locale: Locale, n: number, forms: Forms): string {
   return `${n} ${forms[RULES[locale].select(n)] ?? forms.other}`;
 }
@@ -38,4 +44,9 @@ function counted(locale: Locale, n: number, forms: Forms): string {
 /** « 196 سيكل », « 4 سياكل », « 1 bike », « 137 bikes » : un total et son mot, accordés. */
 export function bikesCount(locale: Locale, n: number): string {
   return counted(locale, n, BIKE[locale]);
+}
+
+/** « 5 مقاسات », « 1 مقاس », « 5 sizes » : les tailles d'une fiche, comptées et accordées. */
+export function sizesCount(locale: Locale, n: number): string {
+  return counted(locale, n, SIZE[locale]);
 }

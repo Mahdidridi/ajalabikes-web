@@ -9,7 +9,7 @@ import { getBuild, isLocale, type Locale } from '@/lib/api';
 import { sizeCatalogue } from '@/lib/images';
 import { buildBreadcrumbJsonLd, productJsonLd } from '@/lib/jsonld';
 import { brandPath } from '@/lib/routes';
-import { bikeTitle, seoFor } from '@/lib/seo';
+import { bikeDescription, bikeTitle, seoFor } from '@/lib/seo';
 
 /**
  * Rendue au premier appel, puis servie du cache : le tag `build:…` porte par
@@ -88,7 +88,11 @@ async function resolve(params: Props['params']) {
   return { locale, build };
 }
 
-/** Le canonical suit les slugs que l'API renvoie — apres `resolve`, ce sont aussi ceux de l'URL. */
+/**
+ * Le canonical suit les slugs que l'API renvoie — apres `resolve`, ce sont
+ * aussi ceux de l'URL. Titre et description sont propres a la fiche, batis
+ * sur ses champs : 634 fiches, 634 descriptions, jamais la signature.
+ */
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, build } = await resolve(params);
 
@@ -96,6 +100,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     locale,
     path: `/bikes/${build.brand.slug}/${build.slug}`,
     title: bikeTitle(build),
+    description: bikeDescription(locale, build),
   });
 }
 

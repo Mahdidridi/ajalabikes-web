@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { bikeDescription } from '@/lib/seo';
 
 /**
  * SEO prepare SANS lever le noindex (decisions du 2 septembre 2026, CLAUDE.md
@@ -280,5 +281,72 @@ test.describe('pages marque et categorie', () => {
     const maillons = fil!.itemListElement as { item: string }[];
     expect(maillons).toHaveLength(2);
     expect(maillons[1].item).toBe(`${SITE}/en-sa/road-bikes`);
+  });
+});
+
+test.describe('description des fiches', () => {
+  const description = (page: Page) => page.locator('meta[name="description"]').getAttribute('content');
+
+  test('chaque fiche a sa propre description, batie sur ses champs', async ({ page }) => {
+    await page.goto(FUEL_EN);
+    const fuel = await description(page);
+    // Marque, modele, millesime tel que l'API le libelle, nombre de tailles publiees.
+    expect(fuel).toBe(
+      'Trek Fuel MX 9.8 XT Gen 7 2027: full specs, geometry by size (5 sizes), components and side-by-side comparison.',
+    );
+    await expect(page.locator('meta[property="og:description"]')).toHaveAttribute('content', fuel!);
+
+    await page.goto('/en-sa/bikes/trek/farley-5');
+    const farley = await description(page);
+    expect(farley).toContain('Farley 5');
+    expect(farley).not.toBe(fuel);
+    // Plus jamais la signature, partagee hier par les 634 fiches.
+    expect(farley).not.toContain('bike comparison platform');
+  });
+
+  test('en arabe : « سيكل » en tete, le modele, puis le decompte de tailles accorde', async ({ page }) => {
+    await page.goto(FUEL_AR);
+
+    expect(await description(page)).toBe(
+      'سيكل Trek Fuel MX 9.8 XT Gen 7 2027: المواصفات الكاملة، الهندسة حسب المقاس (5 مقاسات)، المكونات، والمقارنة مع سياكل أخرى.',
+    );
+  });
+
+  test('une description trop longue est coupee au dernier mot, sous 160 caracteres', async ({ page }) => {
+    // Le nom le plus long du catalogue : 83 caracteres avec le millesime.
+    await page.goto('/en-sa/bikes/specialized/stumpjumper-15-evo-expert-shimano-xt-di2-fox-performance-elite');
+    const longue = await description(page);
+
+    expect(longue!.length).toBeLessThanOrEqual(160);
+    expect(longue).toMatch(/^Specialized Stumpjumper 15 EVO Expert .*\S…$/);
+    expect(longue).not.toContain('comparison.');
+  });
+
+  test('la fonction omet ce que la fiche ne publie pas, et coupe proprement', () => {
+    const base = {
+      brand: { slug: 'marque', name: 'Marque' },
+      model_name: 'Modele',
+      year: null,
+      year_label: 'non renseigne',
+      sizes: [],
+    };
+
+    // Ni millesime ni tailles : ni l'un ni l'autre n'apparait, rien n'est estime.
+    expect(bikeDescription('en-sa', base)).toBe(
+      'Marque Modele: full specs, geometry by size, components and side-by-side comparison.',
+    );
+    expect(bikeDescription('ar-sa', base)).toBe(
+      'سيكل Marque Modele: المواصفات الكاملة، الهندسة حسب المقاس، المكونات، والمقارنة مع سياكل أخرى.',
+    );
+
+    // Une seule taille : le singulier, dans les deux langues ; 3 a 10 : le pluriel arabe.
+    expect(bikeDescription('en-sa', { ...base, sizes: [{}] })).toContain('(1 size)');
+    expect(bikeDescription('ar-sa', { ...base, sizes: [{}] })).toContain('(1 مقاس)');
+    expect(bikeDescription('ar-sa', { ...base, sizes: [{}, {}, {}] })).toContain('(3 مقاسات)');
+
+    // Coupe au dernier mot entier, jamais au milieu, avec des points de suspension.
+    const longue = bikeDescription('en-sa', { ...base, model_name: 'Modele '.repeat(30).trim() });
+    expect(longue.length).toBeLessThanOrEqual(160);
+    expect(longue).toMatch(/Modele…$/);
   });
 });
