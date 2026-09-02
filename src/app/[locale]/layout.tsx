@@ -3,7 +3,8 @@ import { Geist, Geist_Mono, Noto_Sans_Arabic } from 'next/font/google';
 import { notFound } from 'next/navigation';
 import { SiteFooter } from '@/components/SiteFooter';
 import { SiteHeader } from '@/components/SiteHeader';
-import { direction, isLocale, LOCALES, type Locale } from '@/lib/api';
+import { direction, isLocale, LOCALES } from '@/lib/api';
+import { SIGNATURE, SITE_NAME, SITE_URL } from '@/lib/seo';
 import '../globals.css';
 
 const geistSans = Geist({ variable: '--font-sans', subsets: ['latin'] });
@@ -13,31 +14,33 @@ const geistMono = Geist_Mono({ variable: '--font-mono', subsets: ['latin'] });
 // une substitution systeme differente d'une machine a l'autre.
 const notoArabic = Noto_Sans_Arabic({ variable: '--font-arabic', subsets: ['arabic'] });
 
-/** La signature suit la locale ; c'est la meme que celle du pied de page. */
-const SIGNATURE: Record<Locale, string> = {
-  'ar-sa': 'منصة عربية لاكتشاف الدراجات ومقارنتها',
-  'en-sa': "The Gulf's bike comparison platform",
-};
-
+/**
+ * Le DEFAUT de toute page. Chaque page le complete par `seoFor` (`src/lib/seo.ts`)
+ * — canonical, hreflang, Open Graph et robots — ; ce qui est ici ne vaut que
+ * pour une page qui ne l'appellerait pas. Aucun canonical a ce niveau : il
+ * serait herite, faux, par toute page qui l'oublie.
+ */
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
   const description = isLocale(locale) ? SIGNATURE[locale] : SIGNATURE['en-sa'];
 
   return {
-    title: 'Darraja Bikes',
+    // Les URL relatives des metadonnees se resolvent sur l'hote canonique.
+    metadataBase: new URL(SITE_URL),
+    title: SITE_NAME,
     description,
-    openGraph: { siteName: 'Darraja Bikes', title: 'Darraja Bikes', description },
+    openGraph: { siteName: SITE_NAME, title: SITE_NAME, description },
     /*
-     * NOINDEX SUR TOUT LE SITE, decision du 11 aout 2026, reaffirmee le 28 aout :
-     * aucune indexation ni sitemap tant que les URL ne sont pas figees.
+     * NOINDEX SUR TOUT LE SITE, decision du 11 aout 2026, reaffirmee le 28 aout
+     * et le 2 septembre : aucune indexation ni sitemap avant les droits
+     * d'images, les sitemaps et la mesure depuis Riyad.
      *
      * Le catalogue est incomplet et les droits d'image ne sont pas encore
      * accordes : une page indexee aujourd'hui serait vue par Google avant
      * d'etre prete, et une premiere impression de qualite ne se rejoue pas.
      *
-     * A RETIRER quand la strategie d'indexation sera decidee — canonical,
-     * hreflang, sitemaps et liste blanche des comparaisons. Ne pas le retirer
-     * page par page en passant.
+     * Ce defaut RESTE apres la levee : c'est `INDEXING_LOCKED` (`src/lib/seo.ts`)
+     * qui s'ouvre, page par page via `seoFor`, jamais ce filet.
      */
     robots: { index: false, follow: false },
   };
