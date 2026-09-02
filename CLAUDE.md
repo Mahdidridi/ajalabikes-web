@@ -101,6 +101,12 @@ ont chacune une page à chemin propre. Les chemins sont construits par `src/lib/
   helper SEO. Même schéma de cache que la fiche (voir « Cache »), tag `catalog`.
 - Liens entrants : tuiles de l'accueil (`HomeBrands`, `HomeCategories`) et nom de la marque sur la fiche. Les tuiles des
   pages elles-mêmes mènent au catalogue filtré (`/bikes?brand=…&category=…`), un résultat réel.
+- **Une fiche, une URL** (`src/app/[locale]/bikes/[brand]/[slug]/page.tsx`, `resolve()` partagé par la page et
+  `generateMetadata`) : si `getBuild` renvoie un build dont `slug` ou `brand.slug` diffère de l'URL — ancien slug résolu
+  par la future table `slug_redirects` de l'API, fusion —, `permanentRedirect` (308, mis en cache ISR) vers
+  `/{locale}/bikes/{brand.slug}/{slug}`. Un slug inconnu de l'API reste 404. `tests/e2e/redirects.spec.ts` : le cas
+  `fuel-mx-9-8-xt` → `…-gen-7-81563` est en `test.fixme` jusqu'à la semence côté API (vérifié en local contre une API
+  simulée qui renvoie la fiche vivante sur l'ancien slug).
 
 ## Cache — rendre une fois, invalider au changement
 

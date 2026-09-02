@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import { BikeGallery } from '@/components/BikeGallery';
 import { JsonLd } from '@/components/JsonLd';
 import { SizePicker } from '@/components/SizePicker';
@@ -61,20 +61,36 @@ const COPY = {
   },
 } as const satisfies Record<Locale, Record<string, string>>;
 
+type Props = PageProps<'/[locale]/bikes/[brand]/[slug]'>;
+
 /**
- * Le meme `getBuild` que la page : Next memoise l'appel au sein d'un rendu,
- * l'API n'est interrogee qu'une fois. Le canonical suit les slugs que l'API
- * renvoie, pas ceux de l'URL demandee — le jour des redirections de fusion,
- * c'est elle qui dit ou vit la fiche.
+ * Resout la fiche de l'URL, ou rend 404 — partage par la page et ses
+ * metadonnees : Next memoise `getBuild` au sein d'un rendu, l'API n'est
+ * interrogee qu'une fois.
+ *
+ * UNE FICHE, UNE URL. Si l'API repond avec d'autres slugs que ceux demandes
+ * — un ancien slug qu'elle resout par sa table `slug_redirects`, une fusion —,
+ * la fiche a demenage : redirection PERMANENTE vers l'adresse vivante (308
+ * chez Next), plutot que la meme fiche servie a deux adresses. Un slug que
+ * l'API ne connait pas reste un 404, comme avant.
  */
-export async function generateMetadata({
-  params,
-}: PageProps<'/[locale]/bikes/[brand]/[slug]'>): Promise<Metadata> {
+async function resolve(params: Props['params']) {
   const { locale, brand, slug } = await params;
   if (!isLocale(locale)) notFound();
 
   const build = await getBuild(locale, brand, slug);
   if (!build) notFound();
+
+  if (build.brand.slug !== brand || build.slug !== slug) {
+    permanentRedirect(`/${locale}/bikes/${build.brand.slug}/${build.slug}`);
+  }
+
+  return { locale, build };
+}
+
+/** Le canonical suit les slugs que l'API renvoie — apres `resolve`, ce sont aussi ceux de l'URL. */
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { locale, build } = await resolve(params);
 
   return seoFor({
     locale,
@@ -83,12 +99,8 @@ export async function generateMetadata({
   });
 }
 
-export default async function BuildPage({ params }: PageProps<'/[locale]/bikes/[brand]/[slug]'>) {
-  const { locale, brand, slug } = await params;
-  if (!isLocale(locale)) notFound();
-
-  const build = await getBuild(locale, brand, slug);
-  if (!build) notFound();
+export default async function BuildPage({ params }: Props) {
+  const { locale, build } = await resolve(params);
 
   const t = COPY[locale];
   // Le contrat marque les lignes nullable (filtrage cote API) : on ne garde
