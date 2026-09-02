@@ -1,9 +1,11 @@
 import Image from 'next/image';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { BikeGallery } from '@/components/BikeGallery';
 import { SizePicker } from '@/components/SizePicker';
 import { getBuild, isLocale, type Locale } from '@/lib/api';
 import { sizeCatalogue } from '@/lib/images';
+import { brandPath } from '@/lib/routes';
 
 /**
  * Rendue au premier appel, puis servie du cache : le tag `build:…` porte par
@@ -72,7 +74,12 @@ export default async function BuildPage({ params }: PageProps<'/[locale]/bikes/[
       <header className="flex flex-wrap items-start justify-between gap-4 border-b-2 border-neutral-900 pb-4 dark:border-neutral-100">
         <div>
           <p className="font-mono text-xs uppercase tracking-widest opacity-60">
-            {build.brand.name} · {build.family.name}
+            {/* Le nom de la marque mène à sa page — le seul lien « vers le haut » de la fiche. */}
+            <Link href={brandPath(locale, build.brand.slug)} className="hover:underline">
+              {build.brand.name}
+            </Link>
+            {' · '}
+            {build.family.name}
           </p>
           <h1 className="text-3xl font-extrabold tracking-tight text-balance">
             {build.model_name}

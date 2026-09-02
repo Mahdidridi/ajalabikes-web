@@ -39,22 +39,26 @@ test('la pastille du hero annonce le bikefinder et y mene', async ({ page }) => 
   await expect(page).toHaveURL(/\/en-sa\/finder$/);
 });
 
-test('une marque mene au catalogue filtre par marque', async ({ page }) => {
+test('une marque mene a sa page', async ({ page }) => {
   await page.goto(EN);
 
   // Le decompte vient des facettes, pas d'une liste codee en dur.
   await page.getByRole('link', { name: 'Trek 196 bikes' }).click();
 
-  await expect(page).toHaveURL(/\/en-sa\/bikes\?brand=trek$/);
+  // La page marque (`/bikes/{brand}`), pas le catalogue filtre — meme total.
+  await expect(page).toHaveURL(/\/en-sa\/bikes\/trek$/);
+  await expect(page.getByRole('heading', { name: 'Trek', level: 1 })).toBeVisible();
   await expect(page.getByText('196 bikes')).toBeVisible();
 });
 
-test('une tuile de categorie mene au catalogue filtre', async ({ page }) => {
+test('une tuile de categorie mene a sa page', async ({ page }) => {
   await page.goto(EN);
 
   await page.getByRole('link', { name: 'Road 137 bikes' }).click();
 
-  await expect(page).toHaveURL(/category=road/);
+  // La page categorie (`/{category}-bikes`), titree du libelle de l'API.
+  await expect(page).toHaveURL(/\/en-sa\/road-bikes$/);
+  await expect(page.getByRole('heading', { name: 'Road', level: 1 })).toBeVisible();
   await expect(page.getByText('137 bikes')).toBeVisible();
 });
 

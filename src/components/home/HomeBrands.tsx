@@ -1,13 +1,14 @@
 import Link from 'next/link';
 import type { Facets, Locale } from '@/lib/api';
+import { brandPath } from '@/lib/routes';
 
 /**
  * Les marques du catalogue. Bloc Tailwind Plus « Simple with heading »
  * (Marketing › Logo Clouds) — avec les NOMS en texte : aucun logo n'est
  * publié tant que ses droits ne sont pas documentés (règle Images du projet).
  *
- * Noms et décomptes viennent des facettes de l'API ; chaque marque ouvre le
- * catalogue filtré. Alphabet latin canonique, comme partout.
+ * Noms et décomptes viennent des facettes de l'API ; chaque marque ouvre SA
+ * page (`/bikes/{brand}`). Alphabet latin canonique, comme partout.
  */
 const COPY = {
   'ar-sa': { title: 'الماركات في الكتالوج', results: 'دراجة' },
@@ -25,7 +26,7 @@ export function HomeBrands({ locale, brands }: { locale: Locale; brands: Facets[
           {brands.map((b) => (
             <li key={b.key}>
               <Link
-                href={`/${locale}/bikes?brand=${b.key}`}
+                href={brandPath(locale, b.key)}
                 className="flex flex-col items-center gap-0.5 rounded-xl px-3 py-3 transition hover:bg-background focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
               >
                 <span className="text-2xl font-extrabold tracking-tight">{b.label}</span>

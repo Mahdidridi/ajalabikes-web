@@ -1,10 +1,12 @@
 import Link from 'next/link';
 import type { Facets, Locale } from '@/lib/api';
+import { catalogPath, categoryPath, hasCategoryPage } from '@/lib/routes';
 
 /**
  * Les tuiles de catégories : libellés ET décomptes viennent des facettes de
- * l'API, déjà traduits. Chaque tuile ouvre le catalogue filtré — un résultat
- * réel, jamais une page vide.
+ * l'API, déjà traduits. Chaque tuile ouvre la page de sa catégorie
+ * (`/{category}-bikes`) — sauf le seau « non catégorisé », qui n'en a pas
+ * et garde le catalogue filtré : un résultat réel, jamais une page vide.
  */
 const COPY = {
   'ar-sa': { title: 'تصفح حسب الفئة', results: 'دراجة' },
@@ -27,7 +29,11 @@ export function HomeCategories({
         {categories.map((c) => (
           <li key={c.key} className="contents">
             <Link
-              href={`/${locale}/bikes?category=${c.key}`}
+              href={
+                hasCategoryPage(c.key)
+                  ? categoryPath(locale, c.key)
+                  : catalogPath(locale, { category: c.key })
+              }
               className="flex flex-col gap-0.5 rounded-xl border border-border p-4 transition hover:border-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
             >
               <span className="text-sm font-semibold">{c.label}</span>
