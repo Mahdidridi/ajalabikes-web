@@ -1,7 +1,9 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { BikeCard } from '@/components/BikeCard';
 import { getFinderResults, getFinderTree, isLocale } from '@/lib/api';
+import { seoFor } from '@/lib/seo';
 import { FinderQuestionScreen, finderCopy } from '../question';
 
 /**
@@ -48,6 +50,25 @@ const COPY = {
     refine: 'Refine your answers',
   },
 } as const;
+
+/**
+ * Une étape du parcours est un état d'interface, pas une page de destination :
+ * canonical propre (l'URL se partage), politique cible `noindex, follow`.
+ * Un chemin invalide rend 404 par la page elle-même.
+ */
+export async function generateMetadata({
+  params,
+}: PageProps<'/[locale]/finder/[...steps]'>): Promise<Metadata> {
+  const { locale, steps } = await params;
+  if (!isLocale(locale)) notFound();
+
+  return seoFor({
+    locale,
+    path: `/finder/${steps.join('/')}`,
+    title: finderCopy(locale).eyebrow,
+    indexable: false,
+  });
+}
 
 export default async function FinderStepsPage({
   params,

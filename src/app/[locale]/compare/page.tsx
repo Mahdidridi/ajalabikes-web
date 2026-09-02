@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -5,6 +6,7 @@ import { ComparePicker } from '@/components/ComparePicker';
 import { SizeSelect } from '@/components/SizeSelect';
 import { getCatalog, getCompare, isLocale, type BuildCard, type Locale } from '@/lib/api';
 import { sizeCatalogue } from '@/lib/images';
+import { seoFor } from '@/lib/seo';
 
 /** Libellés d'interface uniquement — toute DONNÉE arrive déjà localisée de l'API. */
 const COPY = {
@@ -35,6 +37,28 @@ const COPY = {
     dash: '—',
   },
 } as const;
+
+/**
+ * La page nue est une vraie page ; une comparaison en cours (`?bikes=`,
+ * `sizes`, `diff`) est un etat d'interface : canonical de la page nue,
+ * politique cible `noindex, follow`. Les comparaisons indexables seront la
+ * liste blanche de Laravel, `/compare/{a}-vs-{b}` (decision 3 du 2 septembre
+ * 2026) — pas ces permutations.
+ */
+export async function generateMetadata({
+  params,
+  searchParams,
+}: PageProps<'/[locale]/compare'>): Promise<Metadata> {
+  const { locale } = await params;
+  if (!isLocale(locale)) notFound();
+
+  return seoFor({
+    locale,
+    path: '/compare',
+    title: COPY[locale].title,
+    indexable: Object.keys(await searchParams).length === 0,
+  });
+}
 
 export default async function ComparePage({ params, searchParams }: PageProps<'/[locale]/compare'>) {
   const { locale } = await params;

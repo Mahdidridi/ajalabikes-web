@@ -1,9 +1,19 @@
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getFinderTree, isLocale } from '@/lib/api';
+import { seoFor } from '@/lib/seo';
 import { FinderQuestionScreen, finderCopy } from './question';
 
 /** Prérendue par locale, re-rendue sur le tag `bikefinder` ; 24 h de filet. */
 export const revalidate = 86400;
+
+/** L'entrée du parcours est une page à part entière ; son titre est le nom du bikefinder. */
+export async function generateMetadata({ params }: PageProps<'/[locale]/finder'>): Promise<Metadata> {
+  const { locale } = await params;
+  if (!isLocale(locale)) notFound();
+
+  return seoFor({ locale, path: '/finder', title: finderCopy(locale).eyebrow });
+}
 
 /**
  * L'entrée du bikefinder : la première question EST l'accueil du parcours

@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { HomeBrands } from '@/components/home/HomeBrands';
 import { HomeCategories } from '@/components/home/HomeCategories';
@@ -6,7 +7,10 @@ import { HomeHero } from '@/components/home/HomeHero';
 import { HomeNewest } from '@/components/home/HomeNewest';
 import { HomePillars } from '@/components/home/HomePillars';
 import { HomeStats } from '@/components/home/HomeStats';
+import { JsonLd } from '@/components/JsonLd';
 import { getCatalog, isLocale } from '@/lib/api';
+import { organizationJsonLd, websiteJsonLd } from '@/lib/jsonld';
+import { seoFor } from '@/lib/seo';
 
 /**
  * L'accueil : l'entrée vers le catalogue, pas une vitrine promotionnelle.
@@ -26,6 +30,14 @@ import { getCatalog, isLocale } from '@/lib/api';
  */
 export const revalidate = 86400; // Re-rendue sur le tag `catalog`, 24 h de filet — voir CLAUDE.md, « Cache ».
 
+/** Le titre de l'accueil est le nom du site seul ; la description, la signature. */
+export async function generateMetadata({ params }: PageProps<'/[locale]'>): Promise<Metadata> {
+  const { locale } = await params;
+  if (!isLocale(locale)) notFound();
+
+  return seoFor({ locale, path: '' });
+}
+
 export default async function HomePage({ params }: PageProps<'/[locale]'>) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
@@ -36,6 +48,9 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
 
   return (
     <main className="flex w-full flex-col">
+      {/* Le site et son éditeur, pour Google : un bloc chacun, dans la langue de la page. */}
+      <JsonLd data={websiteJsonLd(locale)} />
+      <JsonLd data={organizationJsonLd()} />
       <HomeHero locale={locale} total={page.meta.total} />
       <HomeBrands locale={locale} brands={page.facets.brands} />
       <HomeCategories locale={locale} categories={page.facets.categories} />
