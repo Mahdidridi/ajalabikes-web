@@ -9,7 +9,10 @@ test('robots.txt interdit tout', async ({ request }) => {
   const res = await request.get('/robots.txt');
 
   expect(res.status()).toBe(200);
-  expect((await res.text()).replace(/\r\n/g, '\n')).toContain('User-agent: *\nDisallow: /');
+  // Genere par `src/app/robots.ts` : Next ecrit `User-Agent`, la casse d'un
+  // champ est libre (RFC 9309) — le contenu de l'ancien fichier statique.
+  const corps = (await res.text()).replace(/\r\n/g, '\n').toLowerCase();
+  expect(corps).toContain('user-agent: *\ndisallow: /');
 });
 
 test('chaque page porte X-Robots-Tag noindex', async ({ request }) => {

@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, MetadataRoute } from 'next';
 import { LOCALES, type Build, type Locale } from '@/lib/api';
 
 /**
@@ -34,8 +34,9 @@ const DEFAULT_LOCALE: Locale = 'en-sa';
  * VERROU D'INDEXATION — decision du 28 aout 2026, reaffirmee le 2 septembre :
  * rien ne s'indexe avant les droits d'images, les sitemaps, `indexable` cote
  * API et la mesure depuis Riyad. Tant qu'il est pose, chaque page sort en
- * `noindex, nofollow` quelle que soit sa politique cible, et l'en-tete
- * `X-Robots-Tag` de `next.config.ts` dit la meme chose.
+ * `noindex, nofollow` quelle que soit sa politique cible, l'en-tete
+ * `X-Robots-Tag` de `next.config.ts` dit la meme chose, `robots.txt` interdit
+ * tout (`robotsRules`) et le sitemap est vide (`src/lib/sitemap.ts`).
  *
  * A la levee : passer a `false` ET retirer l'en-tete, ensemble — sinon l'un
  * annule l'autre. Le `robots` du layout reste : c'est le defaut des pages qui
@@ -86,6 +87,24 @@ export function absoluteUrl(locale: Locale, path = ''): string {
   return `${SITE_URL}/${locale}${relatif}`;
 }
 
+/** `{ 'ar-SA': url, 'en-SA': url, 'x-default': url }` — la forme des `alternates.languages` de Next. */
+type HreflangGroup = Record<string, string> & { 'x-default': string };
+
+/**
+ * Le groupe hreflang d'un chemin : toutes les locales SERVIES — la courante
+ * comprise, c'est l'auto-reference — puis le repli `x-default`. Une seule
+ * construction pour le `<link rel="alternate">` des pages et le
+ * `<xhtml:link>` du sitemap : les deux disent la meme chose, par construction.
+ * `ae` entrera ici le jour ou `LOCALES` le servira, pas avant : un hreflang
+ * vers un 404 fait sortir la page du groupe.
+ */
+export function hreflangGroup(path = ''): HreflangGroup {
+  return {
+    ...Object.fromEntries(LOCALES.map((l) => [hreflangOf(l), absoluteUrl(l, path)])),
+    'x-default': absoluteUrl(DEFAULT_LOCALE, path),
+  };
+}
+
 /** « Trek Fuel MX 9.8 XT Gen 7 » : le nom complet d'un velo, marque comprise. */
 export function bikeName({ brand, model_name }: Pick<Build, 'brand' | 'model_name'>): string {
   return `${brand.name} ${model_name}`;
@@ -107,6 +126,40 @@ function robotsFor(indexable: boolean): Metadata['robots'] {
 }
 
 /**
+ * Les regles de `robots.txt` (`src/app/robots.ts`), fonction pure : la
+ * politique se verifie sans toucher au verrou (`tests/e2e/sitemap.spec.ts`).
+ *
+ * Verrouille : tout est interdit et aucun sitemap n'est annonce — le contenu,
+ * mot pour mot, de l'ancien fichier statique `public/robots.txt`.
+ *
+ * Deverrouille : tout est permis sauf ce qui n'est pas une page, et le sitemap
+ * est annonce. Les motifs sont ecrits avec la locale en tete parce qu'une
+ * regle robots se compare au DEBUT du chemin : `/compare?` ne rencontrerait
+ * jamais `/en-sa/compare?…`.
+ */
+export function robotsRules(locked: boolean): MetadataRoute.Robots {
+  if (locked) return { rules: { userAgent: '*', disallow: '/' } };
+
+  return {
+    rules: {
+      userAgent: '*',
+      allow: '/',
+      disallow: [
+        // Une comparaison avec query est un etat d'interface : les permutations
+        // d'un meme ensemble sont infinies. Le comparateur nu reste une page.
+        ...LOCALES.map((locale) => `/${locale}/compare?`),
+        // « Afficher plus » du catalogue, ou que `per_page` tombe dans la query
+        // (`?per_page=48` comme `?brand=trek&per_page=48`).
+        '/*per_page=',
+        // Le webhook d'invalidation.
+        '/api/',
+      ],
+    },
+    sitemap: `${SITE_URL}/sitemap.xml`,
+  };
+}
+
+/**
  * Les metadonnees d'une page. Le resultat REMPLACE, cle par cle, ce que le
  * layout declare (fusion superficielle de Next) : `openGraph` et `robots`
  * sont donc emis en entier ici, jamais a moitie.
@@ -116,18 +169,10 @@ export function seoFor({ locale, path, title, description, indexable = true }: S
   const resume = description ?? SIGNATURE[locale];
   const canonical = absoluteUrl(locale, path);
 
-  // Toutes les locales SERVIES, la courante comprise (auto-reference), puis
-  // le repli. `ae` entrera ici le jour ou `LOCALES` le servira, pas avant :
-  // un hreflang vers un 404 fait sortir la page du groupe.
-  const languages: NonNullable<Metadata['alternates']>['languages'] = {
-    ...Object.fromEntries(LOCALES.map((l) => [hreflangOf(l), absoluteUrl(l, path)])),
-    'x-default': absoluteUrl(DEFAULT_LOCALE, path),
-  };
-
   return {
     title: { absolute: titreComplet },
     description: resume,
-    alternates: { canonical, languages },
+    alternates: { canonical, languages: hreflangGroup(path) },
     openGraph: {
       type: 'website',
       siteName: SITE_NAME,
