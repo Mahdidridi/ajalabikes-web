@@ -43,6 +43,25 @@ export function direction(locale: Locale): 'rtl' | 'ltr' {
 const BASE = process.env.API_BASE_URL ?? 'http://127.0.0.1:8000/api';
 
 /**
+ * Toutes les lectures sont cachees par Next et invalidees PAR TAG depuis l'API
+ * (contrat du 2 septembre 2026, `tasks/2026-09-02-cache-contrat.md`). Les 24 h
+ * sont un filet de securite, pas le mecanisme : c'est le webhook
+ * `/api/revalidate` qui rafraichit une page quand la donnee change.
+ *
+ * Une reponse est cachee par URL : deux locales, ou deux filtres du catalogue,
+ * sont deux entrees distinctes, toutes portees par le meme tag.
+ */
+const ONE_DAY = 86_400;
+
+function cached(tags: string[]): RequestInit {
+  return {
+    headers: { Accept: 'application/json' },
+    cache: 'force-cache',
+    next: { tags, revalidate: ONE_DAY },
+  };
+}
+
+/**
  * Un seul appel par page. Toutes les tailles arrivent ensemble : changer de taille
  * a l'ecran ne doit declencher aucune requete.
  */
@@ -51,10 +70,7 @@ export async function getBuild(
   brand: string,
   slug: string,
 ): Promise<Build | null> {
-  const res = await fetch(`${BASE}/v1/${locale}/builds/${brand}/${slug}`, {
-    headers: { Accept: 'application/json' },
-    next: { tags: [`build:${brand}:${slug}`] },
-  });
+  const res = await fetch(`${BASE}/v1/${locale}/builds/${brand}/${slug}`, cached([`build:${brand}:${slug}`]));
 
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`API ${res.status} sur ${brand}/${slug}`);
@@ -81,10 +97,7 @@ export async function getCatalog(
     if (valeur !== undefined && valeur !== '') query.set(cle, valeur);
   }
 
-  const res = await fetch(`${BASE}/v1/${locale}/builds?${query}`, {
-    headers: { Accept: 'application/json' },
-    next: { tags: ['catalog'] },
-  });
+  const res = await fetch(`${BASE}/v1/${locale}/builds?${query}`, cached(['catalog']));
 
   if (!res.ok) throw new Error(`API ${res.status} sur le catalogue`);
 
@@ -103,10 +116,7 @@ export type FinderResults = FinderResultsResponse['data'];
 
 /** L'arbre du bikefinder, localise par l'API — aucun libelle en dur ici. */
 export async function getFinderTree(locale: Locale): Promise<FinderTree> {
-  const res = await fetch(`${BASE}/v1/${locale}/bikefinder/tree`, {
-    headers: { Accept: 'application/json' },
-    next: { tags: ['bikefinder'] },
-  });
+  const res = await fetch(`${BASE}/v1/${locale}/bikefinder/tree`, cached(['bikefinder']));
 
   if (!res.ok) throw new Error(`API ${res.status} sur l'arbre du bikefinder`);
 
@@ -125,7 +135,7 @@ export async function getFinderResults(
 ): Promise<FinderResults | null> {
   const res = await fetch(
     `${BASE}/v1/${locale}/bikefinder/results?path=${encodeURIComponent(path)}`,
-    { headers: { Accept: 'application/json' }, next: { tags: ['bikefinder'] } },
+    cached(['bikefinder']),
   );
 
   if (res.status === 422 || res.status === 404) return null;
@@ -149,10 +159,7 @@ export async function getCompare(
   const query = new URLSearchParams({ builds: bikes });
   if (sizes) query.set('sizes', sizes);
 
-  const res = await fetch(`${BASE}/v1/${locale}/compare?${query}`, {
-    headers: { Accept: 'application/json' },
-    next: { tags: ['compare'] },
-  });
+  const res = await fetch(`${BASE}/v1/${locale}/compare?${query}`, cached(['compare']));
 
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`API ${res.status} sur la comparaison`);
