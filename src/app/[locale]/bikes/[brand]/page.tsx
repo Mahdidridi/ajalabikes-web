@@ -1,11 +1,14 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { JsonLd } from '@/components/JsonLd';
 import { CollectionHeader } from '@/components/collection/CollectionHeader';
 import { FacetTiles } from '@/components/collection/FacetTiles';
 import { RecentBikes } from '@/components/collection/RecentBikes';
 import { isLocale, type Locale } from '@/lib/api';
 import { getBrandPage } from '@/lib/api-pages';
+import { brandBreadcrumbJsonLd } from '@/lib/jsonld';
 import { catalogPath } from '@/lib/routes';
+import { seoFor } from '@/lib/seo';
 
 /**
  * La page d'une marque : `/{locale}/bikes/{brand}` — décision du 2 septembre
@@ -32,7 +35,7 @@ const COPY = {
     categories: 'تصفح حسب الفئة',
     newest: 'أحدث الموديلات',
     all: 'كل دراجات {name}',
-    title: 'دراجات {name} — Darraja Bikes',
+    title: 'دراجات {name}',
     description: '{total} دراجة من {name}: المواصفات والهندسة والمقارنة.',
   },
   'en-sa': {
@@ -41,7 +44,7 @@ const COPY = {
     categories: 'Browse by category',
     newest: 'Newest models',
     all: 'All {name} bikes',
-    title: '{name} bikes — Darraja Bikes',
+    title: '{name} bikes',
     description: '{total} {name} bikes: specifications, geometry and comparison.',
   },
 } as const satisfies Record<Locale, Record<string, string>>;
@@ -60,21 +63,19 @@ async function resolve(params: Props['params']) {
 }
 
 /**
- * Métadonnées MINIMALES, en attendant le helper SEO (canonical, hreflang) :
- * titre et description bilingues. Le noindex reste — décision du 28 août
- * 2026, rien n'est indexé avant que les URL soient figées.
+ * Canonical, hreflang et titre par le helper SEO ; le noindex reste verrouille
+ * (`INDEXING_LOCKED`). La cible, a la levee : indexable.
  */
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, bucket, page } = await resolve(params);
   const t = COPY[locale];
 
-  return {
+  return seoFor({
+    locale,
+    path: `/bikes/${bucket.key}`,
     title: t.title.replace('{name}', bucket.label),
-    description: t.description
-      .replace('{name}', bucket.label)
-      .replace('{total}', String(page.meta.total)),
-    robots: { index: false, follow: false },
-  };
+    description: t.description.replace('{name}', bucket.label).replace('{total}', String(page.meta.total)),
+  });
 }
 
 export default async function BrandPage({ params }: Props) {
@@ -83,6 +84,7 @@ export default async function BrandPage({ params }: Props) {
 
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-col gap-10 px-4 py-8 sm:px-6 sm:py-12">
+      <JsonLd data={brandBreadcrumbJsonLd(locale, { name: bucket.label, slug: bucket.key })} />
       <CollectionHeader
         eyebrow={t.eyebrow}
         title={bucket.label}

@@ -94,6 +94,27 @@ export function buildBreadcrumbJsonLd(locale: Locale, build: Build): JsonLdObjec
   ]);
 }
 
+/** Le fil d'Ariane d'une page marque : Accueil → Velos → Marque. */
+export function brandBreadcrumbJsonLd(locale: Locale, brand: { name: string; slug: string }): JsonLdObject {
+  const t = TRAIL_COPY[locale];
+
+  return breadcrumbJsonLd(locale, [
+    { name: t.home, path: '' },
+    { name: t.bikes, path: '/bikes' },
+    { name: brand.name, path: `/bikes/${brand.slug}` },
+  ]);
+}
+
+/** Le fil d'Ariane d'une page categorie, qui vit a la racine de la locale : Accueil → Categorie. */
+export function categoryBreadcrumbJsonLd(locale: Locale, category: { name: string; path: string }): JsonLdObject {
+  const t = TRAIL_COPY[locale];
+
+  return breadcrumbJsonLd(locale, [
+    { name: t.home, path: '' },
+    { name: category.name, path: category.path },
+  ]);
+}
+
 /**
  * Le produit d'une fiche. `image` : les photos de la galerie en taille
  * `detail` — toutes portent des droits documentes cote API, condition pour

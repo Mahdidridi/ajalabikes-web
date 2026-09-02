@@ -34,8 +34,13 @@ export function hasCategoryPage(key: string): boolean {
   return key !== UNCATEGORIZED;
 }
 
+/** Le segment d'URL d'une catégorie, sans locale : `e_mtb` → `e-mtb-bikes`. */
+export function categorySlug(key: string): string {
+  return `${key.replace(/_/g, '-')}${CATEGORY_SUFFIX}`;
+}
+
 export function categoryPath(locale: Locale, key: string): string {
-  return `/${locale}/${key.replace(/_/g, '-')}${CATEGORY_SUFFIX}`;
+  return `/${locale}/${categorySlug(key)}`;
 }
 
 /**

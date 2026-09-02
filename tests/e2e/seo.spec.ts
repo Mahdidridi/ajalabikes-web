@@ -242,3 +242,36 @@ test.describe('noindex conserve', () => {
     }
   });
 });
+
+test.describe('pages marque et categorie', () => {
+  test('la page marque porte canonical, hreflang reciproques et un fil d Ariane a 3 maillons', async ({ page }) => {
+    await page.goto('/ar-sa/bikes/trek');
+
+    await expect(canonical(page)).toHaveAttribute('href', `${SITE}/ar-sa/bikes/trek`);
+    const liens = await hreflangs(page);
+    expect(liens['ar-SA']).toBe(`${SITE}/ar-sa/bikes/trek`);
+    expect(liens['en-SA']).toBe(`${SITE}/en-sa/bikes/trek`);
+    expect(liens['x-default']).toBe(`${SITE}/en-sa/bikes/trek`);
+    await expect(page).toHaveTitle(/Trek.*Darraja Bikes/);
+
+    const fil = bloc(await jsonLd(page), 'BreadcrumbList');
+    const maillons = fil!.itemListElement as { item: string }[];
+    expect(maillons).toHaveLength(3);
+    expect(maillons[2].item).toBe(`${SITE}/ar-sa/bikes/trek`);
+  });
+
+  test('la page categorie porte canonical, hreflang et un fil d Ariane a 2 maillons', async ({ page }) => {
+    await page.goto('/en-sa/road-bikes');
+
+    await expect(canonical(page)).toHaveAttribute('href', `${SITE}/en-sa/road-bikes`);
+    const liens = await hreflangs(page);
+    expect(liens['ar-SA']).toBe(`${SITE}/ar-sa/road-bikes`);
+    expect(liens['x-default']).toBe(`${SITE}/en-sa/road-bikes`);
+    await expect(page.locator('meta[name="robots"]').first()).toHaveAttribute('content', /noindex/);
+
+    const fil = bloc(await jsonLd(page), 'BreadcrumbList');
+    const maillons = fil!.itemListElement as { item: string }[];
+    expect(maillons).toHaveLength(2);
+    expect(maillons[1].item).toBe(`${SITE}/en-sa/road-bikes`);
+  });
+});
