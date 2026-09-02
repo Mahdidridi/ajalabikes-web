@@ -1,11 +1,15 @@
+import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { BikeGallery } from '@/components/BikeGallery';
+import { JsonLd } from '@/components/JsonLd';
 import { SizePicker } from '@/components/SizePicker';
 import { getBuild, isLocale, type Locale } from '@/lib/api';
 import { sizeCatalogue } from '@/lib/images';
+import { buildBreadcrumbJsonLd, productJsonLd } from '@/lib/jsonld';
 import { brandPath } from '@/lib/routes';
+import { bikeTitle, seoFor } from '@/lib/seo';
 
 /**
  * Rendue au premier appel, puis servie du cache : le tag `build:…` porte par
@@ -57,6 +61,28 @@ const COPY = {
   },
 } as const satisfies Record<Locale, Record<string, string>>;
 
+/**
+ * Le meme `getBuild` que la page : Next memoise l'appel au sein d'un rendu,
+ * l'API n'est interrogee qu'une fois. Le canonical suit les slugs que l'API
+ * renvoie, pas ceux de l'URL demandee — le jour des redirections de fusion,
+ * c'est elle qui dit ou vit la fiche.
+ */
+export async function generateMetadata({
+  params,
+}: PageProps<'/[locale]/bikes/[brand]/[slug]'>): Promise<Metadata> {
+  const { locale, brand, slug } = await params;
+  if (!isLocale(locale)) notFound();
+
+  const build = await getBuild(locale, brand, slug);
+  if (!build) notFound();
+
+  return seoFor({
+    locale,
+    path: `/bikes/${build.brand.slug}/${build.slug}`,
+    title: bikeTitle(build),
+  });
+}
+
 export default async function BuildPage({ params }: PageProps<'/[locale]/bikes/[brand]/[slug]'>) {
   const { locale, brand, slug } = await params;
   if (!isLocale(locale)) notFound();
@@ -71,6 +97,10 @@ export default async function BuildPage({ params }: PageProps<'/[locale]/bikes/[
 
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-col gap-8 p-6">
+      {/* Fil d'Ariane et produit pour Google — tout vient de `build`, sans
+          offre ni prix : le MSRP US n'est pas un prix local. */}
+      <JsonLd data={buildBreadcrumbJsonLd(locale, build)} />
+      <JsonLd data={productJsonLd(locale, build)} />
       <header className="flex flex-wrap items-start justify-between gap-4 border-b-2 border-neutral-900 pb-4 dark:border-neutral-100">
         <div>
           <p className="font-mono text-xs uppercase tracking-widest opacity-60">

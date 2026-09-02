@@ -1,8 +1,12 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { BikeCard } from '@/components/BikeCard';
 import { CatalogFilters } from '@/components/CatalogFilters';
+import { JsonLd } from '@/components/JsonLd';
 import { getCatalog, isLocale, type Locale } from '@/lib/api';
+import { itemListJsonLd } from '@/lib/jsonld';
+import { seoFor } from '@/lib/seo';
 
 /**
  * Libelles d'interface uniquement. Tout ce qui decrit une donnee — libelles de
@@ -45,6 +49,29 @@ const COPY = {
   },
 } as const;
 
+/**
+ * Une query string — filtre, tri, « afficher plus » — n'est pas une page :
+ * le canonical reste celui du catalogue nu et la politique cible passe a
+ * `noindex, follow` (`?brand=trek` duplique la page marque, les combinaisons
+ * sont infinies). Sans query, le catalogue est une page a part entiere.
+ */
+const filtre = (query: Record<string, unknown>) => Object.keys(query).length > 0;
+
+export async function generateMetadata({
+  params,
+  searchParams,
+}: PageProps<'/[locale]/bikes'>): Promise<Metadata> {
+  const { locale } = await params;
+  if (!isLocale(locale)) notFound();
+
+  return seoFor({
+    locale,
+    path: '/bikes',
+    title: COPY[locale].title,
+    indexable: !filtre(await searchParams),
+  });
+}
+
 export default async function CatalogPage({
   params,
   searchParams,
@@ -76,6 +103,9 @@ export default async function CatalogPage({
 
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 sm:p-6">
+      {/* La liste des fiches de la page, pour le catalogue NU seulement : un
+          filtre ne decrit rien a Google. */}
+      {!filtre(query) && page.data.length > 0 && <JsonLd data={itemListJsonLd(locale, page.data)} />}
       <header className="flex flex-wrap items-baseline justify-between gap-3">
         <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">{t.title}</h1>
         {/* Le compteur vient de l'API : il compte TOUS les resultats du
