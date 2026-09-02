@@ -72,13 +72,31 @@ Les conversions sont déjà générées par Laravel et servies par le CDN. Les r
 **4. L'état du comparateur vit dans l'URL.**
 Source partageable et indexable. L'état local ne fait que la synchroniser.
 
-**5. Invalidation par tags.**
-`bike:{id}` · `family:{id}` · `brand:{id}` · `market:{code}`. Le webhook `/api/revalidate` est appelé par Laravel avec un secret partagé — **logger chaque invalidation**.
+**5. Invalidation par tags — voir « Cache » ci-dessous.**
+`build:{brand_slug}:{build_slug}` · `catalog` · `bikefinder` · `compare` · `all`. Le webhook `/api/revalidate` est appelé par Laravel avec un secret partagé — **chaque appel écrit une ligne de journal**.
 
 **6. Indexation contrôlée.**
 Comparaisons : liste blanche uniquement, jamais les permutations d'un même ensemble. Recherche libre et filtres arbitraires : `noindex`.
 
 **7. Jamais de `aggregateRating` fabriqué** dans les données structurées.
+
+## Cache — rendre une fois, invalider au changement
+
+Contrat partagé avec l'API : `../tasks/2026-09-02-cache-contrat.md`. Les tags y sont la référence ; aucun autre n'est inventé sans le mettre à jour.
+
+- **Lectures API** (`src/lib/api.ts`) : `cache: 'force-cache'` + `next: { tags, revalidate: 86400 }`. Les 24 h sont un filet, l'invalidation par tag est le mécanisme. `getBuild` → `build:{brand}:{slug}` · `getCatalog` → `catalog` · `getFinderTree` / `getFinderResults` → `bikefinder` · `getCompare` → `compare`.
+- **Pages** : fiche vélo et étapes du finder sont rendues au premier appel puis servies du cache (`revalidate = 86400`, `dynamicParams = true`, `generateStaticParams` vide — sans lui, même vide, Next rend la route à chaque requête). Accueil et racine du finder sont prérendus par locale avec le même `revalidate`. Catalogue et comparateur restent dynamiques (`searchParams`), mais leurs appels API sont cachés.
+- **Route `POST /api/revalidate`** (`src/app/api/revalidate/route.ts`) : `Authorization: Bearer $REVALIDATE_SECRET` (comparaison en temps constant, secret absent = tout refusé), corps `{ "tags": [...], "reason": "..." }`. Réponses : `200 { revalidated, reason, at }` · `401 { "error": "unauthorized" }` · `422 { "error": "tags required" }`. Chaque tag expire immédiatement (`revalidateTag(tag, { expire: 0 })` : la requête suivante re-rend, jamais de page périmée servie après un import) ; `all` = `revalidatePath('/', 'layout')`. Une ligne `[revalidate] {"status","tags","reason","ms"}` par appel dans la sortie du serveur.
+- **Preuve** : l'en-tête `x-nextjs-cache` sur toute page cachée — `MISS` au premier rendu, `HIT` ensuite, de nouveau `MISS` après le tag. Uniquement sous `npm run build && npm start` : `next dev` ne cache rien. Vérifié par `tests/e2e/cache.spec.ts`.
+- **Purger en local** (secret de `.env.local`, jamais commité — `REVALIDATE_SECRET=secret-local-de-test` est la valeur par défaut du spec, surchargeable par la variable d'environnement) :
+
+  ```bash
+  curl -X POST http://127.0.0.1:3000/api/revalidate \
+    -H "Authorization: Bearer secret-local-de-test" -H "Content-Type: application/json" \
+    -d '{"tags":["all"],"reason":"purge manuelle"}'
+  ```
+
+- **Limite connue** : le cache handler par défaut de Next garde les invalidations de tags **en mémoire du processus** (`tags-manifest.external`) ; le HTML est sur disque, mais avec plusieurs workers PM2 seul celui qui reçoit le webhook purge, les autres servent l'ancienne page jusqu'au filet de 24 h. Un seul worker, ou un cache handler partagé, avant de passer en cluster.
 
 ## Budgets performance
 
