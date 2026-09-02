@@ -31,7 +31,7 @@ test('la page marque arabe est en RTL et porte le nom, le compteur et les catég
 
   // Les tuiles sont les catégories DE LA MARQUE — facette filtrée, libellée
   // par l'API dans la langue de la page — et ouvrent le catalogue filtré.
-  await expect(page.getByRole('link', { name: 'طريق 32 سيكل' })).toHaveAttribute(
+  await expect(page.getByRole('link', { name: 'سيكل رود 32 سيكل' })).toHaveAttribute(
     'href',
     '/ar-sa/bikes?brand=trek&category=road',
   );
@@ -93,7 +93,7 @@ test('le slug de catégorie est parlant, lu dans la table, et vaut dans les deux
   await page.getByRole('link', { name: 'العربية' }).click();
   await expect(page).toHaveURL(/\/ar-sa\/electric-mountain-bikes$/);
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
-  await expect(page.getByRole('heading', { name: 'جبلية كهربائية', level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'سيكل جبلي كهربائي', level: 1 })).toBeVisible();
 });
 
 test('la table des slugs est une bijection stricte sur les seize catégories', () => {

@@ -44,7 +44,8 @@ const COPY = {
     brands: 'تصفح حسب الماركة',
     newest: 'أحدث الموديلات',
     all: 'كل السياكل في هذه الفئة',
-    title: 'سياكل {name}',
+    // Le libellé de l'API porte déjà « سيكل » (« سيكل رود ») : pas de générique devant.
+    title: '{name}',
     description:
       '{count} في فئة {name}: المواصفات الكاملة والهندسة حسب المقاس ومقارنة الدراجات الهوائية جنبًا إلى جنب.',
   },

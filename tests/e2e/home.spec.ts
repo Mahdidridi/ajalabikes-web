@@ -146,7 +146,7 @@ test('la version arabe est en RTL avec les libelles traduits', async ({ page }) 
   await expect(page.getByRole('heading', { name: 'اكتشف، قارن، ثم اختر', level: 2 })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'الكتالوج بالأرقام', level: 2 })).toBeVisible();
   // Les libelles des tuiles arrivent traduits de l'API, pas du front.
-  await expect(page.getByRole('link', { name: 'مدينة ولياقة' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'سيكل مدينة وهجين' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Trek 196 سيكل' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'ابدأ دليل اختيار السيكل' })).toHaveAttribute(
     'href',
@@ -162,7 +162,7 @@ test('le mot du compteur s accorde au nombre, dans les deux langues', async ({ p
   await page.goto(AR);
   await expect(page.getByRole('link', { name: 'إندورو 4 سياكل' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'سيكلوكروس 1 سيكل' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'طريق 137 سيكل' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'سيكل رود 137 سيكل' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'تصفح 634 سيكل' })).toBeVisible();
 
   // En anglais, le singulier existe aussi : « 1 bike », jamais « 1 bikes ».
