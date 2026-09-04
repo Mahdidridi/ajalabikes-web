@@ -26,12 +26,12 @@ test('la page marque arabe est en RTL et porte le nom, le compteur et les catég
   await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
   await expect(page.getByRole('heading', { name: 'Trek', level: 1 })).toBeVisible();
   // 196 : le total du filtre brand=trek, le même que le catalogue affiche —
-  // suivi du mot mesuré du Golfe, « سيكل », accordé au nombre.
-  await expect(page.getByText('196 سيكل')).toBeVisible();
+  // suivi du générique arabe « دراجة », accordé au nombre (196 % 100 = 96 → accusatif).
+  await expect(page.getByText('196 دراجةً')).toBeVisible();
 
   // Les tuiles sont les catégories DE LA MARQUE — facette filtrée, libellée
   // par l'API dans la langue de la page — et ouvrent le catalogue filtré.
-  await expect(page.getByRole('link', { name: 'سيكل رود 32 سيكل' })).toHaveAttribute(
+  await expect(page.getByRole('link', { name: 'دراجات هوائية للطريق 32 دراجةً' })).toHaveAttribute(
     'href',
     '/ar-sa/bikes?brand=trek&category=road',
   );
@@ -45,7 +45,7 @@ test('la page marque arabe est en RTL et porte le nom, le compteur et les catég
     await expect(carte).toHaveAttribute('href', /^\/ar-sa\/bikes\/trek\//);
   }
 
-  await expect(page.getByRole('link', { name: 'كل سياكل Trek' })).toHaveAttribute(
+  await expect(page.getByRole('link', { name: 'كل دراجات Trek' })).toHaveAttribute(
     'href',
     '/ar-sa/bikes?brand=trek',
   );
@@ -93,7 +93,7 @@ test('le slug de catégorie est parlant, lu dans la table, et vaut dans les deux
   await page.getByRole('link', { name: 'العربية' }).click();
   await expect(page).toHaveURL(/\/ar-sa\/electric-mountain-bikes$/);
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
-  await expect(page.getByRole('heading', { name: 'سيكل جبلي كهربائي', level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'دراجات هوائية كهربائية جبلية', level: 1 })).toBeVisible();
 });
 
 test('la table des slugs est une bijection stricte sur les seize catégories', () => {

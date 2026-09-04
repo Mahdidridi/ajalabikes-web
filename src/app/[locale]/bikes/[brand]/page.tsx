@@ -30,7 +30,7 @@ export function generateStaticParams() {
 
 /**
  * Libellés d'interface : rien ici ne décrit une donnée, tout arrive traduit de
- * l'API. En arabe, le générique est « سيكل / سياكل » (`src/lib/vocabulary.ts`) ;
+ * l'API. En arabe, le générique est « دراجة / دراجات » (`src/lib/vocabulary.ts`) ;
  * la description garde le registre formel en second, jamais « دراجة » nue.
  * `{count}` est le total accordé (`bikesCount`), `{name}` le nom de la marque.
  */
@@ -39,8 +39,8 @@ const COPY = {
     eyebrow: 'الماركة',
     categories: 'تصفح حسب الفئة',
     newest: 'أحدث الموديلات',
-    all: 'كل سياكل {name}',
-    title: 'سياكل {name}',
+    all: 'كل دراجات {name}',
+    title: 'دراجات {name}',
     description:
       '{count} من {name}: المواصفات الكاملة والهندسة حسب المقاس ومقارنة الدراجات الهوائية جنبًا إلى جنب.',
   },

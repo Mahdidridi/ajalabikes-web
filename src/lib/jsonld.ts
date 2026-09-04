@@ -24,11 +24,12 @@ const language = (locale: Locale) => locale.split('-')[0];
 
 /**
  * Libelles du fil d'Ariane — les seuls textes de ce module qui ne viennent pas
- * de l'API. « السياكل » : le mot mesure du Golfe (`src/lib/vocabulary.ts`),
- * celui que Google affiche a la place de l'URL.
+ * de l'API. « الدراجات الهوائية » : le generique COMPLET, parce que ce fil
+ * est ce que Google affiche a la place de l'URL et qu'il y est isole —
+ * « دراجات » nu appelle la moto (`src/lib/vocabulary.ts`).
  */
 const TRAIL_COPY = {
-  'ar-sa': { home: 'الرئيسية', bikes: 'السياكل' },
+  'ar-sa': { home: 'الرئيسية', bikes: 'الدراجات الهوائية' },
   'en-sa': { home: 'Home', bikes: 'Bikes' },
 } as const satisfies Record<Locale, { home: string; bikes: string }>;
 

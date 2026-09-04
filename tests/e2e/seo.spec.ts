@@ -176,12 +176,12 @@ test.describe('JSON-LD', () => {
     ]);
 
     // Une langue par page : les libelles suivent la locale, les noms restent
-    // latins. « السياكل » : le mot mesure du Golfe, que Google affiche a la
+    // latins. « الدراجات الهوائية » : le generique complet, que Google affiche a la
     // place de l'URL (decision du 3 septembre 2026).
     await page.goto(FUEL_AR);
     const filAr = bloc(await jsonLd(page), 'BreadcrumbList');
     const nomsAr = (filAr!.itemListElement as { name: string }[]).map((m) => m.name);
-    expect(nomsAr).toEqual(['الرئيسية', 'السياكل', 'Trek', 'Fuel MX 9.8 XT Gen 7']);
+    expect(nomsAr).toEqual(['الرئيسية', 'الدراجات الهوائية', 'Trek', 'Fuel MX 9.8 XT Gen 7']);
   });
 
   test('le catalogue nu porte un ItemList des cartes de la page, le filtre non', async ({ page }) => {
@@ -255,11 +255,11 @@ test.describe('pages marque et categorie', () => {
     expect(liens['ar-SA']).toBe(`${SITE}/ar-sa/bikes/trek`);
     expect(liens['en-SA']).toBe(`${SITE}/en-sa/bikes/trek`);
     expect(liens['x-default']).toBe(`${SITE}/en-sa/bikes/trek`);
-    // « سياكل Trek », le mot mesure du Golfe en tete du titre — jamais « دراجات Trek ».
-    await expect(page).toHaveTitle('سياكل Trek · Darraja Bikes');
+    // « دراجات Trek » : le generique en tete du titre — jamais « سياكل Trek ».
+    await expect(page).toHaveTitle('دراجات Trek · Darraja Bikes');
     await expect(page.locator('meta[name="description"]')).toHaveAttribute(
       'content',
-      /^196 سيكل من Trek: .*الدراجات الهوائية/,
+      /^196 دراجةً من Trek: .*الدراجات الهوائية/,
     );
 
     const fil = bloc(await jsonLd(page), 'BreadcrumbList');
@@ -304,11 +304,11 @@ test.describe('description des fiches', () => {
     expect(farley).not.toContain('bike comparison platform');
   });
 
-  test('en arabe : « سيكل » en tete, le modele, puis le decompte de tailles accorde', async ({ page }) => {
+  test('en arabe : « دراجة » en tete, le modele, puis le decompte de tailles accorde', async ({ page }) => {
     await page.goto(FUEL_AR);
 
     expect(await description(page)).toBe(
-      'سيكل Trek Fuel MX 9.8 XT Gen 7 2027: المواصفات الكاملة، الهندسة حسب المقاس (5 مقاسات)، المكونات، والمقارنة مع سياكل أخرى.',
+      'دراجة Trek Fuel MX 9.8 XT Gen 7 2027: المواصفات الكاملة، الهندسة حسب المقاس (5 مقاسات)، المكونات، والمقارنة مع دراجات أخرى.',
     );
   });
 
@@ -336,7 +336,7 @@ test.describe('description des fiches', () => {
       'Marque Modele: full specs, geometry by size, components and side-by-side comparison.',
     );
     expect(bikeDescription('ar-sa', base)).toBe(
-      'سيكل Marque Modele: المواصفات الكاملة، الهندسة حسب المقاس، المكونات، والمقارنة مع سياكل أخرى.',
+      'دراجة Marque Modele: المواصفات الكاملة، الهندسة حسب المقاس، المكونات، والمقارنة مع دراجات أخرى.',
     );
 
     // Une seule taille : le singulier, dans les deux langues ; 3 a 10 : le pluriel arabe.

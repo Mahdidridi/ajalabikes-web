@@ -130,12 +130,13 @@ const DESCRIPTION_MAX = 160;
  * Le patron de la description d'une fiche, par langue : le nom titre (marque,
  * modele, millesime s'il est connu), puis ce que la page offre. `sizes` est le
  * decompte de tailles deja accorde, ou `null` quand la fiche n'en publie
- * aucune — la parenthese disparait, rien n'est estime. En arabe, « سيكل » en
- * tete (le mot mesure du Golfe, `src/lib/vocabulary.ts`).
+ * aucune — la parenthese disparait, rien n'est estime. En arabe, « دراجة » en
+ * tete, colle au nom de la marque : la forme qu'emploie le distributeur Trek
+ * officiel en Arabie (« دراجة مادون ») — `src/lib/vocabulary.ts`.
  */
 const BIKE_DESCRIPTION: Record<Locale, (name: string, sizes: string | null) => string> = {
   'ar-sa': (name, sizes) =>
-    `سيكل ${name}: المواصفات الكاملة، الهندسة حسب المقاس${sizes ? ` (${sizes})` : ''}، المكونات، والمقارنة مع سياكل أخرى.`,
+    `دراجة ${name}: المواصفات الكاملة، الهندسة حسب المقاس${sizes ? ` (${sizes})` : ''}، المكونات، والمقارنة مع دراجات أخرى.`,
   'en-sa': (name, sizes) =>
     `${name}: full specs, geometry by size${sizes ? ` (${sizes})` : ''}, components and side-by-side comparison.`,
 };
