@@ -163,8 +163,12 @@ export default async function ComparePage({ params, searchParams }: PageProps<'/
                       )}
                     </div>
                     <div className="flex grow flex-col gap-1 bg-background px-3 pb-3 pt-2 text-start font-normal">
-                      <p className="text-xs text-muted">{bike.brand.name}</p>
-                      <p className="text-sm font-semibold leading-snug">{bike.model_name}</p>
+                      <p className="text-xs text-muted">
+                        <bdi>{bike.brand.name}</bdi>
+                      </p>
+                      <p className="text-sm font-semibold leading-snug">
+                        <bdi>{bike.model_name}</bdi>
+                      </p>
                       <p className="text-xs text-muted">{bike.year_label}</p>
                       <p className="text-sm font-medium tabular-nums">
                         {bike.msrp_formatted ?? <span className="font-normal italic text-muted">{bike.msrp_label}</span>}
