@@ -123,13 +123,16 @@ export default async function BuildPage({ params }: Props) {
           <p className="font-mono text-xs uppercase tracking-widest opacity-60">
             {/* Le nom de la marque mène à sa page — le seul lien « vers le haut » de la fiche. */}
             <Link href={brandPath(locale, build.brand.slug)} className="hover:underline">
-              {build.brand.name}
+              <bdi>{build.brand.name}</bdi>
             </Link>
             {' · '}
-            {build.family.name}
+            <bdi>{build.family.name}</bdi>
           </p>
+          {/* <bdi> : sans lui, un nom qui finit par un signe (« Borrego+ »,
+              « Ponto Go! », « Precaliber 20\" ») voit ce signe passer a gauche
+              dans une page RTL — 11 modeles du catalogue sont concernes. */}
           <h1 className="text-3xl font-extrabold tracking-tight text-balance">
-            {build.model_name}
+            <bdi>{build.model_name}</bdi>
           </h1>
           <p className="mt-2 inline-block border border-dashed border-neutral-400 px-2 py-1 font-mono text-xs opacity-70 dark:border-neutral-600">
             {build.year_label}

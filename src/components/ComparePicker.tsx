@@ -52,7 +52,8 @@ export function ComparePicker({
                   }}
                   className="w-full px-3 py-2 text-start text-sm transition hover:bg-surface"
                 >
-                  {o.label}
+                  {/* Le libelle est « marque + modele » en latin : isole. */}
+                  <bdi>{o.label}</bdi>
                 </button>
               </li>
             ))

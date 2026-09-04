@@ -41,8 +41,14 @@ export function BikeCard({ bike, locale }: { bike: BuildCard; locale: string }) 
       </div>
 
       <div className="flex flex-col gap-0.5 bg-background px-4 pb-4 pt-3">
-        <p className="text-xs text-muted">{bike.brand.name}</p>
-        <h2 className="text-[15px] font-semibold leading-snug text-balance">{bike.model_name}</h2>
+        {/* Noms latins isoles : en RTL, un signe final passerait a gauche
+            (« +Borrego »). Voir la fiche et `CLAUDE.md` § Vocabulaire arabe. */}
+        <p className="text-xs text-muted">
+          <bdi>{bike.brand.name}</bdi>
+        </p>
+        <h2 className="text-[15px] font-semibold leading-snug text-balance">
+          <bdi>{bike.model_name}</bdi>
+        </h2>
 
         <p className="text-xs text-muted">{bike.year_label}</p>
 
