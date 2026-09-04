@@ -12,8 +12,9 @@ test('la fiche arabe est en RTL et affiche le reach en millimetres', async ({ pa
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
   await expect(page.getByRole('heading', { name: 'Fuel MX 9.8 XT' })).toBeVisible();
 
-  // Chiffres arabo-indiens, formates par Laravel et non par le front.
-  await expect(page.getByText('٤٢٦ مم')).toBeVisible();
+  // Chiffres 0-9 et unite arabe, formates par Laravel et non par le front
+  // (un seul systeme de chiffres sur la page, api #11).
+  await expect(page.getByText('426 مم')).toBeVisible();
   // La valeur telle que Trek la publie reste visible a cote.
   await expect(page.getByText('42.6 cm')).toBeVisible();
 });
@@ -36,7 +37,7 @@ test('un prix ne devient jamais zero', async ({ page }) => {
   // qu'aucun zero ne s'affiche a l'ecran, dans les deux systemes de chiffres.
   await page.goto(TREK);
 
-  await expect(page.getByText('٥٬٩٩٩٫٩٩', { exact: false })).toBeVisible();
+  await expect(page.getByText('5,999.99', { exact: false })).toBeVisible();
   await expect(page.getByText('٠٫٠٠')).toHaveCount(0);
   await expect(page.getByText('0.00')).toHaveCount(0);
 });

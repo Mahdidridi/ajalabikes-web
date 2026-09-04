@@ -169,10 +169,10 @@ test('la version arabe est en RTL et localise ses libelles par l API', async ({ 
   // dictionnaire front qui dériverait au premier champ ajouté.
   await expect(page.getByRole('heading', { name: 'القياسات الهندسية' })).toBeVisible();
 
-  // La mesure est en chiffres arabo-indiens, la publication constructeur reste
-  // telle quelle : aucun nombre n'est mis en forme côté front.
+  // La mesure normalisee (420 mm, chiffres 0-9) et la publication constructeur
+  // (42.0 cm) cohabitent : aucun nombre n'est mis en forme côté front.
   const ligne = page.getByRole('row').filter({ hasText: '42.0 cm' });
-  await expect(ligne.getByText('٤٢٠').first()).toBeVisible();
+  await expect(ligne.getByText('420 مم').first()).toBeVisible();
 });
 
 test('le theme reste commande depuis le comparateur', async ({ page }) => {
