@@ -62,13 +62,13 @@ test('une tuile de categorie mene a sa page', async ({ page }) => {
   await expect(page.getByText('137 bikes')).toBeVisible();
 });
 
-test('l apercu montre quatre cartes, les memes que le catalogue', async ({ page }) => {
+test('l apercu montre trois cartes, les memes que le catalogue', async ({ page }) => {
   await page.goto(EN);
 
   // Les seules images de la page sont les cartes — le meme composant que le
   // catalogue, donc les memes liens vers les fiches.
   const cartes = page.getByRole('link').filter({ has: page.locator('img') });
-  await expect(cartes).toHaveCount(4);
+  await expect(cartes).toHaveCount(3);
   await expect(cartes.first()).toHaveAttribute(
     'href',
     /\/en-sa\/bikes\/(trek|specialized|giant|canyon|scott)\//,

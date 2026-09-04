@@ -33,10 +33,16 @@ test('les cartes ont toutes la meme hauteur malgre deux formats source', async (
   await page.goto(EN);
 
   const cadres = page.locator('main .aspect-4\\/3');
-  const hauteurs = await cadres.evaluateAll((n) => n.map((e) => Math.round(e.getBoundingClientRect().height)));
+  const hauteurs = await cadres.evaluateAll((n) => n.map((e) => e.getBoundingClientRect().height));
 
   expect(hauteurs.length).toBeGreaterThan(4);
-  expect(new Set(hauteurs).size).toBe(1);
+  // Tolerance sub-pixel, pas de confort : sur une grille de 3 colonnes la largeur
+  // disponible ne se divise pas en entiers et CSS Grid repartit le reste fractionnaire —
+  // les cadres mesurent 294.484 ou 294.5 px selon la colonne. Arrondir tombait pile sur
+  // la frontiere .5 et rendait 294 puis 295. Un vrai defaut (16:9 servi sans cadre
+  // impose) se compterait en dizaines de pixels.
+  const ecart = Math.max(...hauteurs) - Math.min(...hauteurs);
+  expect(ecart).toBeLessThan(1);
 });
 
 test('aucune image ne repasse par l optimiseur de Next', async ({ page }) => {

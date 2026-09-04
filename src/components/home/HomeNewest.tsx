@@ -28,7 +28,7 @@ export function HomeNewest({ locale, bikes }: { locale: Locale; bikes: BuildCard
           <ArrowIcon className="size-4" />
         </Link>
       </header>
-      <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {bikes.map((bike) => (
           <li key={`${bike.brand.slug}/${bike.slug}`} className="contents">
             <BikeCard bike={bike} locale={locale} />

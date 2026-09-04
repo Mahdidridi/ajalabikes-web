@@ -44,7 +44,7 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
 
   // `year_desc` est un tri de l'API, pas un choix éditorial : l'aperçu montre
   // les mêmes vélos que « Voir tout », qui rouvre ce tri dans le catalogue.
-  const page = await getCatalog(locale, { per_page: '4', sort: 'year_desc' });
+  const page = await getCatalog(locale, { per_page: '3', sort: 'year_desc' });
 
   return (
     <main className="flex w-full flex-col">

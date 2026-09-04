@@ -129,7 +129,7 @@ export default async function CatalogPage({
       {page.data.length === 0 ? (
         <p className="py-16 text-center text-muted">{t.empty}</p>
       ) : (
-        <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {page.data.map((bike) => (
             <li key={`${bike.brand.slug}/${bike.slug}`} className="contents">
               <BikeCard bike={bike} locale={locale} />
