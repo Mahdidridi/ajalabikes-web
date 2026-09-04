@@ -17,7 +17,8 @@ export type CollectionPage = {
   page: CatalogPage;
 };
 
-/** Trois rangées de quatre cartes sur grand écran. */
+/** Quatre rangées de trois cartes sur grand écran (12 est divisible par 1, 2 et 3,
+ *  les trois paliers de la grille : aucune ligne orpheline). */
 const RECENT = '12';
 
 /**

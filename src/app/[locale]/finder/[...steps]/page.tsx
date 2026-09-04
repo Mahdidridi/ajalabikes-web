@@ -169,7 +169,7 @@ export default async function FinderStepsPage({
           {results.alternatives.length > 0 && (
             <>
               <h2 className="mt-10 text-lg font-semibold">{copy.alternatives}</h2>
-              <ul className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
+              <ul className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-3">
                 {results.alternatives.map((bike) => (
                   <li key={`${bike.brand.slug}/${bike.slug}`}>
                     <BikeCard bike={bike} locale={locale} />
