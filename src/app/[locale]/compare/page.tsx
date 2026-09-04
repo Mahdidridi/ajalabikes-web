@@ -11,10 +11,10 @@ import { seoFor } from '@/lib/seo';
 /** Libellés d'interface uniquement — toute DONNÉE arrive déjà localisée de l'API. */
 const COPY = {
   'ar-sa': {
-    title: 'قارن السياكل',
-    intro: 'أضف سيكلين أو ثلاثة سياكل لمقارنتها جنبًا إلى جنب.',
-    add: 'أضف سيكلًا',
-    search: 'ابحث عن سيكل…',
+    title: 'قارن الدراجات',
+    intro: 'أضف دراجتين أو ثلاث دراجات لمقارنتها جنبًا إلى جنب.',
+    add: 'أضف دراجةً',
+    search: 'ابحث عن دراجة…',
     no_match: 'لا نتائج.',
     remove: 'إزالة',
     view: 'عرض التفاصيل',

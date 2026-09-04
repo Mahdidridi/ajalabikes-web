@@ -164,7 +164,7 @@ test('la version arabe est en RTL et localise ses libelles par l API', async ({ 
   await page.goto(`/ar-sa/compare?bikes=${A},${B}&sizes=M,M`);
 
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
-  await expect(page.getByRole('heading', { name: 'قارن السياكل', level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'قارن الدراجات', level: 1 })).toBeVisible();
   // Les libellés de sections et de lignes viennent de Laravel, pas d'un
   // dictionnaire front qui dériverait au premier champ ajouté.
   await expect(page.getByRole('heading', { name: 'القياسات الهندسية' })).toBeVisible();

@@ -146,24 +146,24 @@ test('la version arabe est en RTL avec les libelles traduits', async ({ page }) 
   await expect(page.getByRole('heading', { name: 'اكتشف، قارن، ثم اختر', level: 2 })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'الكتالوج بالأرقام', level: 2 })).toBeVisible();
   // Les libelles des tuiles arrivent traduits de l'API, pas du front.
-  await expect(page.getByRole('link', { name: 'سيكل مدينة وهجين' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Trek 196 سيكل' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'ابدأ دليل اختيار السيكل' })).toHaveAttribute(
+  await expect(page.getByRole('link', { name: 'دراجات هوائية للمدينة والهجين' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Trek 196 دراجةً' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'ابدأ دليل اختيار الدراجة' })).toHaveAttribute(
     'href',
     '/ar-sa/finder',
   );
 });
 
 test('le mot du compteur s accorde au nombre, dans les deux langues', async ({ page }) => {
-  // Le generique arabe est « سيكل » (mesure du 3 septembre 2026) ; la regle du
-  // nombre — 3 a 10 au pluriel « سياكل », le reste au singulier — vient
+  // Le generique arabe est « دراجة » (decision du 4 septembre 2026) ; la regle du
+  // nombre — 3 a 10 « دراجات », 11 a 99 l'accusatif « دراجةً », le reste « دراجة » — vient
   // d'`Intl.PluralRules`, pas d'une liste ecrite a la main. Les decomptes sont
   // ceux des facettes de l'API.
   await page.goto(AR);
-  await expect(page.getByRole('link', { name: 'إندورو 4 سياكل' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'سيكلوكروس 1 سيكل' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'سيكل رود 137 سيكل' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'تصفح 634 سيكل' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'إندورو 4 دراجات' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'سيكلوكروس 1 دراجة' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'للطريق 137 دراجةً' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'تصفح 634 دراجةً' })).toBeVisible();
 
   // En anglais, le singulier existe aussi : « 1 bike », jamais « 1 bikes ».
   await page.goto(EN);
@@ -212,7 +212,7 @@ test('la navbar mene au catalogue, au comparateur et au bikefinder', async ({ pa
 
   await page.goto(AR);
   await expect(
-    nav.getByRole('link', { name: isMobile ? 'الدليل' : 'دليل اختيار السيكل', exact: true }),
+    nav.getByRole('link', { name: isMobile ? 'الدليل' : 'دليل اختيار الدراجة', exact: true }),
   ).toHaveAttribute('href', '/ar-sa/finder');
 });
 

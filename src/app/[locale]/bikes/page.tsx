@@ -12,17 +12,18 @@ import { bikesCount } from '@/lib/vocabulary';
 /**
  * Libelles d'interface uniquement. Tout ce qui decrit une donnee — libelles de
  * facettes, montants, millesimes — arrive deja traduit et mis en forme. Le
- * generique arabe est « سيكل / سياكل » (`src/lib/vocabulary.ts`).
+ * generique arabe est « دراجة / دراجات » (`src/lib/vocabulary.ts`) ; ce titre
+ * sert de H1 et de <title>, il porte donc le generique COMPLET.
  */
 const COPY = {
   'ar-sa': {
-    title: 'السياكل',
+    title: 'الدراجات الهوائية',
     brand: 'الماركة',
     category: 'الفئة',
     wheelSize: 'مقاس العجلات',
     sort: 'الترتيب',
     reset: 'إزالة الفلاتر',
-    empty: 'لا يوجد سيكل يطابق هذا الاختيار.',
+    empty: 'لا توجد دراجة تطابق هذا الاختيار.',
     more: 'عرض المزيد',
     sortOptions: [
       { value: 'name', label: 'الاسم' },

@@ -14,9 +14,9 @@ import type { Locale } from '@/lib/api';
 const COPY = {
   'ar-sa': {
     nav: 'روابط الموقع',
-    bikes: 'السياكل',
+    bikes: 'الدراجات',
     compare: 'قارن',
-    finder: 'دليل اختيار السيكل',
+    finder: 'دليل اختيار الدراجة',
     // La signature de la marque : elle ne suit pas le vocabulaire mesuré.
     tagline: 'منصة عربية لاكتشاف الدراجات ومقارنتها',
     sources: 'المواصفات من المواقع الرسمية للشركات المصنعة.',

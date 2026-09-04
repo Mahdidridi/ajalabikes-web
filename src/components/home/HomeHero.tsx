@@ -11,19 +11,19 @@ import { ArrowIcon } from './icons';
  *
  * Le titre est la signature de la marque : la même que les métadonnées et le
  * pied de page — elle ne suit pas le vocabulaire mesuré, le reste du texte
- * si (« سيكل / سياكل », `src/lib/vocabulary.ts`). Le compteur du bouton
+ * si (« دراجة / دراجات », `src/lib/vocabulary.ts`). Le compteur du bouton
  * vient de l'API, jamais écrit en dur. La pastille annonce la seule
  * nouveauté réelle : le bikefinder.
  */
 const COPY = {
   'ar-sa': {
-    pill: 'جديد: دليل اختيار السيكل',
+    pill: 'جديد: دليل اختيار الدراجة',
     pillLink: 'جرّبه',
     title: 'منصة عربية لاكتشاف الدراجات ومقارنتها',
     subtitle:
-      'مواصفات كاملة وهندسة موحّدة بالمليمتر من المواقع الرسمية للشركات المصنعة. قارن السياكل جنبًا إلى جنب، مقاسًا بمقاس.',
+      'مواصفات كاملة وهندسة موحّدة بالمليمتر من المواقع الرسمية للشركات المصنعة. قارن الدراجات جنبًا إلى جنب، مقاسًا بمقاس.',
     browse: 'تصفح',
-    compare: 'قارن السياكل',
+    compare: 'قارن الدراجات',
   },
   'en-sa': {
     pill: 'New: the bike finder',

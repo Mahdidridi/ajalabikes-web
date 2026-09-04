@@ -125,8 +125,9 @@ test('la version arabe est en RTL et formate ses prix par l API', async ({ page 
   await page.goto(AR);
 
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
-  // « السياكل » : le mot mesuré du Golfe, pas « الدراجات » (décision du 3 septembre 2026).
-  await expect(page.getByRole('heading', { name: 'السياكل', level: 1 })).toBeVisible();
+  // « الدراجات الهوائية » : le générique complet, décision du 4 septembre 2026 —
+  // ce H1 est aussi le <title>, et « دراجات » nu appelle la moto.
+  await expect(page.getByRole('heading', { name: 'الدراجات الهوائية', level: 1 })).toBeVisible();
   // Chiffres arabo-indiens : aucun montant n'est mis en forme cote front.
   await expect(page.locator('main').getByText(/[٠-٩]/).first()).toBeVisible();
 });

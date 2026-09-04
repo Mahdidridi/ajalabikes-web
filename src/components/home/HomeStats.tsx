@@ -13,7 +13,7 @@ const COPY = {
   'ar-sa': {
     title: 'الكتالوج بالأرقام',
     subtitle: 'أرقام حيّة تُقرأ من الكتالوج مباشرةً.',
-    bikes: 'السياكل',
+    bikes: 'الدراجات',
     brands: 'الماركات',
     categories: 'الفئات',
     wheelSizes: 'مقاسات العجلات',
