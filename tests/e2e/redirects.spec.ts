@@ -57,14 +57,25 @@ test.describe('forme canonique', () => {
 
   test('la query string n est JAMAIS mise en minuscules', async ({ request }) => {
     const res = await request.get('/EN-SA/compare?bikes=trek/Fuel-MX', { maxRedirects: 0 });
-    const location = res.headers()['location'];
+    const location = new URL(res.headers()['location'], 'http://x');
 
     // Le chemin descend en minuscules...
     expect(res.status()).toBe(308);
-    expect(location).toContain('/en-sa/compare');
+    expect(location.pathname).toBe('/en-sa/compare');
     // ...mais la query passe intacte : elle porte des slugs, et demain le `q=`
     // de la recherche portera du texte saisi. Le toucher changerait la requete.
-    expect(location).toContain('bikes=trek/Fuel-MX');
+    // Comparee DECODEE : l'adaptateur de Next re-serialise la query de toute
+    // Location de proxy par URLSearchParams (« / » ressort en « %2F ») — la
+    // valeur et sa casse sont ce qui compte, pas l'encodage (voir proxy.ts).
+    expect(location.searchParams.get('bikes')).toBe('trek/Fuel-MX');
+  });
+
+  test('un chemin deja canonique avec une query n est pas redirige', async ({ request }) => {
+    const res = await request.get('/en-sa/compare?bikes=trek/fuel-mx-9-8-xt-gen-7-81563', {
+      maxRedirects: 0,
+    });
+
+    expect(res.status()).toBe(200);
   });
 
   test('casse et slash final se corrigent en UN SEUL saut', async ({ request }) => {

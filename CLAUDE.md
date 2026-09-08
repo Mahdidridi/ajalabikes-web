@@ -117,10 +117,14 @@ ont chacune une page à chemin propre. Les chemins sont construits par `src/lib/
   casse — chaque variante tolérée est un doublon. Trois mécanismes, chacun à sa place : la racine `/` → `/ar-sa` en
   **308** (`next.config.ts`, `permanent: true` — les URL sont figées, le 307 n'avait plus de raison ; jamais de
   négociation de langue par IP) ; la **casse** par `src/proxy.ts` — le `middleware.ts` de Next 16, renommé — qui
-  redirige en 308 tout chemin portant une majuscule vers sa forme en minuscules, **chemin seulement, jamais la query**
-  (`?builds=` porte des slugs, le futur `?q=` du texte saisi), en un seul saut, slash final compris, `/api/`, `/_next/` et
-  les fichiers statiques exclus ; le **slash final** seul reste à Next (`trailingSlash: false`, 308 natif) ; `www` → apex
-  est une règle nginx du site Forge (301, un saut), pas du code. `tests/e2e/redirects.spec.ts` couvre les six cas.
+  redirige en 308 tout chemin portant une majuscule ou un slash final vers sa forme canonique, **chemin seulement,
+  jamais la query** (`?builds=` porte des slugs, le futur `?q=` du texte saisi ; limite connue : l'adaptateur de Next
+  re-sérialise la query de toute `Location` de proxy par `URLSearchParams`, « / » ressort en « %2F » — valeur et casse
+  intactes une fois décodée, voulu plutôt que `skipProxyUrlNormalize` qui exposerait le schéma interne), en un seul saut,
+  `/api/`, `/_next/` et les fichiers statiques exclus ; le **slash final** est retiré par le proxy aussi, avec
+  `skipTrailingSlashRedirect: true` — la redirection native de Next se déclenchait avant le proxy et `/EN-SA/Bikes/`
+  coûtait deux sauts ; `www` → apex est une règle nginx du site Forge (301, un saut), pas du code.
+  `tests/e2e/redirects.spec.ts` couvre les six cas.
 
 ## Cache — rendre une fois, invalider au changement
 

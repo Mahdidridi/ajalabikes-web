@@ -17,6 +17,14 @@ const nextConfig: NextConfig = {
   },
 
   /**
+   * Le slash final est retire par `src/proxy.ts`, en meme temps que la casse
+   * et en un seul saut. La redirection native de Next se declenchait AVANT le
+   * proxy : `/EN-SA/Bikes/` coutait deux 308 (constate le 8 septembre 2026).
+   * Option documentee pour exactement ce cas (`proxy.md`, Advanced Proxy flags).
+   */
+  skipTrailingSlashRedirect: true,
+
+  /**
    * Aucune indexation tant que les URL ne sont pas figees (decision du
    * 28 aout 2026). L'en-tete double le <meta name="robots"> du layout : il
    * couvre aussi ce qui n'a pas de <head> (robots.txt, 404, redirections).
