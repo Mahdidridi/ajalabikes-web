@@ -256,9 +256,15 @@ export default async function BuildPage({ params }: Props) {
         </dl>
       </section>
 
-      <footer className="border-t border-neutral-200 pt-4 font-mono text-xs opacity-75 dark:border-neutral-800">
-        {t.freshness} : {build.freshness.last_changed_at}
-      </footer>
+      {/*
+       * Le libelle formate par Laravel, jamais `last_changed_at` : depuis
+       * api #13 c'est un horodatage ISO 8601 pour le sitemap, pas un texte.
+       */}
+      {build.freshness.last_changed_label !== null && (
+        <footer className="border-t border-neutral-200 pt-4 font-mono text-xs opacity-75 dark:border-neutral-800">
+          {t.freshness} : {build.freshness.last_changed_label}
+        </footer>
+      )}
     </main>
   );
 }
