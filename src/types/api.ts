@@ -166,7 +166,24 @@ export interface components {
             family: {
                 key: string;
                 name: string;
+                slug: string;
             };
+            /**
+             * @description Absent (null) plutot qu'un seau approchant : un velo n'entre
+             *     jamais dans une categorie qu'il n'a pas.
+             */
+            category: {
+                key: string | null;
+                label: string;
+                slug: string | null;
+            } | null;
+            /**
+             * @description Calcule une fois par requete (App\Catalog\Indexability), jamais
+             *     par carte : au moins une photo, droits complets, marque et
+             *     categorie assez peuplees.
+             */
+            indexable: boolean;
+            indexable_reasons: ("no_product_photo" | "media_rights_incomplete" | "few_bikes_in_brand" | "few_bikes_in_category")[];
             year: number | null;
             /**
              * @description Un millesime inconnu se declare. 48 velos sur 98 n'en ont pas :
@@ -189,6 +206,12 @@ export interface components {
              *     un 29 pouces qu'il n'est pas.
              */
             wheel_size: string | null;
+            /**
+             * @description Machine, pas d'affichage sur une carte : le sitemap en a besoin
+             *     (`lastmod`). Pas de compagnon `_label` ici — rien dans le
+             *     catalogue n'affiche aujourd'hui de date de fraicheur par carte.
+             */
+            last_changed_at: string;
         };
         /** BuildResource */
         BuildResource: {
@@ -202,7 +225,24 @@ export interface components {
             family: {
                 key: string;
                 name: string;
+                slug: string;
             };
+            /**
+             * @description Absent (null) plutot qu'un seau approchant : un velo n'entre
+             *     jamais dans une categorie qu'il n'a pas.
+             */
+            category: {
+                key: string | null;
+                label: string;
+                slug: string | null;
+            } | null;
+            /**
+             * @description Calcule une fois par requete (App\Catalog\Indexability), jamais
+             *     par carte : au moins une photo, droits complets, marque et
+             *     categorie assez peuplees.
+             */
+            indexable: boolean;
+            indexable_reasons: ("no_product_photo" | "media_rights_incomplete" | "few_bikes_in_brand" | "few_bikes_in_category")[];
             year: number | null;
             /** @description Un champ inconnu est declare absent, jamais omis ni estime. */
             year_label: string;
@@ -268,7 +308,12 @@ export interface components {
             }[];
             freshness: {
                 last_checked_at: string;
+                /**
+                 * @description ISO 8601 : machine, pour le `lastmod` du sitemap. Le front
+                 *     affiche `last_changed_label` — jamais cette valeur brute.
+                 */
                 last_changed_at: string;
+                last_changed_label: string | null;
             };
         };
         /** CompareResource */
