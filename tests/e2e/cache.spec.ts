@@ -25,7 +25,9 @@ const ROUTE = '/api/revalidate';
  */
 const FICHES = {
   desktop: { path: '/en-sa/bikes/giant/anthem-advanced-sl-0', tag: 'build:giant:anthem-advanced-sl-0' },
-  mobile: { path: '/en-sa/bikes/scott/scott-addict-10-bike', tag: 'build:scott:scott-addict-10-bike' },
+  // `addict-10` depuis le 8 septembre 2026 (scraper #5) : l'ancienne adresse
+  // `scott-addict-10-bike` repond 308, et son tag ne purge plus rien.
+  mobile: { path: '/en-sa/bikes/scott/addict-10', tag: 'build:scott:addict-10' },
 } as const;
 
 /** La fiche du contrat, lue par d'autres specs — jamais invalidee ici. */
