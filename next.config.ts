@@ -4,12 +4,25 @@ const nextConfig: NextConfig = {
   /**
    * La racine n'existe pas : tout vit sous une locale, et le layout racine —
    * qui porte <html dir> — vit sous `[locale]`. L'arabe est la marque, il est
-   * donc la destination. En 307, pas en 308 : rien n'est grave en cache avant
-   * le lancement, et une future negociation de langue restera possible.
+   * donc la destination.
+   *
+   * En 308 depuis le 7 septembre 2026 : les URL sont figees (decision du
+   * 5 septembre), le 307 ne se justifiait que par leur caractere mouvant.
+   * Jamais de negociation de langue par IP ici — Googlebot crawle depuis les
+   * Etats-Unis sans `Accept-Language`, il doit voir la meme racine que tout
+   * le monde.
    */
   async redirects() {
-    return [{ source: '/', destination: '/ar-sa', permanent: false }];
+    return [{ source: '/', destination: '/ar-sa', permanent: true }];
   },
+
+  /**
+   * Le slash final est retire par `src/proxy.ts`, en meme temps que la casse
+   * et en un seul saut. La redirection native de Next se declenchait AVANT le
+   * proxy : `/EN-SA/Bikes/` coutait deux 308 (constate le 8 septembre 2026).
+   * Option documentee pour exactement ce cas (`proxy.md`, Advanced Proxy flags).
+   */
+  skipTrailingSlashRedirect: true,
 
   /**
    * Aucune indexation tant que les URL ne sont pas figees (decision du
