@@ -112,6 +112,15 @@ ont chacune une page à chemin propre. Les chemins sont construits par `src/lib/
   `/{locale}/bikes/{brand.slug}/{slug}`. Un slug inconnu de l'API reste 404. `tests/e2e/redirects.spec.ts` : le cas
   `fuel-mx-9-8-xt` → `…-gen-7-81563` est en `test.fixme` jusqu'à la semence côté API (vérifié en local contre une API
   simulée qui renvoie la fiche vivante sur l'ancien slug).
+- **Une seule forme canonique par adresse** (décision du 5 septembre 2026, `../CLAUDE.md` Routes point 6 ; issue #17,
+  livrée le 8 septembre) : minuscules, sans slash final, apex sans `www`. Google traite les URL comme sensibles à la
+  casse — chaque variante tolérée est un doublon. Trois mécanismes, chacun à sa place : la racine `/` → `/ar-sa` en
+  **308** (`next.config.ts`, `permanent: true` — les URL sont figées, le 307 n'avait plus de raison ; jamais de
+  négociation de langue par IP) ; la **casse** par `src/proxy.ts` — le `middleware.ts` de Next 16, renommé — qui
+  redirige en 308 tout chemin portant une majuscule vers sa forme en minuscules, **chemin seulement, jamais la query**
+  (`?builds=` porte des slugs, le futur `?q=` du texte saisi), en un seul saut, slash final compris, `/api/`, `/_next/` et
+  les fichiers statiques exclus ; le **slash final** seul reste à Next (`trailingSlash: false`, 308 natif) ; `www` → apex
+  est une règle nginx du site Forge (301, un saut), pas du code. `tests/e2e/redirects.spec.ts` couvre les six cas.
 
 ## Cache — rendre une fois, invalider au changement
 
