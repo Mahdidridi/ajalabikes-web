@@ -42,6 +42,22 @@ export function direction(locale: Locale): 'rtl' | 'ltr' {
 
 const BASE = process.env.API_BASE_URL ?? 'http://127.0.0.1:8000/api';
 
+/** Refus métier attendu, distinct d'une panne réseau/serveur. Jamais de corps API dans l'UI. */
+export class ApiValidationError extends Error {
+  constructor() {
+    super('Invalid API selection');
+    this.name = 'ApiValidationError';
+  }
+}
+
+// Paramètres de mesure explicitement supportés, pas des filtres métier.
+// Ne pas ignorer toutes les clés inconnues : une faute dans un filtre doit
+// toujours être signalée par l'API, seule source de validation du catalogue.
+const TRACKING_PARAMS = new Set([
+  'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'utm_id',
+  'gclid', 'fbclid', 'msclkid', 'gbraid', 'wbraid',
+]);
+
 /**
  * Toutes les lectures sont cachees par Next et invalidees PAR TAG depuis l'API
  * (contrat du 2 septembre 2026, `tasks/2026-09-02-cache-contrat.md`). Les 24 h
@@ -83,10 +99,9 @@ export async function getBuild(
 /**
  * Le catalogue, filtre par l'API.
  *
- * Les parametres sont transmis TELS QUELS : l'API decide de ce qu'elle
- * accepte et refuse un filtre inconnu par un 422. Filtrer ici ferait un second
- * endroit ou maintenir la liste, et le front finirait par masquer une erreur
- * plutot que de la remonter.
+ * Seuls les paramètres de mesure explicitement reconnus sont retirés. Les
+ * filtres sont transmis tels quels : l'API décide de leur validité (422).
+ * Deux liens ne différant que par leur suivi partagent donc la même entrée cache.
  */
 export async function getCatalog(
   locale: Locale,
@@ -94,11 +109,13 @@ export async function getCatalog(
 ): Promise<CatalogPage> {
   const query = new URLSearchParams();
   for (const [cle, valeur] of Object.entries(params)) {
+    if (TRACKING_PARAMS.has(cle)) continue;
     if (valeur !== undefined && valeur !== '') query.set(cle, valeur);
   }
 
   const res = await fetch(`${BASE}/v1/${locale}/builds?${query}`, cached(['catalog']));
 
+  if (res.status === 422) throw new ApiValidationError();
   if (!res.ok) throw new Error(`API ${res.status} sur le catalogue`);
 
   return res.json();
@@ -162,6 +179,7 @@ export async function getCompare(
   const res = await fetch(`${BASE}/v1/${locale}/compare?${query}`, cached(['compare']));
 
   if (res.status === 404) return null;
+  if (res.status === 422) throw new ApiValidationError();
   if (!res.ok) throw new Error(`API ${res.status} sur la comparaison`);
 
   const payload: CompareResponse = await res.json();

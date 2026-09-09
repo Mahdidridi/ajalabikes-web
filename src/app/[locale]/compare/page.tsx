@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ComparePicker } from '@/components/ComparePicker';
 import { SizeSelect } from '@/components/SizeSelect';
-import { getCatalog, getCompare, isLocale, type BuildCard, type Locale } from '@/lib/api';
+import { InvalidSelection } from '@/components/InvalidSelection';
+import { ApiValidationError, getCatalog, getCompare, isLocale, type BuildCard, type Locale } from '@/lib/api';
 import { sizeCatalogue } from '@/lib/images';
 import { seoFor } from '@/lib/seo';
 
@@ -78,9 +79,15 @@ export default async function ComparePage({ params, searchParams }: PageProps<'/
   const carteDe = new Map(catalogue.data.map((b) => [`${b.brand.slug}/${b.slug}`, b]));
 
   // La comparaison n'existe qu'à partir de deux vélos — l'API le garantit.
-  const data = paires.length >= 2
-    ? await getCompare(locale, paires.join(','), sizes.some(Boolean) ? sizes.map((s) => s ?? '').join(',') : undefined)
-    : null;
+  let data;
+  try {
+    data = paires.length >= 2
+      ? await getCompare(locale, paires.join(','), sizes.some(Boolean) ? sizes.map((s) => s ?? '').join(',') : undefined)
+      : null;
+  } catch (error) {
+    if (error instanceof ApiValidationError) return <InvalidSelection locale={locale} context="compare" />;
+    throw error;
+  }
   if (paires.length >= 2 && data === null) notFound();
 
   const cartes: BuildCard[] = data

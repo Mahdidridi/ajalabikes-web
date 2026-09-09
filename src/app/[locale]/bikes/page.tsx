@@ -4,7 +4,8 @@ import { notFound } from 'next/navigation';
 import { BikeCard } from '@/components/BikeCard';
 import { CatalogFilters } from '@/components/CatalogFilters';
 import { JsonLd } from '@/components/JsonLd';
-import { getCatalog, isLocale, type Locale } from '@/lib/api';
+import { InvalidSelection } from '@/components/InvalidSelection';
+import { ApiValidationError, getCatalog, isLocale, type Locale } from '@/lib/api';
 import { itemListJsonLd } from '@/lib/jsonld';
 import { seoFor } from '@/lib/seo';
 import { bikesCount } from '@/lib/vocabulary';
@@ -85,7 +86,13 @@ export default async function CatalogPage({
     Object.entries(query).map(([c, v]) => [c, Array.isArray(v) ? v[0] : v]),
   );
 
-  const page = await getCatalog(locale, plats);
+  let page;
+  try {
+    page = await getCatalog(locale, plats);
+  } catch (error) {
+    if (error instanceof ApiValidationError) return <InvalidSelection locale={locale} context="bikes" />;
+    throw error;
+  }
   const t = COPY[locale as Locale];
 
   // « Afficher plus » est CUMULATIF : le lien re-demande la même page avec un
