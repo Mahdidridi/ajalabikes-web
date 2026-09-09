@@ -191,6 +191,13 @@ export interface components {
              */
             year_label: string;
             /**
+             * @description L'adresse MODELE (issue #21) — null pour un velo nomme comme sa
+             *     famille dans une famille a plusieurs modeles : cette adresse
+             *     appartient alors a la page famille, pas a lui. Calcule une fois
+             *     par requete (App\Catalog\BuildEditions), jamais par carte.
+             */
+            model_path: string | null;
+            /**
              * @description Formate par Laravel, dans la locale demandee. Aucun montant n'est
              *     mis en forme cote front.
              */
@@ -246,6 +253,23 @@ export interface components {
             year: number | null;
             /** @description Un champ inconnu est declare absent, jamais omis ni estime. */
             year_label: string;
+            /**
+             * @description Deux adresses par velo (issue #21, decision du 5 septembre 2026).
+             *     `is_current` : cette edition est-elle le millesime le plus
+             *     recent de son modele. `model_path` : l'adresse SANS annee —
+             *     null si elle appartient a la page famille (regle 4). `editions`
+             *     : toutes les adresses millesime connues, la plus recente
+             *     d'abord ; une edition sans annee n'y figure pas, elle n'a que
+             *     l'adresse modele. Calcule une fois par requete
+             *     (App\Catalog\BuildEditions), jamais par fiche.
+             */
+            is_current: boolean;
+            model_path: string | null;
+            editions: {
+                year: number;
+                path: string;
+                is_current: boolean;
+            }[];
             msrp: {
                 formatted: string | null;
                 amount_minor: number | null;
@@ -297,6 +321,12 @@ export interface components {
                 description: string;
             } | null)[];
             components: {
+                id: number;
+                size_label: string | null;
+                size_note: string | null;
+                unit_original: string | null;
+                description_formatted: string;
+                unit_note: string | null;
                 key: string;
                 /**
                  * @description "shortSpecFork" est une cle d'API Trek, pas un mot que quelqu'un
