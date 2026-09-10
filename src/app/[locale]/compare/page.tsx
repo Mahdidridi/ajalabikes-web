@@ -3,6 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ComparePicker } from '@/components/ComparePicker';
+import { ComparisonSection } from '@/components/ComparisonSection';
 import { SizeSelect } from '@/components/SizeSelect';
 import { InvalidSelection } from '@/components/InvalidSelection';
 import { ApiValidationError, getCatalog, getCompare, isLocale, type BuildCard, type Locale } from '@/lib/api';
@@ -222,60 +223,13 @@ export default async function ComparePage({ params, searchParams }: PageProps<'/
           </thead>
 
           {sections?.map((section) => (
-            <tbody key={section.key}>
-              <tr>
-                {/* `rowgroup` : ces titres coiffent un groupe de LIGNES, pas de
-                    colonnes. Le `h2` reste un vrai titre — sans lui, la page
-                    n'a plus qu'un seul niveau et la navigation par titres
-                    d'un lecteur d'écran ne mène nulle part. */}
-                <th scope="rowgroup" colSpan={largeurTotale} className="pb-2 pt-6 text-start">
-                  <h2 className="text-lg font-bold">{section.label}</h2>
-                </th>
-              </tr>
-
-              {section.requires_sizes && section.hint && (
-                <tr>
-                  <td colSpan={largeurTotale}>
-                    <p className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-muted">
-                      {section.hint}
-                    </p>
-                  </td>
-                </tr>
-              )}
-
-              {section.rows.map((row) => (
-                <tr key={row.key} className="border-t border-border">
-                  <th scope="row" className="py-2 pe-3 text-start align-top text-xs font-medium text-muted">
-                    {row.label}
-                  </th>
-                  {row.cells.map((cell, i) => (
-                    <td
-                      key={i}
-                      className={`whitespace-pre-line px-2 py-2 align-top tabular-nums ${
-                        row.status === 'differs' ? 'font-medium' : ''
-                      }`}
-                    >
-                      {cell === null ? (
-                        <span className="text-muted">{t.dash}</span>
-                      ) : (
-                        <>
-                          {/* `dir="auto"` isole chaque valeur : « 80 mm (492 mm
-                              axle-to-crown) » s'affichait « mm (…) 80 » en RTL,
-                              l'algorithme bidi détachant le nombre de tête. */}
-                          <span dir="auto">{cell.formatted}</span>
-                          {cell.original !== null && cell.original !== cell.formatted && (
-                            <span className="ms-2 text-xs text-muted" dir="ltr">
-                              {cell.original}
-                            </span>
-                          )}
-                        </>
-                      )}
-                    </td>
-                  ))}
-                  {peutAjouter && <td />}
-                </tr>
-              ))}
-            </tbody>
+            <ComparisonSection
+              key={section.key}
+              section={section}
+              columnCount={largeurTotale}
+              canAdd={peutAjouter}
+              dash={t.dash}
+            />
           ))}
         </table>
       </div>

@@ -3,6 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { BikeGallery } from '@/components/BikeGallery';
+import { ComponentList } from '@/components/ComponentList';
 import { JsonLd } from '@/components/JsonLd';
 import { SizePicker } from '@/components/SizePicker';
 import { getBuild, isLocale, type Locale } from '@/lib/api';
@@ -241,19 +242,7 @@ export default async function BuildPage({ params }: Props) {
         <h2 className="font-mono text-xs font-semibold uppercase tracking-widest opacity-60">
           {t.components}
         </h2>
-        <dl className="grid grid-cols-[minmax(140px,auto)_1fr] text-sm">
-          {build.components.map((c) => (
-            <div key={c.key} className="contents">
-              <dt className="border-b border-neutral-200 py-2 pe-3 opacity-70 dark:border-neutral-800">
-                {c.label}
-              </dt>
-              {/* Description constructeur : jamais traduite. */}
-              <dd className="border-b border-neutral-200 py-2 font-mono text-xs dark:border-neutral-800">
-                {c.description}
-              </dd>
-            </div>
-          ))}
-        </dl>
+        <ComponentList components={build.components} />
       </section>
 
       {/*
