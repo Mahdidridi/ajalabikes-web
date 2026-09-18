@@ -39,6 +39,25 @@ export function fill(template: string, values: Record<string, string>): string {
   return template.replace(/\{(\w+)\}/g, (_, key: string) => values[key] ?? '');
 }
 
+/** Le trait qui identifie un vélo : couleur ET motif, jamais la couleur seule. */
+export function SeriesMark({ index }: { index: number }) {
+  const serie = SERIES[index % SERIES.length];
+
+  return (
+    <svg aria-hidden="true" width="22" height="8" viewBox="0 0 22 8" className={serie.stroke}>
+      <line
+        x1="1"
+        y1="4"
+        x2="21"
+        y2="4"
+        stroke="currentColor"
+        strokeWidth="3"
+        strokeDasharray={serie.dash}
+      />
+    </svg>
+  );
+}
+
 export type GeometryFigureLabels = {
   /** Nom accessible de la figure entière. */
   title: string;
@@ -263,22 +282,11 @@ export function GeometryFigure({
       </div>
       <figcaption className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
         {figure.bikes.map((bike, i) => {
-          if (!bike.drawable || bike.points === null) return null;
-          const serie = SERIES[i % SERIES.length];
+          if (!estDessine(bike)) return null;
 
           return (
             <span key={i} className="inline-flex items-center gap-2">
-              <svg aria-hidden="true" width="22" height="8" viewBox="0 0 22 8" className={serie.stroke}>
-                <line
-                  x1="1"
-                  y1="4"
-                  x2="21"
-                  y2="4"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  strokeDasharray={serie.dash}
-                />
-              </svg>
+              <SeriesMark index={i} />
               <bdi className="font-mono">{nommer(i)}</bdi>
             </span>
           );

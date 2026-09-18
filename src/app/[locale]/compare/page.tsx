@@ -35,6 +35,7 @@ const COPY = {
       highlighted: 'القياس المميَّز: {label}.',
       nothingToDraw: 'لا يمكن رسم أي إطار بالقياسات المنشورة.',
       listSeparator: '، ',
+      size: 'مقاس {label}',
       explain: 'شرح {label}',
       highlight: 'إبراز {label} في الرسم',
       notPublished: 'غير منشور',
@@ -64,6 +65,7 @@ const COPY = {
       highlighted: 'Highlighted measurement: {label}.',
       nothingToDraw: 'No frame can be drawn from the published measurements.',
       listSeparator: ', ',
+      size: 'Size for {label}',
       explain: 'Explain {label}',
       highlight: 'Highlight {label} on the drawing',
       notPublished: 'Not published',
@@ -165,6 +167,12 @@ export default async function ComparePage({ params, searchParams }: PageProps<'/
   const velosDeLaPlanche = cartes.map((bike, i) => ({
     name: `${bike.brand.name} ${bike.model_name}`,
     size: data?.sizes_selected[i] ?? null,
+    // Les mêmes URL que le sélecteur de la carte : une seule construction, côté
+    // serveur, pour que la taille se choisisse aussi sous les yeux du dessin.
+    sizeOptions: bike.sizes.map((label) => ({
+      label,
+      href: urlCompare(paires, sizes.map((s, j) => (j === i ? label : s)), diffOnly),
+    })),
   }));
 
   // Cartes et données partagent UNE table : c'est ce qui garantit que la
