@@ -1,4 +1,5 @@
 /** @jsxImportSource react */
+import { useId } from 'react';
 import type { CompareFigure } from '@/lib/api';
 
 /**
@@ -9,8 +10,10 @@ import type { CompareFigure } from '@/lib/api';
  * qui donne le `viewBox`, et l'axe Y est retourné par une transformation SVG
  * déclarative — jamais coordonnée par coordonnée.
  *
- * Décision du 18 septembre 2026 : le dessin reste `dir="ltr"` même en arabe. Un
- * cadre miroir serait un autre vélo ; l'axe avant est toujours à droite.
+ * Le dessin reste `dir="ltr"` même en arabe — un cadre miroir serait un autre
+ * vélo, l'axe avant est toujours à droite. C'est la règle RTL du projet, pas une
+ * décision propre à ce composant : le sens est posé sur le dessin SEUL, jamais
+ * sur la figure, dont la légende doit suivre la page (corrigé le 18 sept. 2026).
  */
 
 /** Marge visuelle constante autour du rectangle englobant, en millimètres. */
@@ -53,22 +56,41 @@ export type GeometryFigureLabels = {
 
 type Bike = { name: string; size: string | null };
 
+/** Un couple de coordonnées utilisable : le contrat l'exige, on ne le suppose pas. */
+function finies(point: readonly [number, number] | undefined): point is [number, number] {
+  return point !== undefined && Number.isFinite(point[0]) && Number.isFinite(point[1]);
+}
+
+/**
+ * Un vélo est dessiné s'il a au moins un point utilisable. C'est la MÊME
+ * définition pour le rectangle englobant, pour le tracé et pour la description
+ * accessible : sinon la page annonce un cadre qu'elle ne dessine pas.
+ */
+function estDessine(bike: CompareFigure['bikes'][number]): boolean {
+  return bike.drawable
+    && bike.points !== null
+    && Object.values(bike.points).some((point) => finies(point));
+}
+
 function boundingBox(figure: CompareFigure): [number, number, number, number] | null {
   const xs: number[] = [];
   const ys: number[] = [];
 
   for (const bike of figure.bikes) {
-    if (!bike.drawable || bike.points === null) continue;
+    if (!estDessine(bike) || bike.points === null) continue;
 
-    for (const [x, y] of Object.values(bike.points)) {
-      if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
-      xs.push(x);
-      ys.push(y);
+    for (const point of Object.values(bike.points)) {
+      if (!finies(point)) continue;
+      xs.push(point[0]);
+      ys.push(point[1]);
     }
 
-    if (bike.wheels !== null) {
+    // Les roues sont filtrées comme les points : un rayon non fini mettait tout
+    // le viewBox à NaN et faisait disparaître le schéma, sans erreur console.
+    if (bike.wheels !== null && Number.isFinite(bike.wheels.radius)) {
       const { radius, ground_y: ground } = bike.wheels;
       for (const { center } of [bike.wheels.front, bike.wheels.rear]) {
+        if (!finies(center)) continue;
         xs.push(center[0] - radius, center[0] + radius);
         ys.push(center[1] - radius, center[1] + radius);
       }
@@ -88,24 +110,27 @@ function boundingBox(figure: CompareFigure): [number, number, number, number] | 
   return [minX, -maxY, maxX - minX, maxY - minY];
 }
 
-export function GeometryFigure({ figure, bikes, activeMark, activeLabel, labels }: {
+export function GeometryFigure({
+  figure, bikes, activeMark, activeLabel, labels, measureLabels = {},
+}: {
   figure: CompareFigure;
   bikes: Bike[];
   activeMark?: string | null;
   activeLabel?: string | null;
   labels: GeometryFigureLabels;
+  /** Libellé traduit de chaque cote, par clé — pour nommer ce qui manque. */
+  measureLabels?: Record<string, string>;
 }) {
+  const descriptionId = useId();
   const box = boundingBox(figure);
   const nommer = (i: number) => [bikes[i]?.name, bikes[i]?.size].filter(Boolean).join(' · ');
 
   const dessines = figure.bikes
-    .map((bike, i) => (bike.drawable && bike.points !== null ? nommer(i) : null))
+    .map((bike, i) => (estDessine(bike) ? nommer(i) : null))
     .filter((nom): nom is string => nom !== null);
 
   const absents = figure.bikes
-    .map((bike, i) => (bike.drawable && bike.points !== null
-      ? null
-      : { nom: nommer(i), missing: bike.missing }))
+    .map((bike, i) => (estDessine(bike) ? null : { nom: nommer(i), missing: bike.missing }))
     .filter((absent): absent is { nom: string; missing: string[] } => absent !== null);
 
   const marque = activeMark ? figure.marks.find((m) => m.key === activeMark) ?? null : null;
@@ -114,9 +139,13 @@ export function GeometryFigure({ figure, bikes, activeMark, activeLabel, labels 
     dessines.length > 0
       ? fill(labels.drawn, { bikes: dessines.join(labels.listSeparator) })
       : labels.nothingToDraw,
+    // Une cote absente se nomme dans la langue de la page : « stack » n'est pas
+    // une information pour qui lit la page en arabe.
     ...absents.map((a) => fill(labels.undrawable, {
       bike: a.nom,
-      missing: a.missing.join(labels.listSeparator),
+      missing: a.missing
+        .map((cle) => measureLabels[cle] ?? cle)
+        .join(labels.listSeparator),
     })),
     marque !== null && activeLabel ? fill(labels.highlighted, { label: activeLabel }) : null,
   ].filter(Boolean).join(' ');
@@ -132,26 +161,30 @@ export function GeometryFigure({ figure, bikes, activeMark, activeLabel, labels 
   const [x, y, largeur, hauteur] = box;
 
   return (
-    // `dir` n'est pas une propriété SVG : c'est le conteneur qui fixe le sens,
-    // et le dessin l'hérite. Un cadre miroir serait un autre vélo.
-    <figure className="m-0" dir="ltr">
-      <svg
-        role="img"
-        aria-label={labels.title}
-        aria-describedby="geometry-figure-desc"
-        viewBox={`${x} ${y} ${largeur} ${hauteur}`}
-        preserveAspectRatio="xMidYMid meet"
-        className="w-full"
-        style={{ aspectRatio: `${largeur} / ${hauteur}` }}
-      >
-        <desc id="geometry-figure-desc">{description}</desc>
+    <figure className="m-0">
+      {/* Le sens est fixé sur le DESSIN seul : `dir` n'est pas une propriété SVG,
+          et posé sur la figure entière il alignait la légende latine à gauche
+          dans la page arabe. Un cadre miroir serait un autre vélo. */}
+      <div dir="ltr">
+        <svg
+          role="img"
+          aria-label={labels.title}
+          aria-describedby={descriptionId}
+          viewBox={`${x} ${y} ${largeur} ${hauteur}`}
+          preserveAspectRatio="xMidYMid meet"
+          className="w-full"
+          style={{ aspectRatio: `${largeur} / ${hauteur}` }}
+        >
+          <desc id={descriptionId}>{description}</desc>
         {/* Y vers le haut côté données, vers le bas côté SVG : une seule bascule. */}
         <g transform="scale(1 -1)" fill="none" strokeLinecap="round" strokeLinejoin="round">
           {figure.bikes.map((bike, i) => {
-            if (!bike.drawable || bike.points === null) return null;
+            if (!estDessine(bike) || bike.points === null) return null;
             const serie = SERIES[i % SERIES.length];
             const points = bike.points;
-            const roues = bike.wheels;
+            const roues = bike.wheels !== null && Number.isFinite(bike.wheels.radius)
+              ? bike.wheels
+              : null;
 
             return (
               // Une cote active estompe les cadres : le contraste vient du
@@ -189,7 +222,9 @@ export function GeometryFigure({ figure, bikes, activeMark, activeLabel, labels 
                 {bike.segments !== null && Object.entries(bike.segments).map(([nom, [depuis, vers]]) => {
                   const a = points[depuis];
                   const b = points[vers];
-                  if (a === undefined || b === undefined) return null;
+                  // Une extrémité absente ou non finie ferait partir la ligne du
+                  // boîtier : le navigateur ramène un attribut invalide à 0.
+                  if (!finies(a) || !finies(b)) return null;
 
                   return <line key={nom} x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} strokeWidth={6} />;
                 })}
@@ -223,8 +258,9 @@ export function GeometryFigure({ figure, bikes, activeMark, activeLabel, labels 
               </g>
             );
           })}
-        </g>
-      </svg>
+          </g>
+        </svg>
+      </div>
       <figcaption className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
         {figure.bikes.map((bike, i) => {
           if (!bike.drawable || bike.points === null) return null;

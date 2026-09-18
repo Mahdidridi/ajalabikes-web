@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useId, useState } from 'react';
 import { fill, GeometryFigure, type GeometryFigureLabels } from '@/components/GeometryFigure';
 import type { CompareSection, GeometryGlossary } from '@/lib/api';
 
@@ -58,7 +58,12 @@ export function GeometryBlock({ section, bikes, glossary, labels }: {
   }, [onKeyDown]);
 
   const entries = new Map((glossary?.items ?? []).map((item) => [item.key, item]));
-  const libelle = (key: string) => section.rows.find((row) => row.key === key)?.label ?? key;
+  const measureLabels = Object.fromEntries(section.rows.map((row) => [row.key, row.label]));
+  const libelle = (key: string) => measureLabels[key] ?? key;
+  // Le titre garde un identifiant STABLE : la section est unique sur la page et
+  // sert d'ancre (`#geometry-heading`). Les panneaux, eux, se répètent : leur
+  // identifiant est généré, pour ne jamais se dupliquer.
+  const panneauId = useId();
 
   return (
     <section className="flex flex-col gap-4" aria-labelledby="geometry-heading">
@@ -78,6 +83,7 @@ export function GeometryBlock({ section, bikes, glossary, labels }: {
             activeMark={active}
             activeLabel={active ? libelle(active) : null}
             labels={labels}
+            measureLabels={measureLabels}
           />
         </div>
       )}
@@ -125,6 +131,7 @@ export function GeometryBlock({ section, bikes, glossary, labels }: {
                         <button
                           type="button"
                           aria-expanded={open === row.key}
+                          aria-controls={`${panneauId}-${row.key}`}
                           aria-label={fill(labels.explain, { label: row.label })}
                           onClick={() => {
                             setOpen(open === row.key ? null : row.key);
@@ -155,7 +162,7 @@ export function GeometryBlock({ section, bikes, glossary, labels }: {
                               LTR et s'aligne hors de sa colonne en arabe — et
                               `<bdi>` isole le contenu à l'intérieur, pour que le
                               signe ne saute pas de côté (18 septembre 2026). */}
-                          {cell.delta_formatted !== null && (
+                          {cell.delta_formatted !== null && cell.anomaly === null && (
                             <span className="mt-0.5 block font-mono text-xs text-muted">
                               <bdi>{cell.delta_formatted}</bdi>
                             </span>
@@ -165,7 +172,7 @@ export function GeometryBlock({ section, bikes, glossary, labels }: {
                               {labels.doubtful}
                             </span>
                           )}
-                          {cell.original !== null && cell.original !== cell.formatted && (
+                          {cell.original !== null && (
                             <span className="mt-0.5 block text-xs text-muted">
                               <bdi>{cell.original}</bdi>
                             </span>
@@ -178,7 +185,11 @@ export function GeometryBlock({ section, bikes, glossary, labels }: {
 
                 open === row.key && entry !== undefined ? (
                   <tr key={`${row.key}-explication`} className="border-t border-border/60">
-                    <td colSpan={bikes.length + 1} className="bg-surface px-3 py-3 text-sm">
+                    <td
+                      id={`${panneauId}-${row.key}`}
+                      colSpan={bikes.length + 1}
+                      className="bg-surface px-3 py-3 text-sm"
+                    >
                       <p>{entry.definition}</p>
                       <p className="mt-2">
                         <span className="font-semibold">{labels.effect} </span>
@@ -202,16 +213,21 @@ export function GeometryBlock({ section, bikes, glossary, labels }: {
                       {entry.related.length > 0 && (
                         <p className="mt-2 text-xs text-muted">
                           <span className="font-semibold">{labels.related} </span>
-                          {entry.related.map((key) => (
-                            <button
-                              key={key}
-                              type="button"
-                              onClick={() => { setOpen(key); setActive(key); }}
-                              className="me-2 underline underline-offset-2 transition hover:text-foreground"
-                            >
-                              {libelle(key)}
-                            </button>
-                          ))}
+                          {/* Une cote liée que le filtre « différences seules »
+                              a retirée du tableau n'a pas de ligne à ouvrir :
+                              elle ne devient pas un lien mort. */}
+                          {entry.related
+                            .filter((key) => key in measureLabels)
+                            .map((key) => (
+                              <button
+                                key={key}
+                                type="button"
+                                onClick={() => { setOpen(key); setActive(key); }}
+                                className="me-2 underline underline-offset-2 transition hover:text-foreground"
+                              >
+                                {libelle(key)}
+                              </button>
+                            ))}
                         </p>
                       )}
                     </td>

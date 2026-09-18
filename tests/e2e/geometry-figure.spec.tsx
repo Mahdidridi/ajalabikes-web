@@ -107,7 +107,7 @@ test('seul le vélo dessinable est tracé, et le manquant est nommé avec ses co
   await expect(page.locator('svg[role=img] line[stroke-width="6"]')).toHaveCount(5);
   await expect(page.locator('svg[role=img] circle[r="340"]')).toHaveCount(2);
 
-  const description = page.locator('#geometry-figure-desc');
+  const description = page.locator('svg[role=img] desc');
   await expect(description).toContainText('Frames drawn: Giant Talon 2 · M.');
   await expect(description).toContainText('Trek Marlin 5 · L is not drawn: stack, wheel_size not published.');
 });
@@ -134,15 +134,17 @@ test('une cote active surligne le repère fourni par l API, sans le recalculer',
   await expect(repere).toHaveCount(1);
   await expect(repere).toHaveAttribute('x1', '0');
   await expect(repere).toHaveAttribute('x2', '435');
-  await expect(page.locator('#geometry-figure-desc')).toContainText('Highlighted measurement: Reach.');
+  await expect(page.locator('svg[role=img] desc')).toContainText('Highlighted measurement: Reach.');
 });
 
 for (const dir of ['ltr', 'rtl'] as const) {
   test(`page ${dir} : le dessin reste LTR et l axe avant reste à droite`, async ({ page }) => {
     await page.setContent(`<main dir="${dir}">${render()}</main>`);
 
-    await expect(page.locator('figure')).toHaveAttribute('dir', 'ltr');
-    await expect(page.locator('figure')).toHaveCSS('direction', 'ltr');
+    // Le sens appartient au dessin seul : la légende, elle, suit la page.
+    await expect(page.locator('figure > div')).toHaveAttribute('dir', 'ltr');
+    await expect(page.locator('svg[role=img]')).toHaveCSS('direction', 'ltr');
+    await expect(page.locator('figcaption')).toHaveCSS('direction', dir);
 
     // Le miroir RTL est invisible à un test textuel : on mesure.
     const avant = await page.locator('svg[role=img] circle[r="340"]').first().boundingBox();
@@ -150,6 +152,36 @@ for (const dir of ['ltr', 'rtl'] as const) {
     expect(avant!.x).toBeGreaterThan(arriere!.x);
   });
 }
+
+test('les cotes manquantes sont nommées dans la langue de la page', async ({ page }) => {
+  await page.setContent(renderToStaticMarkup(
+    <GeometryFigure
+      figure={figure}
+      bikes={bikes}
+      labels={labels}
+      measureLabels={{ stack: 'Stack', wheel_size: 'Wheel size' }}
+    />,
+  ));
+
+  // « stack, wheel_size » n'est pas une information pour qui lit la page.
+  await expect(page.locator('svg[role=img] desc'))
+    .toContainText('is not drawn: Stack, Wheel size not published');
+});
+
+test('un vélo déclaré dessinable mais sans point utilisable n est pas annoncé comme dessiné', async ({ page }) => {
+  const creux: CompareFigure = {
+    ...figure,
+    bikes: [{ ...figure.bikes[0], points: { bb: [Number.NaN, 0] }, wheels: null, segments: null }],
+    marks: [],
+  };
+  await page.setContent(renderToStaticMarkup(
+    <GeometryFigure figure={creux} bikes={[bikes[0]]} labels={labels} />,
+  ));
+
+  await expect(page.locator('svg')).toHaveCount(0);
+  await expect(page.locator('p')).toContainText('No frame can be drawn.');
+  await expect(page.locator('p')).not.toContainText('Frames drawn');
+});
 
 test('sans aucun cadre dessinable, aucun SVG trompeur n est rendu', async ({ page }) => {
   const vide: CompareFigure = { ...figure, bikes: [figure.bikes[1]], marks: [] };
