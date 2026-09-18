@@ -39,6 +39,11 @@ export type CompareData = CompareResponse['data'];
 export type CompareSection = CompareData['sections'][number];
 export type CompareRow = CompareSection['rows'][number];
 
+/** La figure de cadre calculée par Laravel : points, segments, roues, repères. */
+export type CompareFigure = NonNullable<CompareSection['figure']>;
+export type CompareFigureBike = CompareFigure['bikes'][number];
+export type CompareFigureMark = CompareFigure['marks'][number];
+
 export function isLocale(value: string): value is Locale {
   return (LOCALES as readonly string[]).includes(value);
 }
