@@ -75,10 +75,11 @@ const figure: CompareFigure = {
 
 const labels: GeometryFigureLabels = {
   title: 'Overlaid frames',
-  drawn: (bikes) => `Frames drawn: ${bikes.join(', ')}.`,
-  undrawable: (bike, missing) => `${bike} is not drawn: ${missing.join(', ')} not published.`,
-  highlighted: (label) => `Highlighted measurement: ${label}.`,
+  drawn: 'Frames drawn: {bikes}.',
+  undrawable: '{bike} is not drawn: {missing} not published.',
+  highlighted: 'Highlighted measurement: {label}.',
   nothingToDraw: 'No frame can be drawn.',
+  listSeparator: ', ',
 };
 
 const bikes = [
@@ -129,7 +130,7 @@ test('le viewBox englobe roues et sol, avec la marge constante', async ({ page }
 test('une cote active surligne le repère fourni par l API, sans le recalculer', async ({ page }) => {
   await page.setContent(render('reach'));
 
-  const repere = page.locator('svg[role=img] g[stroke-width="9"] line');
+  const repere = page.locator('svg[role=img] g[stroke-width="10"] line');
   await expect(repere).toHaveCount(1);
   await expect(repere).toHaveAttribute('x1', '0');
   await expect(repere).toHaveAttribute('x2', '435');

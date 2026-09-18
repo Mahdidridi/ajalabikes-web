@@ -26,17 +26,29 @@ const SERIES = [
   { stroke: 'text-[#6D28D9] dark:text-[#C4B5FD]', dash: '2 3' },
 ] as const;
 
+/**
+ * Les libellés traversent la frontière serveur → client : ce sont des chaînes à
+ * trous, jamais des fonctions. Next refuse de sérialiser une fonction vers un
+ * composant client, et ni le typecheck ni le build ne le disent — seule la page
+ * rendue le révèle, en 500.
+ */
+export function fill(template: string, values: Record<string, string>): string {
+  return template.replace(/\{(\w+)\}/g, (_, key: string) => values[key] ?? '');
+}
+
 export type GeometryFigureLabels = {
   /** Nom accessible de la figure entière. */
   title: string;
-  /** Introduit la description accessible : « Cadres superposés … ». */
-  drawn: (bikes: string[]) => string;
-  /** Vélos que l'API déclare non dessinables, avec les cotes qui manquent. */
-  undrawable: (bike: string, missing: string[]) => string;
-  /** Cote actuellement surlignée. */
-  highlighted: (label: string) => string;
+  /** Description accessible : « Frames drawn: {bikes}. » */
+  drawn: string;
+  /** Vélo non dessinable : « {bike} is not drawn: {missing} not published. » */
+  undrawable: string;
+  /** Cote surlignée : « Highlighted measurement: {label}. » */
+  highlighted: string;
   /** Aucun cadre dessinable : on n'affiche pas un SVG trompeur. */
   nothingToDraw: string;
+  /** Sépare une énumération dans la langue de la page. */
+  listSeparator: string;
 };
 
 type Bike = { name: string; size: string | null };
@@ -99,9 +111,14 @@ export function GeometryFigure({ figure, bikes, activeMark, activeLabel, labels 
   const marque = activeMark ? figure.marks.find((m) => m.key === activeMark) ?? null : null;
 
   const description = [
-    dessines.length > 0 ? labels.drawn(dessines) : labels.nothingToDraw,
-    ...absents.map((a) => labels.undrawable(a.nom, a.missing)),
-    marque !== null && activeLabel ? labels.highlighted(activeLabel) : null,
+    dessines.length > 0
+      ? fill(labels.drawn, { bikes: dessines.join(labels.listSeparator) })
+      : labels.nothingToDraw,
+    ...absents.map((a) => fill(labels.undrawable, {
+      bike: a.nom,
+      missing: a.missing.join(labels.listSeparator),
+    })),
+    marque !== null && activeLabel ? fill(labels.highlighted, { label: activeLabel }) : null,
   ].filter(Boolean).join(' ');
 
   if (box === null) {
@@ -137,7 +154,15 @@ export function GeometryFigure({ figure, bikes, activeMark, activeLabel, labels 
             const roues = bike.wheels;
 
             return (
-              <g key={i} className={serie.stroke} stroke="currentColor" strokeDasharray={serie.dash}>
+              // Une cote active estompe les cadres : le contraste vient du
+              // retrait, jamais d'une couleur ajoutée qui vaudrait jugement.
+              <g
+                key={i}
+                className={serie.stroke}
+                stroke="currentColor"
+                strokeDasharray={serie.dash}
+                opacity={marque !== null ? 0.3 : 1}
+              >
                 {roues !== null && (
                   <>
                     <line
@@ -183,8 +208,11 @@ export function GeometryFigure({ figure, bikes, activeMark, activeLabel, labels 
                 key={`mark-${i}`}
                 className={serie.stroke}
                 stroke="currentColor"
-                strokeWidth={9}
-                opacity={0.9}
+                strokeWidth={10}
+                // Le motif suit la série jusque sur le repère : deux cotes
+                // presque égales se superposent, et sans lui la seconde
+                // masquerait la première.
+                strokeDasharray={serie.dash}
               >
                 {repere.segments.map(([a, b], j) => (
                   <line key={j} x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} />

@@ -4,9 +4,13 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ComparePicker } from '@/components/ComparePicker';
 import { ComparisonSection } from '@/components/ComparisonSection';
+import { GeometryBlock } from '@/components/GeometryBlock';
 import { SizeSelect } from '@/components/SizeSelect';
 import { InvalidSelection } from '@/components/InvalidSelection';
-import { ApiValidationError, getCatalog, getCompare, isLocale, type BuildCard, type Locale } from '@/lib/api';
+import {
+  ApiValidationError, getCatalog, getCompare, getGeometryGlossary, isLocale,
+  type BuildCard, type Locale,
+} from '@/lib/api';
 import { sizeCatalogue } from '@/lib/images';
 import { seoFor } from '@/lib/seo';
 
@@ -24,6 +28,22 @@ const COPY = {
     diff_only: 'الاختلافات فقط',
     all_rows: 'كل الصفوف',
     dash: '—',
+    geometry: {
+      title: 'الإطارات متراكبة',
+      drawn: 'الإطارات المرسومة: {bikes}.',
+      undrawable: '{bike}: لم يُرسم لأن {missing} غير منشورة.',
+      highlighted: 'القياس المميَّز: {label}.',
+      nothingToDraw: 'لا يمكن رسم أي إطار بالقياسات المنشورة.',
+      listSeparator: '، ',
+      explain: 'شرح {label}',
+      highlight: 'إبراز {label} في الرسم',
+      notPublished: 'غير منشور',
+      doubtful: 'قيمة منشورة مشكوك فيها',
+      effect: 'الأثر:',
+      caveat: 'تحفُّظ:',
+      sourceLabels: 'تسميات الشركة المصنِّعة:',
+      related: 'قياسات مرتبطة:',
+    },
   },
   'en-sa': {
     title: 'Compare bikes',
@@ -37,6 +57,22 @@ const COPY = {
     diff_only: 'Differences only',
     all_rows: 'All rows',
     dash: '—',
+    geometry: {
+      title: 'Overlaid frames',
+      drawn: 'Frames drawn: {bikes}.',
+      undrawable: '{bike} is not drawn: {missing} not published.',
+      highlighted: 'Highlighted measurement: {label}.',
+      nothingToDraw: 'No frame can be drawn from the published measurements.',
+      listSeparator: ', ',
+      explain: 'Explain {label}',
+      highlight: 'Highlight {label} on the drawing',
+      notPublished: 'Not published',
+      doubtful: 'Published value looks wrong',
+      effect: 'Effect:',
+      caveat: 'Caveat:',
+      sourceLabels: 'Manufacturer labels:',
+      related: 'Related measurements:',
+    },
   },
 } as const;
 
@@ -76,7 +112,10 @@ export default async function ComparePage({ params, searchParams }: PageProps<'/
 
   // Les 98 cartes alimentent le sélecteur ET les colonnes avant que la
   // comparaison existe (un seul vélo choisi). Un appel, celui du catalogue.
-  const catalogue = await getCatalog(locale, { per_page: '800' });
+  const [catalogue, glossaire] = await Promise.all([
+    getCatalog(locale, { per_page: '800' }),
+    getGeometryGlossary(locale),
+  ]);
   const carteDe = new Map(catalogue.data.map((b) => [`${b.brand.slug}/${b.slug}`, b]));
 
   // La comparaison n'existe qu'à partir de deux vélos — l'API le garantit.
@@ -116,6 +155,16 @@ export default async function ComparePage({ params, searchParams }: PageProps<'/
   const sections = data?.sections.map((section) => ({
     ...section,
     rows: diffOnly ? section.rows.filter((r) => r.status !== 'same') : section.rows,
+  }));
+
+  // La géométrie sort du tableau : elle a un dessin, une explication qui s'ouvre
+  // en place et sa propre grille lisible à 400 px. Les autres sections gardent
+  // le rendu générique, aligné sous les cartes.
+  const geometrie = sections?.find((s) => s.key === 'geometry') ?? null;
+  const autresSections = sections?.filter((s) => s.key !== 'geometry') ?? [];
+  const velosDeLaPlanche = cartes.map((bike, i) => ({
+    name: `${bike.brand.name} ${bike.model_name}`,
+    size: data?.sizes_selected[i] ?? null,
   }));
 
   // Cartes et données partagent UNE table : c'est ce qui garantit que la
@@ -222,7 +271,7 @@ export default async function ComparePage({ params, searchParams }: PageProps<'/
             </tr>
           </thead>
 
-          {sections?.map((section) => (
+          {autresSections.map((section) => (
             <ComparisonSection
               key={section.key}
               section={section}
@@ -233,6 +282,15 @@ export default async function ComparePage({ params, searchParams }: PageProps<'/
           ))}
         </table>
       </div>
+
+      {geometrie && (
+        <GeometryBlock
+          section={geometrie}
+          bikes={velosDeLaPlanche}
+          glossary={glossaire}
+          labels={t.geometry}
+        />
+      )}
     </main>
   );
 }
