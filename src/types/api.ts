@@ -123,6 +123,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/{locale}/glossary/geometry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["glossary.geometry.show"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -292,12 +308,86 @@ export interface components {
                 wheel_size: string | null;
                 rider_height: string | null;
                 rider_inseam: string | null;
+                figure: {
+                    /** @constant */
+                    unit: "mm";
+                    drawable: boolean;
+                    missing: string[];
+                    /** @enum {string|null} */
+                    sta_used: "seat_tube_angle_effective" | "seat_tube_angle" | null;
+                    /** @enum {string|null} */
+                    front_axle_method: "wheelbase" | "front_center" | null;
+                    points: {
+                        [key: string]: [
+                            number,
+                            number
+                        ];
+                    } | null;
+                    wheels: {
+                        radius: number;
+                        /** @constant */
+                        method: "illustrative_nominal_outer_diameter";
+                        assumption: string;
+                        source_circumference_mm: number;
+                        rounding_mm: number;
+                        /** @constant */
+                        measurement: false;
+                        ground_y: number;
+                        front: {
+                            center: [
+                                number,
+                                number
+                            ];
+                        };
+                        rear: {
+                            center: [
+                                number,
+                                number
+                            ];
+                        };
+                    } | null;
+                    segments: {
+                        [key: string]: [
+                            string,
+                            string
+                        ];
+                    } | null;
+                    marks: {
+                        [key: string]: {
+                            value: number;
+                            /** @enum {string} */
+                            unit: "mm" | "deg";
+                            method: string;
+                            approximate: boolean;
+                            assumption: string | null;
+                            segments: [
+                                [
+                                    number,
+                                    number
+                                ],
+                                [
+                                    number,
+                                    number
+                                ]
+                            ][];
+                            polylines: [
+                                number,
+                                number
+                            ][][];
+                        };
+                    };
+                };
                 geometry: {
                     key: string;
                     label: string;
+                    /**
+                     * @description Une anomalie invalide la valeur canonique, y compris pendant
+                     *     l'etat transitoire avant que la commande ne la mette a null.
+                     */
                     value_formatted: string | null;
                     value_raw: number | null;
                     unit: string | null;
+                    anomaly: string | null;
                     /**
                      * @description La provenance reste visible a cote du normalise, deja assemblee :
                      *     le front n'a pas a decider s'il faut accoler l'unite.
@@ -359,16 +449,108 @@ export interface components {
                 label: string;
                 requires_sizes: boolean;
                 hint: string | null;
+                figure: {
+                    /** @constant */
+                    unit: "mm";
+                    bikes: {
+                        drawable: boolean;
+                        missing: string[];
+                        /** @enum {string|null} */
+                        sta_used: "seat_tube_angle_effective" | "seat_tube_angle" | null;
+                        /** @enum {string|null} */
+                        front_axle_method: "wheelbase" | "front_center" | null;
+                        points: {
+                            [key: string]: [
+                                number,
+                                number
+                            ];
+                        } | null;
+                        wheels: {
+                            radius: number;
+                            /** @constant */
+                            method: "illustrative_nominal_outer_diameter";
+                            assumption: string;
+                            source_circumference_mm: number;
+                            rounding_mm: number;
+                            /** @constant */
+                            measurement: false;
+                            ground_y: number;
+                            front: {
+                                center: [
+                                    number,
+                                    number
+                                ];
+                            };
+                            rear: {
+                                center: [
+                                    number,
+                                    number
+                                ];
+                            };
+                        } | null;
+                        segments: {
+                            [key: string]: [
+                                string,
+                                string
+                            ];
+                        } | null;
+                    }[];
+                    marks: {
+                        key: string;
+                        bikes: ({
+                            value: number;
+                            /** @enum {string} */
+                            unit: "mm" | "deg";
+                            method: string;
+                            approximate: boolean;
+                            assumption: string | null;
+                            segments: [
+                                [
+                                    number,
+                                    number
+                                ],
+                                [
+                                    number,
+                                    number
+                                ]
+                            ][];
+                            polylines: [
+                                number,
+                                number
+                            ][][];
+                        } | null)[];
+                    }[];
+                } | null;
                 rows: {
                     key: string;
                     label: string;
+                    /** @enum {string} */
+                    kind: "length" | "angle" | "ratio" | "text";
                     cells: ({
                         formatted: string;
                         original: string | null;
+                        value: number | null;
+                        unit: string | null;
+                        delta: number | null;
+                        delta_formatted: string | null;
+                        /** @enum {string|null} */
+                        anomaly: "unit_mismatch" | "out_of_range" | null;
                     } | null)[];
                     /** @enum {string} */
                     status: "same" | "differs" | "partial";
+                    labels_original: (string | null)[];
                 }[];
+            }[];
+        };
+        /** GeometryGlossaryResource */
+        GeometryGlossaryResource: {
+            items: {
+                key: string;
+                label: string;
+                definition: string;
+                effect: string;
+                caveat: string | null;
+                related: string[];
             }[];
         };
         /** ImageSizeResource */
@@ -397,7 +579,20 @@ export interface components {
             attribution: string | null;
         };
     };
-    responses: never;
+    responses: {
+        /** @description Not found */
+        ModelNotFoundException: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": {
+                    /** @description Error overview. */
+                    message: string;
+                };
+            };
+        };
+    };
     parameters: never;
     requestBodies: never;
     headers: never;
@@ -711,6 +906,29 @@ export interface operations {
                     };
                 };
             };
+        };
+    };
+    "glossary.geometry.show": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                locale: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description `GeometryGlossaryResource` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GeometryGlossaryResource"];
+                };
+            };
+            404: components["responses"]["ModelNotFoundException"];
         };
     };
 }
