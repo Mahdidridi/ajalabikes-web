@@ -27,10 +27,22 @@ type CompareResponse =
 export type CatalogPage = IndexResponse;
 export type Facets = IndexResponse['facets'];
 
+type GlossaryResponse =
+  operations['glossary.geometry.show']['responses'][200]['content']['application/json'];
+
+/** Le glossaire des cotes, rédigé par nous et servi par l'API. Types générés. */
+export type GeometryGlossary = GlossaryResponse;
+export type GeometryGlossaryItem = GeometryGlossary['items'][number];
+
 /** La comparaison complète : cartes, tailles choisies, matrice. Types générés. */
 export type CompareData = CompareResponse['data'];
 export type CompareSection = CompareData['sections'][number];
 export type CompareRow = CompareSection['rows'][number];
+
+/** La figure de cadre calculée par Laravel : points, segments, roues, repères. */
+export type CompareFigure = NonNullable<CompareSection['figure']>;
+export type CompareFigureBike = CompareFigure['bikes'][number];
+export type CompareFigureMark = CompareFigure['marks'][number];
 
 export function isLocale(value: string): value is Locale {
   return (LOCALES as readonly string[]).includes(value);
@@ -185,4 +197,21 @@ export async function getCompare(
   const payload: CompareResponse = await res.json();
 
   return payload.data;
+}
+
+/**
+ * Le glossaire des cotes, pour expliquer une mesure là où elle est lue.
+ *
+ * Un seul appel par page, rendu dans le HTML initial : ouvrir une explication ne
+ * déclenche aucune requête. Le tag `glossary` a rejoint les tags globaux de
+ * l'API le 18 septembre 2026 — une correction de texte purge donc la page, sans
+ * attendre le filet des 24 h.
+ */
+export async function getGeometryGlossary(locale: Locale): Promise<GeometryGlossary | null> {
+  const res = await fetch(`${BASE}/v1/${locale}/glossary/geometry`, cached(['glossary']));
+
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`API ${res.status} sur le glossaire`);
+
+  return res.json();
 }

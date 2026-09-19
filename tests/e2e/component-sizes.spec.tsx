@@ -28,12 +28,21 @@ for (const dir of ['ltr', 'rtl'] as const) {
   });
 }
 
+// Le contrat enrichi du 18 septembre rend value/unit/delta/anomaly requis sur
+// chaque cellule : une cellule de composant les porte à null, sans mesure.
+const cell = (formatted: string): NonNullable<CompareSection['rows'][number]['cells'][number]> => ({
+  formatted, original: null, value: null, unit: null,
+  delta: null, delta_formatted: null, anomaly: null,
+});
+
 const section: CompareSection = {
   key: 'components', label: 'Components', requires_sizes: true,
   hint: 'Choose a size for size-dependent components',
+  // Seule la section géométrie porte une figure (contrat #40) : ici, rien à dessiner.
+  figure: null,
   rows: [
-    { key: 'fork', label: 'Fork', status: 'same', cells: [{ formatted: 'Fox 36', original: null }, { formatted: 'Fox 36', original: null }] },
-    { key: 'stem', label: 'Stem', status: 'partial', cells: [null, { formatted: '90 mm', original: null }] },
+    { key: 'fork', label: 'Fork', kind: 'text', labels_original: ['Fork', 'Fork'], status: 'same', cells: [cell('Fox 36'), cell('Fox 36')] },
+    { key: 'stem', label: 'Stem', kind: 'text', labels_original: [null, 'Stem'], status: 'partial', cells: [null, cell('90 mm')] },
   ],
 };
 
