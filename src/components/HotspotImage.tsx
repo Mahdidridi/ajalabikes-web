@@ -147,7 +147,9 @@ export function HotspotImage({
           }}
         >
           {/* Une balise <img> : le SVG <image> n'a pas de srcset, et la place est
-              déjà réservée par le rapport du cadrage. Les deux URL viennent de l'API. */}
+              déjà réservée par le rapport du cadrage. Les deux URL viennent de l'API,
+              déjà converties par Laravel : next/image les réoptimiserait pour rien. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={image.image.sizes.detail.url}
             srcSet={`${image.image.sizes.detail.url} ${image.image.sizes.detail.w}w, ${image.image.sizes.detail_2x.url} ${image.image.sizes.detail_2x.w}w`}
@@ -283,6 +285,7 @@ export function HotspotImage({
             {/* Le gros plan : le rectangle `closeup` servi par l'API, découpé dans la
                 conversion `zoom`. Aucun recadrage décidé ici. */}
             <div className="relative w-full overflow-hidden rounded bg-[#f5f5f2]" style={{ aspectRatio: '1 / 1' }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={image.image.zoom.url}
                 alt=""

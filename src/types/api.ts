@@ -576,11 +576,16 @@ export interface components {
             image: {
                 w: number;
                 h: number;
+                /**
+                 * @description Une methode au type de retour declare, comme MediaResource : Scramble
+                 *     typerait un `new ImageSizeResource(...)` inline en nullable, et le front
+                 *     devrait garder contre un null qui n'arrive jamais.
+                 */
                 sizes: {
-                    detail: components["schemas"]["ImageSizeResource"] | null;
-                    detail_2x: components["schemas"]["ImageSizeResource"] | null;
+                    detail: components["schemas"]["ImageSizeResource"];
+                    detail_2x: components["schemas"]["ImageSizeResource"];
                 };
-                zoom: components["schemas"]["ImageSizeResource"] | null;
+                zoom: components["schemas"]["ImageSizeResource"];
             };
             view_box: [
                 number,

@@ -35,6 +35,15 @@ const nextConfig: NextConfig = {
         source: '/:path*',
         headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
       },
+      /*
+       * La route cachee /lab (image a hotspots, 23 septembre 2026) reste
+       * noindex APRES la levee du verrou global : ecrit ici, la ou on le
+       * cherchera, en doublon assume de la regle globale tant qu'elle existe.
+       */
+      {
+        source: '/:locale/lab/:path*',
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
+      },
     ];
   },
 
