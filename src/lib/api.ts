@@ -44,6 +44,16 @@ export type CompareFigure = NonNullable<CompareSection['figure']>;
 export type CompareFigureBike = CompareFigure['bikes'][number];
 export type CompareFigureMark = CompareFigure['marks'][number];
 
+/** L'image à hotspots servie par la fiche (null sans layout à jour). Types générés. */
+export type HotspotImage = NonNullable<Build['hotspot_image']>;
+export type Hotspot = HotspotImage['hotspots'][number];
+export type HotspotCalibration = HotspotImage['calibration']['by_size'][number];
+export type BuildFigure = BuildSize['figure'];
+
+type HotspotsIndexResponse =
+  operations['hotspots.index']['responses'][200]['content']['application/json'];
+export type HotspotsIndexItem = HotspotsIndexResponse['items'][number];
+
 export function isLocale(value: string): value is Locale {
   return (LOCALES as readonly string[]).includes(value);
 }
@@ -103,6 +113,37 @@ export async function getBuild(
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`API ${res.status} sur ${brand}/${slug}`);
 
+  const payload: ShowResponse = await res.json();
+
+  return payload.data;
+}
+
+/**
+ * Lectures SANS cache, réservées à la route cachée /lab (image à hotspots,
+ * 23 septembre 2026) : l'API locale de la démo n'a pas de webhook vers ce
+ * front, un `ajala:hotspots:place --apply` ne purgerait rien. Les pages
+ * publiques gardent `cached()`.
+ */
+function fresh(): RequestInit {
+  return { headers: { Accept: 'application/json' }, cache: 'no-store' };
+}
+
+export async function getHotspotsIndex(locale: Locale): Promise<HotspotsIndexItem[]> {
+  const res = await fetch(`${BASE}/v1/${locale}/hotspots/index`, fresh());
+  if (!res.ok) throw new Error(`API ${res.status} sur hotspots/index`);
+  const payload: HotspotsIndexResponse = await res.json();
+
+  return payload.items;
+}
+
+export async function getBuildFresh(
+  locale: Locale,
+  brand: string,
+  slug: string,
+): Promise<Build | null> {
+  const res = await fetch(`${BASE}/v1/${locale}/builds/${brand}/${slug}`, fresh());
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`API ${res.status} sur ${brand}/${slug}`);
   const payload: ShowResponse = await res.json();
 
   return payload.data;

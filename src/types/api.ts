@@ -139,6 +139,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/{locale}/hotspots/index": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["hotspots.index"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -302,6 +318,7 @@ export interface components {
              */
             images: components["schemas"]["MediaResource"][];
             geometry_chart: components["schemas"]["MediaResource"] | null;
+            hotspot_image: components["schemas"]["HotspotImageResource"] | null;
             sizes: {
                 label: string;
                 label_alt: string | null;
@@ -551,6 +568,101 @@ export interface components {
                 effect: string;
                 caveat: string | null;
                 related: string[];
+            }[];
+        };
+        /** HotspotImageResource */
+        HotspotImageResource: {
+            media_id: number;
+            image: {
+                w: number;
+                h: number;
+                sizes: {
+                    detail: components["schemas"]["ImageSizeResource"] | null;
+                    detail_2x: components["schemas"]["ImageSizeResource"] | null;
+                };
+                zoom: components["schemas"]["ImageSizeResource"] | null;
+            };
+            view_box: [
+                number,
+                number,
+                number,
+                number
+            ];
+            font_fraction: number;
+            reference_size: string;
+            /** @description La taille photographiee n'est enregistree nulle part : dite inconnue, jamais devinee. */
+            photographed_size: null;
+            calibration: {
+                method: string;
+                /** @constant */
+                approximate: true;
+                residual_px: number;
+                within_tolerance: boolean;
+                /**
+                 * @description Une LISTE dans l'ordre des tailles de la fiche, jamais une table par libelle :
+                 *     Laravel re-indexe en 0, 1, 2 toute table dont les cles sont numeriques, et les
+                 *     tailles route (49, 52, 54...) le sont. Trouve le 23 septembre sur l'Aethos.
+                 */
+                by_size: {
+                    size: string;
+                    origin_px: [
+                        number,
+                        number
+                    ];
+                    px_per_mm: number;
+                }[];
+            };
+            approximation_note: string;
+            hotspots: {
+                id: string;
+                n: number;
+                at: [
+                    number,
+                    number
+                ];
+                label_at: [
+                    number,
+                    number
+                ];
+                label_box: [
+                    number,
+                    number
+                ];
+                leader_to: [
+                    number,
+                    number
+                ];
+                /** @enum {string} */
+                side: "start" | "end";
+                closeup: [
+                    number,
+                    number,
+                    number,
+                    number
+                ];
+                label: string;
+                title: string;
+                description: string;
+                components: {
+                    id: number;
+                    size_label: string | null;
+                    unit_original: string | null;
+                    description_formatted: string;
+                    key: string;
+                    label: string;
+                    description: string;
+                }[];
+            }[];
+            attribution: string | null;
+        };
+        /** HotspotsIndexResource */
+        HotspotsIndexResource: {
+            items: {
+                brand: string;
+                slug: string;
+                model_name: string;
+                status: string;
+                path: string;
             }[];
         };
         /** ImageSizeResource */
@@ -929,6 +1041,28 @@ export interface operations {
                 };
             };
             404: components["responses"]["ModelNotFoundException"];
+        };
+    };
+    "hotspots.index": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                locale: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description `HotspotsIndexResource` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HotspotsIndexResource"];
+                };
+            };
         };
     };
 }
