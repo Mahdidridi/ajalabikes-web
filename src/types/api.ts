@@ -587,21 +587,33 @@ export interface components {
                 };
                 zoom: components["schemas"]["ImageSizeResource"];
             };
+            /**
+             * @description Cadre a rendre [x, y, w, h], en pixels de l'original ; deborde de la photo quand
+             *     une etiquette est placee hors d'elle.
+             */
             view_box: [
                 number,
                 number,
                 number,
                 number
             ];
+            /** @description Taille de police des etiquettes, en fraction de la largeur rendue du cadre (`font-size: font_fraction * 100cqw`). */
             font_fraction: number;
+            /** @description Taille dont la figure a place les points (mediane des tailles) : defaut du calque de cotes. */
             reference_size: string;
-            /** @description La taille photographiee n'est enregistree nulle part : dite inconnue, jamais devinee. */
+            /** @description Taille photographiee : inconnue, jamais devinee — toujours null. */
             photographed_size: null;
             calibration: {
+                /** @description `axles` : calage sur les deux axes de roue mesures, origine au pedalier, sans rotation. */
                 method: string;
-                /** @constant */
+                /**
+                 * @description Toujours vrai : le trace d'une taille sur la photo d'une autre est approximatif.
+                 * @constant
+                 */
                 approximate: true;
+                /** @description Residu vertical du calage, en pixels de l'original. */
                 residual_px: number;
+                /** @description Faux au-dela de 2 % de l'entraxe : le front RETIRE alors l'option cotes. */
                 within_tolerance: boolean;
                 /**
                  * @description Une LISTE dans l'ordre des tailles de la fiche, jamais une table par libelle :
@@ -618,6 +630,15 @@ export interface components {
                 }[];
             };
             approximation_note: string;
+            /**
+             * @description Les points affiches, numerotes dans l'ordre du registre (un point sans donnee
+             *     n'y est pas). Tout en pixels de l'original : `at` = le point ; `label_at` = le
+             *     CENTRE de la boite d'etiquette, `label_box` = [w, h] de la boite, `leader_to` = ou
+             *     le fil rejoint la boite ; `side` = `start` boite a gauche du point, `end` a droite,
+             *     dans le sens de la photo ; `closeup` = [x, y, w, h] du gros plan, coin haut-gauche,
+             *     a decouper dans `image.zoom` par fractions de `image.w` / `image.h` ; `components`
+             *     = sept champs, sous-ensemble de `BuildResource.components[]`.
+             */
             hotspots: {
                 id: string;
                 n: number;
