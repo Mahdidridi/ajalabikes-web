@@ -4,7 +4,8 @@ import { join } from 'node:path';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { expect, test } from '@playwright/test';
 import { FrameOverlay } from '../../src/components/FrameOverlay';
-import type { BuildFigure } from '../../src/lib/api';
+import { HotspotImage } from '../../src/components/HotspotImage';
+import type { Build, BuildFigure, HotspotImage as HotspotImageData } from '../../src/lib/api';
 
 // Fixtures de contrat : la figure M du Trek FX Sport AL 3 telle que Laravel la
 // calcule, et le calage servi par l'API. Le composant n'en dérive rien.
@@ -39,6 +40,59 @@ test('une cote active ajoute ses repères, fournis par Laravel', async ({ page }
 
   expect(await page.locator('.frame-mark').count()).toBeGreaterThan(0);
 });
+
+// ---------- HotspotImage : rendu statique, sans hydratation (ni clic ni état) ----------
+
+const ficheTrek = JSON.parse(
+  readFileSync(join(__dirname, '../fixtures/hotspots/trek-fx-sport-al-3.ar-sa.json'), 'utf8'),
+) as { hotspot_image: HotspotImageData; sizes: Build['sizes'] };
+
+const copy = {
+  closeLabel: 'إغلاق',
+  sizeLabel: 'المقاس',
+  showDimensions: 'عرض المقاسات',
+  hideDimensions: 'إخفاء المقاسات',
+  listMode: 'النقاط',
+  imageFailed: 'تعذر تحميل الصورة',
+};
+
+function hotspots(locale: 'ar-sa' | 'en-sa' = 'ar-sa'): string {
+  return renderToStaticMarkup(
+    <HotspotImage image={ficheTrek.hotspot_image} sizes={ficheTrek.sizes} locale={locale} copy={copy} />,
+  );
+}
+
+test('le composant pose les points servis, en pourcentages du cadrage, sans en dériver aucun', async ({ page }) => {
+  await page.setContent(`<main dir="rtl">${hotspots()}</main>`);
+
+  const [vx, vy, vw, vh] = ficheTrek.hotspot_image.view_box;
+  await expect(page.locator('[data-stage]')).toHaveAttribute('dir', 'ltr');
+  await expect(page.locator('[data-stage] svg')).toHaveAttribute('viewBox', `${vx} ${vy} ${vw} ${vh}`);
+  await expect(page.locator('button.hotspot-label')).toHaveCount(5);
+  await expect(page.locator('button.hotspot-label').first()).toHaveAttribute('data-n', '3');
+  await expect(page.locator('line.hotspot-leader')).toHaveCount(5);
+  await expect(page.locator('circle.hotspot-anchor')).toHaveCount(5);
+  await expect(page.locator('.frame-segment')).toHaveCount(0);
+
+  const premier = ficheTrek.hotspot_image.hotspots[0];
+  const style = await page.locator('button.hotspot-label').first().getAttribute('style');
+  expect(style).toContain(`left:${((premier.label_at[0] - vx) / vw) * 100}%`);
+  expect(style).toContain(`top:${((premier.label_at[1] - vy) / vh) * 100}%`);
+  expect(style).toContain(`font-size:calc(${ficheTrek.hotspot_image.font_fraction} * 100cqw)`);
+});
+
+for (const dir of ['ltr', 'rtl'] as const) {
+  test(`page ${dir} : la photo reste LTR, la fourche reste à droite du pneu arrière`, async ({ page }) => {
+    await page.setContent(`<main dir="${dir}">${hotspots(dir === 'rtl' ? 'ar-sa' : 'en-sa')}</main>`);
+
+    await expect(page.locator('[data-stage] svg')).toHaveCSS('direction', 'ltr');
+    const fourche = await page.locator('circle.hotspot-anchor[data-n="4"]').boundingBox();
+    const pneu = await page.locator('circle.hotspot-anchor[data-n="7"]').boundingBox();
+    expect(fourche!.x).toBeGreaterThan(pneu!.x);
+    // le texte des étiquettes suit la page, lui
+    await expect(page.locator('button.hotspot-label').first()).toHaveAttribute('dir', dir);
+  });
+}
 
 test('une figure non dessinable ne rend rien', async ({ page }) => {
   const vide: BuildFigure = {
