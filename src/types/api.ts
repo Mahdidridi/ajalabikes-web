@@ -139,6 +139,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/{locale}/builds/{brand}/{slug}/similar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["builds.similar"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -578,6 +594,87 @@ export interface components {
             };
             attribution: string | null;
         };
+        /** SimilarBuildResource */
+        SimilarBuildResource: {
+            slug: string;
+            model_name: string;
+            brand: {
+                slug: string;
+                name: string;
+            };
+            family: {
+                key: string;
+                name: string;
+                slug: string;
+            };
+            /**
+             * @description Absent (null) plutot qu'un seau approchant : un velo n'entre
+             *     jamais dans une categorie qu'il n'a pas.
+             */
+            category: {
+                key: string | null;
+                label: string;
+                slug: string | null;
+            } | null;
+            /**
+             * @description Calcule une fois par requete (App\Catalog\Indexability), jamais
+             *     par carte : au moins une photo, droits complets, marque et
+             *     categorie assez peuplees.
+             */
+            indexable: boolean;
+            indexable_reasons: ("no_product_photo" | "media_rights_incomplete" | "few_bikes_in_brand" | "few_bikes_in_category")[];
+            year: number | null;
+            /**
+             * @description Un millesime inconnu se declare. 48 velos sur 98 n'en ont pas :
+             *     Specialized ne le publie pas par fiche.
+             */
+            year_label: string;
+            /**
+             * @description L'adresse MODELE (issue #21) — null pour un velo nomme comme sa
+             *     famille dans une famille a plusieurs modeles : cette adresse
+             *     appartient alors a la page famille, pas a lui. Calcule une fois
+             *     par requete (App\Catalog\BuildEditions), jamais par carte.
+             */
+            model_path: string | null;
+            /**
+             * @description Formate par Laravel, dans la locale demandee. Aucun montant n'est
+             *     mis en forme cote front.
+             */
+            msrp_formatted: string | null;
+            msrp_amount_minor: number | null;
+            msrp_currency: string | null;
+            /** @description Un prix absent porte son libelle plutot qu'un vide, et jamais zero. */
+            msrp_label: string | null;
+            image: components["schemas"]["MediaResource"] | null;
+            sizes: string[];
+            /**
+             * @description La chaine BRUTE : un mullet reste « 29"/27.5" », il ne devient pas
+             *     un 29 pouces qu'il n'est pas.
+             */
+            wheel_size: string | null;
+            /**
+             * @description Machine, pas d'affichage sur une carte : le sitemap en a besoin
+             *     (`lastmod`). Pas de compagnon `_label` ici — rien dans le
+             *     catalogue n'affiche aujourd'hui de date de fraicheur par carte.
+             */
+            last_changed_at: string;
+            reasons: {
+                key: string;
+                value: string | number;
+                text: string;
+            }[];
+            compare_path: string;
+        };
+        /** SimilarBuildsResource */
+        SimilarBuildsResource: {
+            method: {
+                version: string;
+                criteria: string[];
+            };
+            msrp_disclaimer: string;
+            total: number;
+            items: components["schemas"]["SimilarBuildResource"][];
+        };
     };
     responses: {
         /** @description Not found */
@@ -929,6 +1026,57 @@ export interface operations {
                 };
             };
             404: components["responses"]["ModelNotFoundException"];
+        };
+    };
+    "builds.similar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                locale: string;
+                brand: string;
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description `SimilarBuildsResource` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["SimilarBuildsResource"];
+                    };
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @constant */
+                        message: "Montage introuvable.";
+                    };
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        message: string;
+                        served: [
+                            "ar-sa",
+                            "en-sa"
+                        ];
+                    };
+                };
+            };
         };
     };
 }
