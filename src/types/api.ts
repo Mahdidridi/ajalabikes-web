@@ -257,6 +257,7 @@ export interface components {
             slug: string;
             model_name: string;
             variant: string | null;
+            equipment_specs: components["schemas"]["EquipmentProjectionResource"];
             brand: {
                 slug: string;
                 name: string;
@@ -556,6 +557,67 @@ export interface components {
                     status: "same" | "differs" | "partial";
                     labels_original: (string | null)[];
                 }[];
+            }[];
+        };
+        /** EquipmentProjectionResource */
+        EquipmentProjectionResource: {
+            /** @enum {string} */
+            state: "unavailable" | "current" | "stale";
+            versions: {
+                schema_version: string;
+                registry_sha256: string;
+                capture_version: string;
+                rules_version: string;
+            } | null;
+            coverage: {
+                /** @enum {string} */
+                source_completeness: "partial" | "complete" | "failed";
+                attempted: string[];
+                unsupported: string[];
+                failed: string[];
+                sections: {
+                    section: string;
+                    /** @enum {string} */
+                    scope: "build" | "size" | "conditional" | "unresolved";
+                    /** @enum {string} */
+                    completeness: "partial" | "complete" | "failed";
+                }[];
+            } | null;
+            source: {
+                stream_id: string;
+                revision: number;
+                captured_at: string | null;
+                imported_at: string;
+            } | null;
+            assertions: {
+                /** @enum {string} */
+                scope: "build" | "size" | "conditional" | "unresolved";
+                scope_key: string;
+                role: string;
+                property: string;
+                occurrence: number;
+                /** @enum {string} */
+                status: "known" | "unknown" | "not_published" | "ambiguous" | "conflict" | "not_applicable";
+                reason: string | null;
+                method: string;
+                rule: string;
+                value: string | number | (string | number)[] | null;
+                value_decimal: string | string[] | null;
+                unit: string | null;
+                /** @enum {string} */
+                form: "scalar" | "interval" | "alternatives";
+                /** @enum {string} */
+                precision: "exact" | "approximate";
+                conditions: {
+                    [key: string]: string;
+                };
+                evidence: {
+                    observation_key: string;
+                    source_url: string | null;
+                    excerpt: string;
+                }[];
+                candidates: (string | number | (string | number)[])[];
+                candidates_decimal: (string | string[])[];
             }[];
         };
         /** GeometryGlossaryResource */
