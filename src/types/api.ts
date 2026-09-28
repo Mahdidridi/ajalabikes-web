@@ -669,6 +669,7 @@ export interface components {
         SimilarBuildsResource: {
             method: {
                 version: string;
+                title: string;
                 criteria: string[];
             };
             msrp_disclaimer: string;
