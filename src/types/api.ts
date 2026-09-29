@@ -563,61 +563,42 @@ export interface components {
         EquipmentProjectionResource: {
             /** @enum {string} */
             state: "unavailable" | "current" | "stale";
-            versions: {
-                schema_version: string;
-                registry_sha256: string;
-                capture_version: string;
-                rules_version: string;
-            } | null;
+            state_label: string;
+            /** @description ISO 8601 UTC : date de capture de la tête source, null si elle n'en porte pas. */
+            checked_at: string | null;
+            checked_at_formatted: string | null;
+            /** @description URL http(s) de la page source de toutes les preuves, une seule par vélo ; null hors `current`. */
+            source_url: string | null;
             coverage: {
                 /** @enum {string} */
-                source_completeness: "partial" | "complete" | "failed";
-                attempted: string[];
-                unsupported: string[];
-                failed: string[];
-                sections: {
-                    section: string;
-                    /** @enum {string} */
-                    scope: "build" | "size" | "conditional" | "unresolved";
-                    /** @enum {string} */
-                    completeness: "partial" | "complete" | "failed";
-                }[];
+                completeness: "partial" | "complete" | "failed";
+                label: string;
             } | null;
-            source: {
-                stream_id: string;
-                revision: number;
-                captured_at: string | null;
-                imported_at: string;
-            } | null;
-            assertions: {
-                /** @enum {string} */
-                scope: "build" | "size" | "conditional" | "unresolved";
-                scope_key: string;
+            rules_version: string | null;
+            /** @description Les valeurs affichables, dans l'ordre du registre regroupé par rôle ; vide hors `current`. */
+            items: {
                 role: string;
                 property: string;
-                occurrence: number;
+                label: string;
                 /** @enum {string} */
-                status: "known" | "unknown" | "not_published" | "ambiguous" | "conflict" | "not_applicable";
-                reason: string | null;
-                method: string;
-                rule: string;
+                status: "known" | "ambiguous" | "conflict";
+                status_label: string;
                 value: string | number | (string | number)[] | null;
-                value_decimal: string | string[] | null;
                 unit: string | null;
-                /** @enum {string} */
-                form: "scalar" | "interval" | "alternatives";
+                value_formatted: string;
                 /** @enum {string} */
                 precision: "exact" | "approximate";
-                conditions: {
-                    [key: string]: string;
-                };
+                precision_label: string | null;
+                /** @enum {string} */
+                scope: "build" | "size" | "conditional" | "unresolved";
+                conditions_formatted: string | null;
                 evidence: {
-                    observation_key: string;
-                    source_url: string | null;
+                    category_original: string | null;
+                    unit_original: string | null;
                     excerpt: string;
+                    observed_at: string | null;
+                    observed_at_formatted: string | null;
                 }[];
-                candidates: (string | number | (string | number)[])[];
-                candidates_decimal: (string | string[])[];
             }[];
         };
         /** GeometryGlossaryResource */
@@ -731,6 +712,7 @@ export interface components {
         SimilarBuildsResource: {
             method: {
                 version: string;
+                title: string;
                 criteria: string[];
             };
             msrp_disclaimer: string;
