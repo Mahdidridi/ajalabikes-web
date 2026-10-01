@@ -566,6 +566,10 @@ export interface components {
             state_label: string;
             /** @description ISO 8601 UTC : date de capture de la tête source, null si elle n'en porte pas. */
             checked_at: string | null;
+            /**
+             * @description La date de capture mise en forme ; pour une publication `current` sans date de capture, le texte
+             *     traduit « date d'observation non renseignée », jamais un « à jour » sans date. Null sinon.
+             */
             checked_at_formatted: string | null;
             /** @description URL http(s) de la page source de toutes les preuves, une seule par vélo ; null hors `current`. */
             source_url: string | null;
@@ -575,7 +579,11 @@ export interface components {
                 label: string;
             } | null;
             rules_version: string | null;
-            /** @description Les valeurs affichables, dans l'ordre du registre regroupé par rôle ; vide hors `current`. */
+            /**
+             * @description Les valeurs affichables, dans l'ordre du registre regroupé par rôle ; vide hors `current`.
+             *     `evidence[].excerpt` est du texte brut, jamais du HTML : entités décodées, il peut contenir « < »,
+             *     « > » ou « & » — à échapper à l'affichage, jamais à interpréter.
+             */
             items: {
                 role: string;
                 property: string;
