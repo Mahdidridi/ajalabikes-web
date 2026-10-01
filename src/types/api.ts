@@ -257,6 +257,7 @@ export interface components {
             slug: string;
             model_name: string;
             variant: string | null;
+            equipment_specs: components["schemas"]["EquipmentProjectionResource"];
             brand: {
                 slug: string;
                 name: string;
@@ -555,6 +556,56 @@ export interface components {
                     /** @enum {string} */
                     status: "same" | "differs" | "partial";
                     labels_original: (string | null)[];
+                }[];
+            }[];
+        };
+        /** EquipmentProjectionResource */
+        EquipmentProjectionResource: {
+            /** @enum {string} */
+            state: "unavailable" | "current" | "stale";
+            state_label: string;
+            /** @description ISO 8601 UTC : date de capture de la tête source, null si elle n'en porte pas. */
+            checked_at: string | null;
+            /**
+             * @description La date de capture mise en forme ; pour une publication `current` sans date de capture, le texte
+             *     traduit « date d'observation non renseignée », jamais un « à jour » sans date. Null sinon.
+             */
+            checked_at_formatted: string | null;
+            /** @description URL http(s) de la page source de toutes les preuves, une seule par vélo ; null hors `current`. */
+            source_url: string | null;
+            coverage: {
+                /** @enum {string} */
+                completeness: "partial" | "complete" | "failed";
+                label: string;
+            } | null;
+            rules_version: string | null;
+            /**
+             * @description Les valeurs affichables, dans l'ordre du registre regroupé par rôle ; vide hors `current`.
+             *     `evidence[].excerpt` est du texte brut, jamais du HTML : entités décodées, il peut contenir « < »,
+             *     « > » ou « & » — à échapper à l'affichage, jamais à interpréter.
+             */
+            items: {
+                role: string;
+                property: string;
+                label: string;
+                /** @enum {string} */
+                status: "known" | "ambiguous" | "conflict";
+                status_label: string;
+                value: string | number | (string | number)[] | null;
+                unit: string | null;
+                value_formatted: string;
+                /** @enum {string} */
+                precision: "exact" | "approximate";
+                precision_label: string | null;
+                /** @enum {string} */
+                scope: "build" | "size" | "conditional" | "unresolved";
+                conditions_formatted: string | null;
+                evidence: {
+                    category_original: string | null;
+                    unit_original: string | null;
+                    excerpt: string;
+                    observed_at: string | null;
+                    observed_at_formatted: string | null;
                 }[];
             }[];
         };
