@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { CATEGORY_SLUGS, categoryKeyOf, categorySlug, hasCategoryPage } from '@/lib/routes';
+import { currentBuild, expectedBikeCount, readCatalog, requiredFacet } from './helpers/catalog-api';
 
 /**
  * Pages marque et catégorie — décision du 2 septembre 2026 (rapport SEO, § 1) :
@@ -10,42 +11,45 @@ import { CATEGORY_SLUGS, categoryKeyOf, categorySlug, hasCategoryPage } from '@/
  *                             (slugs parlants, table de `routes.ts` — décision du 3 septembre 2026)
  *
  * Nom, libellés, décomptes, tuiles et cartes viennent tous de l'API. Les
- * chiffres écrits ici sont ceux du catalogue réel — les mêmes que `home.spec`
- * et `catalog.spec`.
+ * attentes sont lues dans la meme requete API que chaque page, au moment du test.
  */
 const TREK_AR = '/ar-sa/bikes/trek';
 const TREK_EN = '/en-sa/bikes/trek';
 const ROAD_EN = '/en-sa/road-bikes';
-const FICHE_EN = '/en-sa/bikes/trek/fuel-mx-9-8-xt-gen-7-81563';
 
-test('la page marque arabe est en RTL et porte le nom, le compteur et les catégories de l API', async ({ page }) => {
+test('la page marque arabe est en RTL et porte le nom, le compteur et les catégories de l API', async ({ page, request }) => {
+  const catalog = await readCatalog(request, 'ar-sa', { brand: 'trek', sort: 'year_desc', per_page: '12' });
+  const brand = requiredFacet(catalog.facets.brands, 'trek');
   await page.goto(TREK_AR);
 
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
   // Un seul h1 : le nom de la marque, tel que l'API le rend — latin canonique.
   await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
-  await expect(page.getByRole('heading', { name: 'Trek', level: 1 })).toBeVisible();
-  // 196 : le total du filtre brand=trek, le même que le catalogue affiche —
-  // suivi du générique arabe « دراجة », accordé au nombre (196 % 100 = 96 → accusatif).
-  await expect(page.getByText('196 دراجةً')).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(brand.label);
+  await expect(page.locator('main header > p')).toHaveText(expectedBikeCount('ar-sa', catalog.meta.total));
 
   // Les tuiles sont les catégories DE LA MARQUE — facette filtrée, libellée
   // par l'API dans la langue de la page — et ouvrent le catalogue filtré.
-  await expect(page.getByRole('link', { name: 'دراجات هوائية للطريق 32 دراجةً' })).toHaveAttribute(
-    'href',
-    '/ar-sa/bikes?brand=trek&category=road',
-  );
-  // Une catégorie que Trek n'a pas ne s'affiche pas : la facette est celle du filtre.
-  await expect(page.getByRole('link', { name: /سيكلوكروس/ })).toHaveCount(0);
+  const categories = page.locator('main a[href^="/ar-sa/bikes?brand=trek&category="]');
+  await expect(categories).toHaveCount(catalog.facets.categories.length);
+  for (const category of catalog.facets.categories) {
+    await expect(page.getByRole('link', {
+      name: `${category.label} ${expectedBikeCount('ar-sa', category.count)}`, exact: true,
+    })).toHaveAttribute('href', `/ar-sa/bikes?brand=trek&category=${category.key}`);
+  }
+  // Aucun seau absent de la facette filtree, quelle que soit son evolution.
+  expect(await categories.evaluateAll((links) => links.map((link) => new URL((link as HTMLAnchorElement).href).searchParams.get('category'))))
+    .toEqual(catalog.facets.categories.map((c) => c.key));
 
   // La grille : les cartes du catalogue, toutes de la marque.
   const cartes = page.getByRole('link').filter({ has: page.locator('img') });
-  await expect(cartes).toHaveCount(12);
+  expect(catalog.data.length).toBeGreaterThan(0);
+  await expect(cartes).toHaveCount(catalog.data.length);
   for (const carte of await cartes.all()) {
     await expect(carte).toHaveAttribute('href', /^\/ar-sa\/bikes\/trek\//);
   }
 
-  await expect(page.getByRole('link', { name: 'كل دراجات Trek' })).toHaveAttribute(
+  await expect(page.getByRole('link', { name: `كل دراجات ${brand.label}`, exact: true })).toHaveAttribute(
     'href',
     '/ar-sa/bikes?brand=trek',
   );
@@ -57,43 +61,51 @@ test('une marque inconnue rend 404', async ({ page }) => {
   expect(reponse?.status()).toBe(404);
 });
 
-test('la page catégorie anglaise porte le libellé de l API, ses marques et ses cartes', async ({ page }) => {
+test('la page catégorie anglaise porte le libellé de l API, ses marques et ses cartes', async ({ page, request }) => {
+  const catalog = await readCatalog(request, 'en-sa', { category: 'road', sort: 'year_desc', per_page: '12' });
+  const category = requiredFacet(catalog.facets.categories, 'road');
   await page.goto(ROAD_EN);
 
   await expect(page.locator('html')).toHaveAttribute('dir', 'ltr');
   await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
   // « Road » est le libellé de la facette, pas le segment d'URL.
-  await expect(page.getByRole('heading', { name: 'Road', level: 1 })).toBeVisible();
-  await expect(page.getByText('137 bikes')).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(category.label);
+  await expect(page.locator('main header > p')).toHaveText(expectedBikeCount('en-sa', catalog.meta.total));
 
   // Les marques présentes dans la catégorie, comptées DANS la catégorie.
-  await expect(page.getByRole('link', { name: 'Trek 32 bikes' })).toHaveAttribute(
-    'href',
-    '/en-sa/bikes?brand=trek&category=road',
-  );
-  await expect(page.getByRole('link', { name: 'Specialized 38 bikes' })).toBeVisible();
+  const brands = page.locator('main a[href$="&category=road"]');
+  await expect(brands).toHaveCount(catalog.facets.brands.length);
+  for (const brand of catalog.facets.brands) {
+    await expect(page.getByRole('link', {
+      name: `${brand.label} ${expectedBikeCount('en-sa', brand.count)}`, exact: true,
+    })).toHaveAttribute('href', `/en-sa/bikes?brand=${brand.key}&category=road`);
+  }
 
   const cartes = page.getByRole('link').filter({ has: page.locator('img') });
-  await expect(cartes).toHaveCount(12);
+  expect(catalog.data.length).toBeGreaterThan(0);
+  await expect(cartes).toHaveCount(catalog.data.length);
 
-  await expect(page.getByRole('link', { name: 'All Road bikes' })).toHaveAttribute(
+  await expect(page.getByRole('link', { name: `All ${category.label} bikes`, exact: true })).toHaveAttribute(
     'href',
     '/en-sa/bikes?category=road',
   );
 });
 
-test('le slug de catégorie est parlant, lu dans la table, et vaut dans les deux langues', async ({ page }) => {
+test('le slug de catégorie est parlant, lu dans la table, et vaut dans les deux langues', async ({ page, request }) => {
+  const en = await readCatalog(request, 'en-sa', { category: 'e_mtb', sort: 'year_desc', per_page: '12' });
   // `e_mtb` → `electric-mountain-bikes` : le mot que l'on cherche, pas la clé de l'API.
   await page.goto('/en-sa/electric-mountain-bikes');
-  await expect(page.getByRole('heading', { name: 'Electric mountain', level: 1 })).toBeVisible();
-  await expect(page.getByText('82 bikes')).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(requiredFacet(en.facets.categories, 'e_mtb').label);
+  await expect(page.locator('main header > p')).toHaveText(expectedBikeCount('en-sa', en.meta.total));
 
   // La même adresse en arabe : le libellé change, le chemin non — la bascule
   // de langue de la navbar mène à LA MÊME page.
   await page.getByRole('link', { name: 'العربية' }).click();
   await expect(page).toHaveURL(/\/ar-sa\/electric-mountain-bikes$/);
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
-  await expect(page.getByRole('heading', { name: 'دراجات هوائية كهربائية جبلية', level: 1 })).toBeVisible();
+  const ar = await readCatalog(request, 'ar-sa', { category: 'e_mtb', sort: 'year_desc', per_page: '12' });
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(requiredFacet(ar.facets.categories, 'e_mtb').label);
+  await expect(page.locator('main header > p')).toHaveText(expectedBikeCount('ar-sa', ar.meta.total));
 });
 
 test('la table des slugs est une bijection stricte sur les seize catégories', () => {
@@ -158,36 +170,41 @@ test('les segments statiques gardent la main sur la page catégorie', async ({ p
   await expect(page.locator('main').getByText('Bike finder').first()).toBeVisible();
 });
 
-test('la fiche mène à la page de sa marque', async ({ page }) => {
-  await page.goto(FICHE_EN);
+test('la fiche mène à la page de sa marque', async ({ page, request }) => {
+  const build = await currentBuild(request, 'en-sa', { brand: 'trek' });
+  expect(build.model_path).not.toBeNull();
+  await page.goto(build.model_path!);
 
-  await page.locator('main').getByRole('link', { name: 'Trek', exact: true }).click();
+  await page.locator('main').getByRole('link', { name: build.brand.name, exact: true }).click();
 
   await expect(page).toHaveURL(/\/en-sa\/bikes\/trek$/);
-  await expect(page.getByRole('heading', { name: 'Trek', level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(build.brand.name);
 });
 
-test('l accueil mène aux pages marque et catégorie', async ({ page }) => {
+test('l accueil mène aux pages marque et catégorie', async ({ page, request }) => {
+  const home = await readCatalog(request, 'en-sa', { per_page: '3', sort: 'year_desc' });
   await page.goto('/en-sa');
 
-  await expect(page.getByRole('link', { name: 'Trek 196 bikes' })).toHaveAttribute(
-    'href',
-    '/en-sa/bikes/trek',
-  );
-  await expect(page.getByRole('link', { name: 'Road 137 bikes' })).toHaveAttribute(
-    'href',
-    '/en-sa/road-bikes',
-  );
-  await expect(page.getByRole('link', { name: 'Electric mountain 82 bikes' })).toHaveAttribute(
-    'href',
-    '/en-sa/electric-mountain-bikes',
-  );
+  const trek = requiredFacet(home.facets.brands, 'trek');
+  await expect(page.getByRole('link', {
+    name: `${trek.label} ${expectedBikeCount('en-sa', trek.count)}`, exact: true,
+  })).toHaveAttribute('href', '/en-sa/bikes/trek');
+  for (const [key, path] of [['road', '/en-sa/road-bikes'], ['e_mtb', '/en-sa/electric-mountain-bikes']]) {
+    const category = requiredFacet(home.facets.categories, key);
+    await expect(page.getByRole('link', {
+      name: `${category.label} ${expectedBikeCount('en-sa', category.count)}`, exact: true,
+    })).toHaveAttribute('href', path);
+  }
   // Le seau « non catégorisé » n'a pas de page : sa tuile garde le catalogue
   // filtré — un résultat réel, jamais un 404 depuis l'accueil.
-  await expect(page.getByRole('link', { name: 'Not categorised 2 bikes' })).toHaveAttribute(
-    'href',
-    '/en-sa/bikes?category=uncategorized',
-  );
+  const uncategorized = home.facets.categories.find((c) => c.key === 'uncategorized');
+  const tile = page.locator('a[href="/en-sa/bikes?category=uncategorized"]');
+  if (uncategorized) {
+    await expect(tile).toHaveAccessibleName(`${uncategorized.label} ${expectedBikeCount('en-sa', uncategorized.count)}`);
+    await expect(tile).toBeVisible();
+  } else {
+    await expect(tile).toHaveCount(0);
+  }
 });
 
 test('les deux pages ne sont pas indexables', async ({ page }) => {

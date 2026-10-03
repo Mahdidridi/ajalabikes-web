@@ -1,4 +1,5 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type APIResponse } from '@playwright/test';
+import { currentBuild, readBuild } from './helpers/catalog-api';
 
 /**
  * Une fiche, une URL. Quand l'API resout un ancien slug — table
@@ -11,22 +12,42 @@ import { expect, test } from '@playwright/test';
  * produit 81563), nouveau slug. L'ancien `fuel-mx-9-8-xt` est le cas d'ecole.
  */
 const ANCIEN = '/en-sa/bikes/trek/fuel-mx-9-8-xt';
-const VIVANT = '/en-sa/bikes/trek/fuel-mx-9-8-xt-gen-7-81563';
 
 /*
- * Ces tests sont actifs : la redirection a ete semee cote API.
- * Le slug vivant attendu ci-dessus est toutefois perime depuis la suppression
- * du suffixe constructeur ; sa mise a jour appartient a web #37.
+ * Paire verifiee par GET public le 3 octobre 2026 : l'API resout cet ancien
+ * slug en 200 et publie model_path ; le web y redirige en 308. Le brief #37
+ * dit 301, mais permanentRedirect et la production utilisent bien 308.
  */
+const destination = async (request: Parameters<typeof readBuild>[0]) => {
+  const build = await readBuild(request, 'en-sa', 'trek', 'fuel-mx-9-8-xt');
+  expect(build.model_path, 'L ancienne fiche doit publier son adresse modele').not.toBeNull();
+  expect(build.model_path).not.toBe(ANCIEN);
+
+  return build.model_path!;
+};
+
+const redirectLocation = (response: APIResponse) => {
+  // A froid, Next peut emettre deux Location identiques. Les verifier toutes
+  // evite la concatenation de headers(), sans accepter de destination differente.
+  const locations = response.headersArray().filter((header) => header.name.toLowerCase() === 'location');
+  expect(locations.length, 'La redirection doit porter Location').toBeGreaterThan(0);
+  expect(new Set(locations.map((header) => header.value)).size).toBe(1);
+  const location = new URL(locations[0].value, response.url());
+  expect(location.origin).toBe(new URL(response.url()).origin);
+
+  return location;
+};
+
 test('un ancien slug redirige en permanent vers le slug vivant', async ({ request }) => {
+  const vivant = await destination(request);
   const res = await request.get(ANCIEN, { maxRedirects: 0 });
 
-  expect([301, 308]).toContain(res.status());
-  expect(res.headers()['location']).toMatch(new RegExp(`${VIVANT}$`));
+  expect(res.status()).toBe(308);
+  expect(redirectLocation(res).href).toBe(new URL(vivant, res.url()).href);
 });
 
 test('le slug vivant est servi tel quel, sans redirection', async ({ request }) => {
-  const res = await request.get(VIVANT, { maxRedirects: 0 });
+  const res = await request.get(await destination(request), { maxRedirects: 0 });
 
   expect(res.status()).toBe(200);
 });
@@ -44,19 +65,21 @@ test.describe('forme canonique', () => {
 
     // 308 et non 307 : les URL sont figees depuis le 5 septembre.
     expect(res.status()).toBe(308);
-    expect(res.headers()['location']).toMatch(/\/ar-sa$/);
+    expect(redirectLocation(res).href).toBe(new URL('/ar-sa', res.url()).href);
   });
 
   test('une majuscule dans le chemin redirige vers la forme en minuscules', async ({ request }) => {
-    const res = await request.get('/en-sa/bikes/Trek/Marlin-7-Gen-3', { maxRedirects: 0 });
+    const build = await currentBuild(request, 'en-sa');
+    const path = build.model_path!;
+    const res = await request.get(path.toUpperCase(), { maxRedirects: 0 });
 
     expect(res.status()).toBe(308);
-    expect(res.headers()['location']).toMatch(/\/en-sa\/bikes\/trek\/marlin-7-gen-3$/);
+    expect(redirectLocation(res).href).toBe(new URL(path, res.url()).href);
   });
 
   test('la query string n est JAMAIS mise en minuscules', async ({ request }) => {
     const res = await request.get('/EN-SA/compare?bikes=trek/Fuel-MX', { maxRedirects: 0 });
-    const location = new URL(res.headers()['location'], 'http://x');
+    const location = redirectLocation(res);
 
     // Le chemin descend en minuscules...
     expect(res.status()).toBe(308);
@@ -70,7 +93,9 @@ test.describe('forme canonique', () => {
   });
 
   test('un chemin deja canonique avec une query n est pas redirige', async ({ request }) => {
-    const res = await request.get('/en-sa/compare?bikes=trek/fuel-mx-9-8-xt-gen-7-81563', {
+    const build = await currentBuild(request, 'en-sa');
+    const query = new URLSearchParams({ bikes: `${build.brand.slug}/${build.slug}` });
+    const res = await request.get(`/en-sa/compare?${query}`, {
       maxRedirects: 0,
     });
 
@@ -82,14 +107,14 @@ test.describe('forme canonique', () => {
 
     expect(res.status()).toBe(308);
     // Directement la forme finale : pas de saut intermediaire vers `/en-sa/bikes/`.
-    expect(res.headers()['location']).toMatch(/\/en-sa\/bikes$/);
+    expect(redirectLocation(res).href).toBe(new URL('/en-sa/bikes', res.url()).href);
   });
 
-  test('le slash final seul est corrige par Next, sans code de notre part', async ({ request }) => {
+  test('le slash final seul est corrige par le proxy', async ({ request }) => {
     const res = await request.get('/en-sa/bikes/', { maxRedirects: 0 });
 
-    expect([301, 308]).toContain(res.status());
-    expect(res.headers()['location']).toMatch(/\/en-sa\/bikes$/);
+    expect(res.status()).toBe(308);
+    expect(redirectLocation(res).href).toBe(new URL('/en-sa/bikes', res.url()).href);
   });
 
   test('une adresse deja canonique ne redirige pas', async ({ request }) => {
