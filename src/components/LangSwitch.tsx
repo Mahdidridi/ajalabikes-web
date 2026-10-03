@@ -12,6 +12,8 @@ export function LangSwitch({ locale, label }: { locale: string; label: string })
   const pathname = usePathname();
   const search = useSearchParams();
 
+  if (!pathname || !search) return null;
+
   const autre = locale.startsWith('ar') ? 'en-sa' : 'ar-sa';
   const chemin = `/${autre}${pathname.slice(locale.length + 1)}`;
   const query = search.toString();

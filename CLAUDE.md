@@ -176,6 +176,25 @@ Décisions du 2 septembre 2026 (`../CLAUDE.md`, « Routes et locales », points 
 - **Tests** : `tests/e2e/seo.spec.ts` — canonical, hreflang réciproques, JSON-LD, noindex, et le `<head>` reçu par un robot sans JavaScript (UA Bingbot : Next diffère sinon les métadonnées des pages dynamiques dans le `<body>`). `tests/e2e/sitemap.spec.ts` — les routes telles que servies (verrou posé) et les fonctions pures avec le verrou simulé à `false` : la politique cible se vérifie sans le lever. Son premier test échoue le jour de la levée : voulu, il dit de mettre à jour les attentes.
 - **Avant la levée** : droits d'images documentés · `indexable` + `last_changed_at` exposés par l'API (contrat régénéré, puis `lastmod` dans le sitemap) · Search Console · mesure TTFB depuis Riyad · audit crawler et Rich Results Test. **Le jour J** : `INDEXING_LOCKED` à `false` **et** retrait de l'en-tête `X-Robots-Tag` de `next.config.ts`, ensemble — `robots.txt` et le sitemap suivent d'eux-mêmes.
 
+## Pages d'erreur (web #10)
+
+- `[locale]/not-found.tsx` conserve la langue, le cadre du site et les liens accueil/catalogue. Le catch-all
+  `[locale]/[...rest]` couvre les chemins inconnus profonds ; les routes existantes gardent la priorite.
+- Les locales invalides utilisent `app/not-found.tsx`, les routes sans correspondance `global-not-found.tsx`
+  (`experimental.globalNotFound`). Les deux rendent le meme document bilingue, sans redirection et en HTTP 404.
+- `[locale]/error.tsx` utilise `retry`, stable dans Next 16.3 : rechargement des donnees et nouveau rendu.
+  Aucun message technique ni digest dans l'interface.
+- **Premier rendu ISR en panne** : Next contourne les error boundaries App Router. Le secours statique
+  `pages/500.tsx` conserve HTTP 500, affiche les deux langues et recharge l'URL au clic. `_app` et `_document`
+  servent uniquement ce secours ; aucune politique de cache n'est modifiee. La coexistence Pages/App rend
+  les hooks de navigation nullable dans les types Next, d'ou les gardes dans les composants concernes.
+- `ThemeScript` applique le meme choix memorise dans les trois documents ; la 404 racine peut etre montee
+  cote client, d'ou `next/script` afterInteractive dans ce seul repli. Le `X-Robots-Tag` global suffit.
+- `tests/e2e/not-found.spec.ts` lance ses propres serveurs Next **de production** et API simulee sur ports libres.
+  Construire d'abord avec une API disponible (`API_BASE_URL`), puis `npx playwright test tests/e2e/not-found.spec.ts`.
+  Les autres specs conservent leur serveur externe. Les captures sont des pieces jointes du rapport Playwright,
+  jamais des fichiers committes. Les nouveaux libelles arabes restent soumis a la validation du fondateur.
+
 ## Budgets performance
 
 LCP ≤ 2,5 s p75 mobile · INP ≤ 200 ms · CLS ≤ 0,1 · TTFB page cachée ≤ 800 ms depuis le Golfe

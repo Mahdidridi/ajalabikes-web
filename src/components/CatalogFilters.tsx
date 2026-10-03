@@ -32,8 +32,10 @@ export function CatalogFilters({ facets, labels }: { facets: Facets; labels: Lab
   const params = useSearchParams();
   const [enCours, demarrer] = useTransition();
 
+  if (!chemin || !params) return null;
+
   function appliquer(cle: string, valeur: string) {
-    const suivant = new URLSearchParams(params.toString());
+    const suivant = new URLSearchParams(params?.toString());
 
     if (valeur === '') suivant.delete(cle);
     else suivant.set(cle, valeur);
