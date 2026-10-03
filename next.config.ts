@@ -1,6 +1,8 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+  experimental: { globalNotFound: true },
+
   /**
    * La racine n'existe pas : tout vit sous une locale, et le layout racine —
    * qui porte <html dir> — vit sous `[locale]`. L'arabe est la marque, il est

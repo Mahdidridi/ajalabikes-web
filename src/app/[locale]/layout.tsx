@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Noto_Sans_Arabic } from 'next/font/google';
 import { notFound } from 'next/navigation';
 import { SiteFooter } from '@/components/SiteFooter';
 import { SiteHeader } from '@/components/SiteHeader';
+import { ThemeScript } from '@/components/ThemeScript';
 import { direction, isLocale, LOCALES } from '@/lib/api';
 import { SIGNATURE, SITE_NAME, SITE_URL } from '@/lib/seo';
 import '../globals.css';
@@ -74,12 +75,7 @@ export default async function LocaleLayout({ children, params }: LayoutProps<'/[
          * posé sur <html> AVANT le premier rendu. En différé, une page sombre
          * s'afficherait blanche un instant à chaque navigation.
          */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html:
-              "(function(){try{var t=localStorage.getItem('theme');if(t!=='light'&&t!=='dark'){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}document.documentElement.dataset.theme=t}catch(e){}})()",
-          }}
-        />
+        <ThemeScript />
       </head>
       <body className="flex min-h-full flex-col">
         <SiteHeader locale={locale} />
