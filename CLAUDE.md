@@ -34,15 +34,36 @@ Régénérer après toute modification côté API :
 npx openapi-typescript ../ajalabikes-api/openapi.json -o src/types/api.ts
 ```
 
-La CI télécharge `openapi.json` depuis la dernière release de `ajalabikes-api`, régénère, et **échoue si le résultat diffère de ce qui est committé**. Une interface redéclarée à la main contourne ce garde-fou et produit un `NaN SAR` en production trois semaines plus tard.
+La cible est une CI qui télécharge `openapi.json` depuis une release identifiée de `ajalabikes-api`, régénère, et **échoue si le résultat diffère de ce qui est committé**. Cette vérification croisée attend la phase 2 de api #19 ; elle n'est pas incluse dans la phase 1 de web #14. Une interface redéclarée à la main contournerait ce garde-fou.
 
 ## Commandes
 
 ```bash
 npm run dev
 npm run typecheck && npm run lint && npm run build
-npx playwright test          # desktop + mobile + RTL
+npm test                    # desktop + mobile + RTL
 ```
+
+### CI - phase 1 (web #14)
+
+`CI` (`.github/workflows/ci.yml`) tourne sur les PR vers `main` et les pushes sur `main` : Node fixe dans
+`.nvmrc` (22.13.1, version locale retenue faute de declaration precedente, a comparer au serveur), cache npm,
+`npm ci`, `npm run test:policy`, `npm run check:tests`, `npm run typecheck`, `npm run lint`, `npm run build`.
+Les memes commandes reproduisent la CI en local. `typecheck` genere d'abord les types de routes Next pour fonctionner
+dans un checkout neuf. Le build lit `API_BASE_URL=https://api.darrajabikes.com/api` sans mutation et charge les polices
+Google : ces services restent des dependances reseau. Aucun mode de rendu n'est modifie. Le garde-fou analyse les appels
+dans `tests/` et refuse `test.only`, `test.skip`, `test.fixme`, y compris les suites ; aucun skip conditionnel n'existe
+sur la base main de cette livraison. Les exemples en commentaires/chaines sont ignores.
+
+`E2E production (manual)` est uniquement declenche par `workflow_dispatch`, apres fusion de son fichier sur `main`.
+Le fondateur doit creer le secret GitHub **`WEB_REVALIDATE_SECRET`** (valeur du secret de revalidation du web en production)
+et confirmer `confirm_cache_invalidation` : **cache.spec.ts invalide reellement le cache de production, y compris une purge
+globale**. Ni execution automatique, ni secret cree par cette PR. Cible : `PLAYWRIGHT_BASE_URL=https://darrajabikes.com` ;
+tests et executions serialises, echec remonte dans les logs GitHub avec masquage du secret. Aucun rapport brut/trace n'est
+televerse : une erreur reseau Playwright peut inclure l'en-tete Authorization. Le workflow construit aussi Next pour
+les tests d'erreur #10, qui utilisent leurs propres serveurs locaux isoles. Les attentes perimees restent rouges jusqu'a #37.
+Pour reproduire sans production, lancer l'API et le Next local de production, fournir leur URL et un secret **local**, puis
+`npm test -- --workers=1 --forbid-only`. La verification croisee du contrat et le deploiement restent hors de cette phase.
 
 ### Piège vérifié le 10 août 2026 — l'interactivité ne se teste pas en `npm run dev`
 
@@ -110,8 +131,8 @@ ont chacune une page à chemin propre. Les chemins sont construits par `src/lib/
   `generateMetadata`) : si `getBuild` renvoie un build dont `slug` ou `brand.slug` diffère de l'URL — ancien slug résolu
   par la future table `slug_redirects` de l'API, fusion —, `permanentRedirect` (308, mis en cache ISR) vers
   `/{locale}/bikes/{brand.slug}/{slug}`. Un slug inconnu de l'API reste 404. `tests/e2e/redirects.spec.ts` : le cas
-  `fuel-mx-9-8-xt` → `…-gen-7-81563` est en `test.fixme` jusqu'à la semence côté API (vérifié en local contre une API
-  simulée qui renvoie la fiche vivante sur l'ancien slug).
+  de redirection est actif, la semence existe cote API ; ses attentes de slug suffixe `-81563` sont perimees et relevent
+  de web #37. Il n'y a aucun `test.fixme` a reactiver.
 - **Une seule forme canonique par adresse** (décision du 5 septembre 2026, `../CLAUDE.md` Routes point 6 ; issue #17,
   livrée le 8 septembre) : minuscules, sans slash final, apex sans `www`. Google traite les URL comme sensibles à la
   casse — chaque variante tolérée est un doublon. Trois mécanismes, chacun à sa place : la racine `/` → `/ar-sa` en
