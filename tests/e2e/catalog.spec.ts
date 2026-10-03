@@ -12,6 +12,7 @@ test('la grille charge les velos avec leurs photos', async ({ page, request }) =
   // 24 par page : le compteur, lui, annonce le total du catalogue.
   expect(catalog.data.length).toBeGreaterThan(0);
   await expect(page.getByRole('link').filter({ has: page.locator('img') })).toHaveCount(catalog.data.length);
+  await expect(page.locator('main header > p')).toBeVisible();
   await expect(page.locator('main header > p')).toHaveText(expectedBikeCount('en-sa', catalog.meta.total));
 });
 
@@ -69,6 +70,7 @@ test('un filtre reduit les resultats et vit dans l URL', async ({ page, request 
   await page.getByLabel('Brand').selectOption('trek');
 
   await expect(page).toHaveURL(/brand=trek/);
+  await expect(page.locator('main header > p')).toBeVisible();
   await expect(page.locator('main header > p')).toHaveText(expectedBikeCount('en-sa', catalog.meta.total));
 
   // Sur les CARTES, pas dans le menu deroulant : la liste des marques doit
@@ -82,6 +84,7 @@ test('deux filtres se combinent', async ({ page, request }) => {
   const catalog = await readCatalog(request, 'en-sa', { brand: 'trek', category: 'fat' });
   await page.goto(`${EN}?brand=trek&category=fat`);
 
+  await expect(page.locator('main header > p')).toBeVisible();
   await expect(page.locator('main header > p')).toHaveText(expectedBikeCount('en-sa', catalog.meta.total));
 });
 
@@ -121,6 +124,7 @@ test('effacer les filtres revient au catalogue entier', async ({ page, request }
 
   await page.getByRole('button', { name: 'Clear filters' }).click();
 
+  await expect(page.locator('main header > p')).toBeVisible();
   await expect(page.locator('main header > p')).toHaveText(expectedBikeCount('en-sa', catalog.meta.total));
   await expect(page).not.toHaveURL(/brand=/);
 });

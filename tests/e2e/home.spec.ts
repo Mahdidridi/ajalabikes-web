@@ -31,6 +31,7 @@ test('le hero porte la signature, le compteur du catalogue et mene a lui', async
 
   await expect(page).toHaveURL(/\/en-sa\/bikes$/);
   const catalog = await readCatalog(request, 'en-sa');
+  await expect(page.locator('main header > p')).toBeVisible();
   await expect(page.locator('main header > p')).toHaveText(expectedBikeCount('en-sa', catalog.meta.total));
 });
 
@@ -53,6 +54,7 @@ test('une marque mene a sa page', async ({ page, request }) => {
   // La page marque (`/bikes/{brand}`), pas le catalogue filtre — meme total.
   await expect(page).toHaveURL(/\/en-sa\/bikes\/trek$/);
   const collection = await readCatalog(request, 'en-sa', { brand: 'trek', sort: 'year_desc', per_page: '12' });
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(brand.label);
   await expect(page.getByText(expectedBikeCount('en-sa', collection.meta.total), { exact: true })).toBeVisible();
 });
@@ -67,6 +69,7 @@ test('une tuile de categorie mene a sa page', async ({ page, request }) => {
   // La page categorie (`/{category}-bikes`), titree du libelle de l'API.
   await expect(page).toHaveURL(/\/en-sa\/road-bikes$/);
   const collection = await readCatalog(request, 'en-sa', { category: 'road', sort: 'year_desc', per_page: '12' });
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(category.label);
   await expect(page.getByText(expectedBikeCount('en-sa', collection.meta.total), { exact: true })).toBeVisible();
 });
