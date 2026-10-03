@@ -1,3 +1,4 @@
+/** @jsxImportSource react */
 import type { SVGProps } from 'react';
 
 /**

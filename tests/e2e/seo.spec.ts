@@ -2,6 +2,7 @@ import { expect, test, type APIRequestContext, type Page } from '@playwright/tes
 import type { Build, BuildCard, Locale } from '@/lib/api';
 import { bikeDescription } from '@/lib/seo';
 import { currentBuild, expectedBikeCount, readBuild, readCatalog, requiredFacet } from './helpers/catalog-api';
+import { expectLatinBrand } from './helpers/catalog-invariants';
 
 /**
  * SEO prepare SANS lever le noindex (decisions du 2 septembre 2026, CLAUDE.md
@@ -39,14 +40,28 @@ const fullDescription = (locale: Locale, build: Build | BuildCard) => {
     : `دراجة ${name}: المواصفات الكاملة، الهندسة حسب المقاس${sizes}، المكونات، والمقارنة مع دراجات أخرى.`;
 };
 
-const expectedDescription = (locale: Locale, build: Build | BuildCard) => {
-  const full = fullDescription(locale, build);
-  if (full.length <= 160) return full;
-
-  const words = full.split(' ');
-  while (words.join(' ').length + 1 > 160) words.pop();
-
-  return `${words.join(' ').replace(/[،,:;(]+$/, '')}…`;
+// Ces scenarios doivent reellement exercer un millesime et un MSRP connus.
+const seoBuild = async (request: APIRequestContext, locale: Locale) => {
+  let cursor: string | undefined;
+  const visited = new Set<string>();
+  do {
+    const catalog = await readCatalog(request, locale, { per_page: '100', sort: 'year_desc', ...(cursor ? { cursor } : {}) });
+    const candidate = catalog.data.find((card) => card.model_path !== null && card.image !== null &&
+      card.year !== null && card.msrp_formatted !== null && fullDescription(locale, card).length <= 160);
+    if (candidate) {
+      const build = await readBuild(request, locale, candidate.brand.slug, candidate.slug);
+      expect(build.year, 'Le sujet SEO doit avoir un millesime connu').not.toBeNull();
+      expect(build.msrp?.formatted, 'Le sujet SEO doit publier un MSRP').toBeTruthy();
+      expect(fullDescription(locale, build).length).toBeLessThanOrEqual(160);
+      return build;
+    }
+    cursor = catalog.meta.next_cursor ?? undefined;
+    if (cursor) {
+      expect(visited.has(cursor), 'Le curseur API doit progresser').toBe(false);
+      visited.add(cursor);
+    }
+  } while (cursor);
+  throw new Error('Une fiche avec millesime, MSRP, photo et description courte est requise pour ce scenario SEO.');
 };
 
 const comparisonQuery = async (request: APIRequestContext) => {
@@ -205,7 +220,7 @@ test.describe('JSON-LD', () => {
   });
 
   test('la fiche porte un Product sans offre, sans prix, sans note', async ({ page, request }) => {
-    const build = await currentBuild(request, 'en-sa');
+    const build = await seoBuild(request, 'en-sa');
     await page.goto(modelPath(build));
     const produit = bloc(await jsonLd(page), 'Product');
 
@@ -215,6 +230,7 @@ test.describe('JSON-LD', () => {
       brand: { '@type': 'Brand', name: build.brand.name },
       url: `${SITE}${modelPath(build)}`,
     });
+    expect(produit!.name).not.toContain(build.year_label);
 
     // Les photos de la galerie, en taille `detail`, en URL absolues.
     const images = produit!.image as string[];
@@ -226,17 +242,22 @@ test.describe('JSON-LD', () => {
     for (const interdit of ['offers', 'aggregateRating', 'review', 'price']) {
       expect(produit, interdit).not.toHaveProperty(interdit);
     }
-    if (build.msrp?.formatted) expect(JSON.stringify(produit)).not.toContain(build.msrp.formatted);
+    const formatted = build.msrp!.formatted!;
+    const amount = formatted.match(/[0-9][0-9,]*(?:\.[0-9]+)?/)?.[0];
+    expect(amount, 'Le MSRP choisi doit contenir un montant verifiable').toBeTruthy();
+    expect(JSON.stringify(produit)).not.toContain(formatted);
+    expect(JSON.stringify(produit)).not.toContain(amount!);
   });
 
   test('le fil d Ariane de la fiche a quatre maillons absolus', async ({ page, request }) => {
-    const build = await currentBuild(request, 'en-sa');
+    const build = await seoBuild(request, 'en-sa');
     await page.goto(modelPath(build));
     const fil = bloc(await jsonLd(page), 'BreadcrumbList');
 
     const maillons = fil!.itemListElement as { position: number; name: string; item: string }[];
     expect(maillons.map((m) => m.position)).toEqual([1, 2, 3, 4]);
     expect(maillons.map((m) => m.name)).toEqual(['Home', 'Bikes', build.brand.name, build.model_name]);
+    expect(maillons[3].name).not.toContain(build.year_label);
     expect(maillons.map((m) => m.item)).toEqual([
       `${SITE}/en-sa`,
       `${SITE}/en-sa/bikes`,
@@ -253,6 +274,7 @@ test.describe('JSON-LD', () => {
     const filAr = bloc(await jsonLd(page), 'BreadcrumbList');
     const nomsAr = (filAr!.itemListElement as { name: string }[]).map((m) => m.name);
     expect(nomsAr).toEqual(['الرئيسية', 'الدراجات الهوائية', buildAr.brand.name, buildAr.model_name]);
+    expect(nomsAr[3]).not.toContain(buildAr.year_label);
   });
 
   test('le catalogue nu porte un ItemList des cartes de la page, le filtre non', async ({ page, request }) => {
@@ -328,6 +350,8 @@ test.describe('pages marque et categorie', () => {
   test('la page marque porte canonical, hreflang reciproques et un fil d Ariane a 3 maillons', async ({ page, request }) => {
     const catalog = await readCatalog(request, 'ar-sa', { brand: 'trek', sort: 'year_desc', per_page: '12' });
     const brand = requiredFacet(catalog.facets.brands, 'trek');
+    expectLatinBrand(brand.label);
+    expect(brand.label).toBe('Trek');
     await page.goto('/ar-sa/bikes/trek');
 
     await expect(canonical(page)).toHaveAttribute('href', `${SITE}/ar-sa/bikes/trek`);
@@ -368,21 +392,22 @@ test.describe('description des fiches', () => {
   const description = (page: Page) => page.locator('meta[name="description"]').getAttribute('content');
 
   test('chaque fiche a sa propre description, batie sur ses champs', async ({ page, request }) => {
-    const build = await currentBuild(request, 'en-sa', { sort: 'year_desc' });
+    const build = await seoBuild(request, 'en-sa');
     await page.goto(modelPath(build));
     const first = await description(page);
     // Marque, modele, millesime tel que l'API le libelle, nombre de tailles publiees.
-    expect(first).toBe(expectedDescription('en-sa', build));
+    expect(first).toBe(fullDescription('en-sa', build));
     await expect(page.locator('meta[property="og:description"]')).toHaveAttribute('content', first!);
 
     const catalog = await readCatalog(request, 'en-sa');
     const other = catalog.data.find((card) => card.model_path !== null &&
+      fullDescription('en-sa', card).length <= 160 &&
       (card.brand.slug !== build.brand.slug || card.slug !== build.slug));
     expect(other, 'Le catalogue doit fournir une seconde fiche distincte').toBeDefined();
     const secondBuild = await readBuild(request, 'en-sa', other!.brand.slug, other!.slug);
     await page.goto(modelPath(secondBuild));
     const second = await description(page);
-    expect(second).toBe(expectedDescription('en-sa', secondBuild));
+    expect(second).toBe(fullDescription('en-sa', secondBuild));
     expect(second).toContain(secondBuild.model_name);
     expect(second).not.toBe(first);
     // Plus jamais la signature partagee par toutes les fiches.
@@ -390,10 +415,12 @@ test.describe('description des fiches', () => {
   });
 
   test('en arabe : « دراجة » en tete, le modele, puis le decompte de tailles accorde', async ({ page, request }) => {
-    const build = await currentBuild(request, 'ar-sa');
+    const build = await seoBuild(request, 'ar-sa');
     await page.goto(modelPath(build));
 
-    expect(await description(page)).toBe(expectedDescription('ar-sa', build));
+    const actual = await description(page);
+    expect(actual).toBe(fullDescription('ar-sa', build));
+    expect(actual).toContain(build.year_label);
   });
 
   test('une description trop longue est coupee au dernier mot, sous 160 caracteres', async ({ page, request }) => {
@@ -403,7 +430,14 @@ test.describe('description des fiches', () => {
     const longue = await description(page);
 
     expect(longue!.length).toBeLessThanOrEqual(160);
-    expect(longue).toBe(expectedDescription('en-sa', build));
+    // Pas d'oracle de troncature recopie : prefixe reel, frontiere de mot,
+    // puis preuve que le mot suivant ne tiendrait plus. Cas limites litteraux a part.
+    const full = fullDescription('en-sa', build);
+    const prefix = longue!.slice(0, -1);
+    expect(full.startsWith(prefix)).toBe(true);
+    const following = full.slice(prefix.length).match(/^[\s،,:;(]+\S+/)?.[0];
+    expect(following, 'La coupe doit terminer un mot entier').toBeTruthy();
+    expect(`${prefix}${following}…`.length).toBeGreaterThan(160);
     expect(longue).toMatch(/\S…$/);
     expect(longue).not.toContain('comparison.');
   });

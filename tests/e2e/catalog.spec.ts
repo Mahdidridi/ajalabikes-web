@@ -11,7 +11,7 @@ test('la grille charge les velos avec leurs photos', async ({ page, request }) =
   await expect(page.getByRole('heading', { name: 'Bikes', level: 1 })).toBeVisible();
   // 24 par page : le compteur, lui, annonce le total du catalogue.
   expect(catalog.data.length).toBeGreaterThan(0);
-  await expect(page.getByRole('link').filter({ has: page.locator('img') })).toHaveCount(catalog.data.length);
+  await expect(page.locator('main a.rounded-xl')).toHaveCount(catalog.data.length);
   await expect(page.locator('main header > p')).toBeVisible();
   await expect(page.locator('main header > p')).toHaveText(expectedBikeCount('en-sa', catalog.meta.total));
 });
@@ -82,8 +82,20 @@ test('un filtre reduit les resultats et vit dans l URL', async ({ page, request 
 
 test('deux filtres se combinent', async ({ page, request }) => {
   const catalog = await readCatalog(request, 'en-sa', { brand: 'trek', category: 'fat' });
+  const brand = await readCatalog(request, 'en-sa', { brand: 'trek' });
+  const category = await readCatalog(request, 'en-sa', { category: 'fat' });
+  expect(catalog.meta.total).toBeLessThanOrEqual(Math.min(brand.meta.total, category.meta.total));
+  expect(catalog.data.length, 'La combinaison choisie doit exercer des cartes').toBeGreaterThan(0);
+  for (const bike of catalog.data) {
+    expect(bike.brand.slug).toBe('trek');
+    expect(bike.category?.key).toBe('fat');
+  }
   await page.goto(`${EN}?brand=trek&category=fat`);
 
+  const cards = page.locator('main a.rounded-xl');
+  await expect(cards).toHaveCount(catalog.data.length);
+  expect(await cards.evaluateAll((links) => links.map((link) => link.getAttribute('href'))))
+    .toEqual(catalog.data.map((bike) => `${EN}/${bike.brand.slug}/${bike.slug}`));
   await expect(page.locator('main header > p')).toBeVisible();
   await expect(page.locator('main header > p')).toHaveText(expectedBikeCount('en-sa', catalog.meta.total));
 });
@@ -132,7 +144,7 @@ test('effacer les filtres revient au catalogue entier', async ({ page, request }
 test('une carte mene a la fiche du velo', async ({ page }) => {
   await page.goto(`${EN}?brand=trek&category=fat`);
 
-  const premiere = page.getByRole('link').filter({ has: page.locator('img') }).first();
+  const premiere = page.locator('main a.rounded-xl').first();
   const cible = await premiere.getAttribute('href');
   await premiere.click();
 
@@ -167,7 +179,7 @@ test('afficher plus allonge la liste, il ne la remplace jamais', async ({ page, 
   // fonctionne encore, l'URL se partage et reproduit ce qui était à l'écran.
   await page.goto(EN);
 
-  const cartes = page.getByRole('link').filter({ has: page.locator('img') });
+  const cartes = page.locator('main a.rounded-xl');
   const premiere = await cartes.first().getAttribute('href');
 
   const suite = page.getByRole('link', { name: 'Show more' });

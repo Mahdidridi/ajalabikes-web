@@ -1,3 +1,4 @@
+/** @jsxImportSource react */
 import Link from 'next/link';
 import { BikeCard } from '@/components/BikeCard';
 import type { BuildCard, Locale } from '@/lib/api';
