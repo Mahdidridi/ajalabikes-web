@@ -1,0 +1,58 @@
+name: E2E production (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_cache_invalidation:
+        description: 'Authorize production cache invalidation, including a full purge, by cache.spec.ts'
+        type: boolean
+        required: true
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-production
+  cancel-in-progress: false
+
+jobs:
+  playwright:
+    name: Production E2E
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      API_BASE_URL: https://api.darrajabikes.com/api
+      PLAYWRIGHT_BASE_URL: https://darrajabikes.com
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - name: Require explicit production authorization and the revalidation secret
+        env:
+          CONFIRMED: ${{ inputs.confirm_cache_invalidation }}
+          REVALIDATE_SECRET: ${{ secrets.WEB_REVALIDATE_SECRET }}
+        run: |
+          if [ "$CONFIRMED" != 'true' ]; then
+            echo '::error::Explicit production cache invalidation authorization is required.'
+            exit 1
+          fi
+          if [ -z "$REVALIDATE_SECRET" ]; then
+            echo '::error::Create the WEB_REVALIDATE_SECRET repository secret before running production E2E.'
+            exit 1
+          fi
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run check:tests
+      - run: npx playwright install --with-deps chromium
+      # not-found.spec.ts starts an isolated local production Next against a stub API.
+      - run: npm run build
+      - name: Run desktop and mobile E2E serially
+        env:
+          REVALIDATE_SECRET: ${{ secrets.WEB_REVALIDATE_SECRET }}
+        # Request errors can contain Authorization; only use GitHub's secret-masked logs.
+        run: npm test -- --workers=1 --forbid-only --reporter=line

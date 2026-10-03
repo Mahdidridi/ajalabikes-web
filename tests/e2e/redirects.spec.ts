@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 /**
  * Une fiche, une URL. Quand l'API resout un ancien slug — table
- * `slug_redirects`, a venir cote API — vers un build dont le slug (ou celui
+ * `slug_redirects` — vers un build dont le slug (ou celui
  * de la marque) differe de l'URL demandee, la page repond par une redirection
  * PERMANENTE vers l'adresse vivante (`permanentRedirect`, 308 chez Next).
  * Sans elle, deux URL serviraient la meme fiche.
@@ -14,10 +14,9 @@ const ANCIEN = '/en-sa/bikes/trek/fuel-mx-9-8-xt';
 const VIVANT = '/en-sa/bikes/trek/fuel-mx-9-8-xt-gen-7-81563';
 
 /*
- * ROUGE tant que l'API repond 404 a l'ancien slug : la redirection n'est pas
- * encore semee cote API (table `slug_redirects`). Le code de la page, lui,
- * est en place — verifie contre une API simulee. A reactiver (`test.fixme` →
- * `test`) des que la semence est en base.
+ * Ces tests sont actifs : la redirection a ete semee cote API.
+ * Le slug vivant attendu ci-dessus est toutefois perime depuis la suppression
+ * du suffixe constructeur ; sa mise a jour appartient a web #37.
  */
 test('un ancien slug redirige en permanent vers le slug vivant', async ({ request }) => {
   const res = await request.get(ANCIEN, { maxRedirects: 0 });
