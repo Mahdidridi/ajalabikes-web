@@ -1,15 +1,19 @@
 import { expect, test } from '@playwright/test';
+import { expectedBikeCount, readCatalog } from './helpers/catalog-api';
 
 const AR = '/ar-sa/bikes';
 const EN = '/en-sa/bikes';
 
-test('la grille charge les velos avec leurs photos', async ({ page }) => {
+test('la grille charge les velos avec leurs photos', async ({ page, request }) => {
+  const catalog = await readCatalog(request, 'en-sa');
   await page.goto(EN);
 
   await expect(page.getByRole('heading', { name: 'Bikes', level: 1 })).toBeVisible();
   // 24 par page : le compteur, lui, annonce le total du catalogue.
-  await expect(page.getByRole('link').filter({ has: page.locator('img') })).toHaveCount(24);
-  await expect(page.getByText('634 bikes')).toBeVisible();
+  expect(catalog.data.length).toBeGreaterThan(0);
+  await expect(page.getByRole('link').filter({ has: page.locator('img') })).toHaveCount(catalog.data.length);
+  await expect(page.locator('main header > p')).toBeVisible();
+  await expect(page.locator('main header > p')).toHaveText(expectedBikeCount('en-sa', catalog.meta.total));
 });
 
 test('chaque carte reserve la place de sa photo', async ({ page }) => {
@@ -57,7 +61,8 @@ test('aucune image ne repasse par l optimiseur de Next', async ({ page }) => {
   expect(optimisees).toEqual([]);
 });
 
-test('un filtre reduit les resultats et vit dans l URL', async ({ page }) => {
+test('un filtre reduit les resultats et vit dans l URL', async ({ page, request }) => {
+  const catalog = await readCatalog(request, 'en-sa', { brand: 'trek' });
   // L'etat dans l'URL rend un resultat filtre partageable, et evite d'avoir
   // deux sources de verite qui finissent par diverger.
   await page.goto(EN);
@@ -65,54 +70,62 @@ test('un filtre reduit les resultats et vit dans l URL', async ({ page }) => {
   await page.getByLabel('Brand').selectOption('trek');
 
   await expect(page).toHaveURL(/brand=trek/);
-  await expect(page.getByText('196 bikes')).toBeVisible();
+  await expect(page.locator('main header > p')).toBeVisible();
+  await expect(page.locator('main header > p')).toHaveText(expectedBikeCount('en-sa', catalog.meta.total));
 
   // Sur les CARTES, pas dans le menu deroulant : la liste des marques doit
   // rester complete pour qu'on puisse revenir en arriere.
   await expect(page.locator('main a[href*="/bikes/specialized/"]')).toHaveCount(0);
-  await expect(page.locator('main a[href*="/bikes/trek/"]')).toHaveCount(24);
+  expect(catalog.data.length).toBeGreaterThan(0);
+  await expect(page.locator('main a[href*="/bikes/trek/"]')).toHaveCount(catalog.data.length);
 });
 
-test('deux filtres se combinent', async ({ page }) => {
+test('deux filtres se combinent', async ({ page, request }) => {
+  const catalog = await readCatalog(request, 'en-sa', { brand: 'trek', category: 'fat' });
   await page.goto(`${EN}?brand=trek&category=fat`);
 
-  await expect(page.getByText('3 bikes')).toBeVisible();
+  await expect(page.locator('main header > p')).toBeVisible();
+  await expect(page.locator('main header > p')).toHaveText(expectedBikeCount('en-sa', catalog.meta.total));
 });
 
-test('les seaux de facettes portent leur decompte', async ({ page }) => {
+test('les seaux de facettes portent leur decompte', async ({ page, request }) => {
+  const catalog = await readCatalog(request, 'en-sa');
   // Les decomptes viennent de l'API. Coder une liste de marques en dur cote
   // front deriverait au premier ajout.
   await page.goto(EN);
 
-  const marque = page.getByLabel('Brand');
-  await expect(marque.locator('option', { hasText: /Trek \(196\)/ })).toHaveCount(1);
-  await expect(marque.locator('option', { hasText: /Specialized \(205\)/ })).toHaveCount(1);
-  await expect(marque.locator('option', { hasText: /Giant \(76\)/ })).toHaveCount(1);
-  await expect(marque.locator('option', { hasText: /Canyon \(63\)/ })).toHaveCount(1);
-  await expect(marque.locator('option', { hasText: /Scott \(94\)/ })).toHaveCount(1);
+  const options = page.getByLabel('Brand').locator('option:not([value=""])');
+  await expect(options).toHaveText(catalog.facets.brands.map((b) => `${b.label} (${b.count})`));
+  expect(await options.evaluateAll((items) => items.map((item) => item.getAttribute('value'))))
+    .toEqual(catalog.facets.brands.map((b) => b.key));
 });
 
-test('le seau des velos sans categorie declare son unique occupant', async ({ page }) => {
-  // Le seau « Not categorised » n'existe que si un velo le justifie. Depuis le
-  // 26 aout 2026 il en a UN : le Canyon dont le breadcrumb passe par
-  // « Outlet|Road Outlet » et les 94 Scott (codes OCC en sac, canonisation a venir) — volontairement non mappes
-  // plutot que range dans un seau proche (CategoryTaxonomy).
+test('le seau des velos sans categorie declare ses occupants reels', async ({ page, request }) => {
+  const catalog = await readCatalog(request, 'en-sa');
+  // Le seau n'est affiche que si l'API le publie : aucun occupant suppose.
   await page.goto(EN);
 
-  await expect(
-    page.getByLabel('Category').locator('option', { hasText: /Not categorised \(2\)/ }),
-  ).toHaveCount(1);
-  await expect(
-    page.getByLabel('Category').locator('option', { hasText: /Electric mountain \(82\)/ }),
-  ).toHaveCount(1);
+  const options = page.getByLabel('Category').locator('option:not([value=""])');
+  await expect(options).toHaveText(catalog.facets.categories.map((c) => `${c.label} (${c.count})`));
+  const uncategorized = catalog.facets.categories.find((c) => c.key === 'uncategorized');
+  const option = page.locator('#category option[value="uncategorized"]');
+  if (uncategorized) {
+    await expect(option).toHaveText(`${uncategorized.label} (${uncategorized.count})`);
+    const filtered = await readCatalog(request, 'en-sa', { category: 'uncategorized' });
+    expect(filtered.meta.total).toBe(uncategorized.count);
+  } else {
+    await expect(option).toHaveCount(0);
+  }
 });
 
-test('effacer les filtres revient au catalogue entier', async ({ page }) => {
+test('effacer les filtres revient au catalogue entier', async ({ page, request }) => {
+  const catalog = await readCatalog(request, 'en-sa');
   await page.goto(`${EN}?brand=trek`);
 
   await page.getByRole('button', { name: 'Clear filters' }).click();
 
-  await expect(page.getByText('634 bikes')).toBeVisible();
+  await expect(page.locator('main header > p')).toBeVisible();
+  await expect(page.locator('main header > p')).toHaveText(expectedBikeCount('en-sa', catalog.meta.total));
   await expect(page).not.toHaveURL(/brand=/);
 });
 
@@ -147,7 +160,8 @@ test('un millesime inconnu est declare sur la carte', async ({ page }) => {
   await expect(page.getByText('Year not recorded').first()).toBeVisible();
 });
 
-test('afficher plus allonge la liste, il ne la remplace jamais', async ({ page }) => {
+test('afficher plus allonge la liste, il ne la remplace jamais', async ({ page, request }) => {
+  const nextPage = await readCatalog(request, 'en-sa', { per_page: '48' });
   // Le libellé promet « plus » : les cartes déjà vues restent, les suivantes
   // s'ajoutent dessous. Et le bouton reste un lien — sans JavaScript il
   // fonctionne encore, l'URL se partage et reproduit ce qui était à l'écran.
@@ -161,17 +175,20 @@ test('afficher plus allonge la liste, il ne la remplace jamais', async ({ page }
 
   await suite.click();
   await expect(page).toHaveURL(/per_page=48/);
-  await expect(cartes).toHaveCount(48);
+  await expect(cartes).toHaveCount(nextPage.data.length);
   // La première carte du premier lot est toujours en tête : rien n'a disparu.
   await expect(cartes.first()).toHaveAttribute('href', premiere!);
 });
 
-test('la liste entière se déroule et le bouton s efface à la fin', async ({ page }) => {
+test('la liste entière se déroule et le bouton s efface à la fin', async ({ page, request }) => {
+  const catalog = await readCatalog(request, 'en-sa', { per_page: '800' });
   // Le défaut d'origine : la dernière « page » n'affichait que 2 vélos seuls.
-  // 800 est le PAR_PAGE_MAX de l'API — assez pour les 634 du catalogue.
+  // 800 est la borne de requete existante, pas un nombre de velos attendu.
+  expect(catalog.meta.has_more, 'Le scenario de fin de liste doit atteindre tout le catalogue').toBe(false);
+  expect(catalog.data).toHaveLength(catalog.meta.total);
   await page.goto(`${EN}?per_page=800`);
 
-  await expect(page.locator('main a.rounded-xl')).toHaveCount(634);
+  await expect(page.locator('main a.rounded-xl')).toHaveCount(catalog.meta.total);
   await expect(page.getByRole('link', { name: 'Show more' })).toHaveCount(0);
 });
 

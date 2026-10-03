@@ -1,4 +1,6 @@
 import { expect, test } from '@playwright/test';
+import { bikesCount } from '@/lib/vocabulary';
+import { expectedBikeCount, readCatalog, requiredFacet } from './helpers/catalog-api';
 
 const AR = '/ar-sa';
 const EN = '/en-sa';
@@ -15,20 +17,22 @@ test('la racine redirige vers la locale par defaut', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 });
 
-test('le hero porte la signature, le compteur du catalogue et mene a lui', async ({ page }) => {
+test('le hero porte la signature, le compteur du catalogue et mene a lui', async ({ page, request }) => {
+  const home = await readCatalog(request, 'en-sa', { per_page: '3', sort: 'year_desc' });
   await page.goto(EN);
 
   // Un seul h1, et c'est la signature de la marque.
   await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
   await expect(page.getByRole('heading', { name: SIGNATURE_EN, level: 1 })).toBeVisible();
 
-  // 634 vient de l'API — le meme total que le catalogue affiche.
-  const cta = page.getByRole('link', { name: 'Browse 634 bikes' });
+  const cta = page.getByRole('link', { name: `Browse ${expectedBikeCount('en-sa', home.meta.total)}`, exact: true });
   await expect(cta).toBeVisible();
   await cta.click();
 
   await expect(page).toHaveURL(/\/en-sa\/bikes$/);
-  await expect(page.getByText('634 bikes')).toBeVisible();
+  const catalog = await readCatalog(request, 'en-sa');
+  await expect(page.locator('main header > p')).toBeVisible();
+  await expect(page.locator('main header > p')).toHaveText(expectedBikeCount('en-sa', catalog.meta.total));
 });
 
 test('la pastille du hero annonce le bikefinder et y mene', async ({ page }) => {
@@ -39,36 +43,46 @@ test('la pastille du hero annonce le bikefinder et y mene', async ({ page }) => 
   await expect(page).toHaveURL(/\/en-sa\/finder$/);
 });
 
-test('une marque mene a sa page', async ({ page }) => {
+test('une marque mene a sa page', async ({ page, request }) => {
+  const home = await readCatalog(request, 'en-sa', { per_page: '3', sort: 'year_desc' });
+  const brand = requiredFacet(home.facets.brands, 'trek');
   await page.goto(EN);
 
   // Le decompte vient des facettes, pas d'une liste codee en dur.
-  await page.getByRole('link', { name: 'Trek 196 bikes' }).click();
+  await page.getByRole('link', { name: `${brand.label} ${expectedBikeCount('en-sa', brand.count)}`, exact: true }).click();
 
   // La page marque (`/bikes/{brand}`), pas le catalogue filtre — meme total.
   await expect(page).toHaveURL(/\/en-sa\/bikes\/trek$/);
-  await expect(page.getByRole('heading', { name: 'Trek', level: 1 })).toBeVisible();
-  await expect(page.getByText('196 bikes')).toBeVisible();
+  const collection = await readCatalog(request, 'en-sa', { brand: 'trek', sort: 'year_desc', per_page: '12' });
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(brand.label);
+  await expect(page.getByText(expectedBikeCount('en-sa', collection.meta.total), { exact: true })).toBeVisible();
 });
 
-test('une tuile de categorie mene a sa page', async ({ page }) => {
+test('une tuile de categorie mene a sa page', async ({ page, request }) => {
+  const home = await readCatalog(request, 'en-sa', { per_page: '3', sort: 'year_desc' });
+  const category = requiredFacet(home.facets.categories, 'road');
   await page.goto(EN);
 
-  await page.getByRole('link', { name: 'Road 137 bikes' }).click();
+  await page.getByRole('link', { name: `${category.label} ${expectedBikeCount('en-sa', category.count)}`, exact: true }).click();
 
   // La page categorie (`/{category}-bikes`), titree du libelle de l'API.
   await expect(page).toHaveURL(/\/en-sa\/road-bikes$/);
-  await expect(page.getByRole('heading', { name: 'Road', level: 1 })).toBeVisible();
-  await expect(page.getByText('137 bikes')).toBeVisible();
+  const collection = await readCatalog(request, 'en-sa', { category: 'road', sort: 'year_desc', per_page: '12' });
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(category.label);
+  await expect(page.getByText(expectedBikeCount('en-sa', collection.meta.total), { exact: true })).toBeVisible();
 });
 
-test('l apercu montre trois cartes, les memes que le catalogue', async ({ page }) => {
+test('l apercu montre trois cartes, les memes que le catalogue', async ({ page, request }) => {
+  const home = await readCatalog(request, 'en-sa', { per_page: '3', sort: 'year_desc' });
   await page.goto(EN);
 
   // Les seules images de la page sont les cartes — le meme composant que le
   // catalogue, donc les memes liens vers les fiches.
   const cartes = page.getByRole('link').filter({ has: page.locator('img') });
-  await expect(cartes).toHaveCount(3);
+  await expect(cartes).toHaveCount(home.data.length);
+  expect(home.data.length).toBeGreaterThan(0);
   await expect(cartes.first()).toHaveAttribute(
     'href',
     /\/en-sa\/bikes\/(trek|specialized|giant|canyon|scott)\//,
@@ -108,20 +122,19 @@ test('les trois piliers menent au catalogue, au comparateur et au bikefinder', a
   );
 });
 
-test('les chiffres sont ceux de l API : total et facettes', async ({ page }) => {
+test('les chiffres sont ceux de l API : total et facettes', async ({ page, request }) => {
+  const home = await readCatalog(request, 'en-sa', { per_page: '3', sort: 'year_desc' });
   await page.goto(EN);
 
   const chiffres = page.locator('dl').filter({ hasText: 'Wheel sizes' });
   const tuiles = chiffres.locator('div');
   await expect(tuiles).toHaveCount(4);
 
-  // Le total du catalogue, puis les cinq marques — les memes que la bande des marques.
-  await expect(tuiles.nth(0)).toContainText('634');
-  await expect(tuiles.nth(0)).toContainText('Bikes');
-  await expect(tuiles.nth(1)).toContainText('5');
-  await expect(tuiles.nth(1)).toContainText('Brands');
-  await expect(tuiles.nth(2)).toContainText('Categories');
-  await expect(tuiles.nth(3)).toContainText('Wheel sizes');
+  await expect(chiffres.locator('dt')).toHaveText(['Bikes', 'Brands', 'Categories', 'Wheel sizes']);
+  await expect(chiffres.locator('dd')).toHaveText([
+    String(home.meta.total), String(home.facets.brands.length),
+    String(home.facets.categories.length), String(home.facets.wheel_sizes.length),
+  ]);
 
   // Aucun chiffre qui ne soit pas dans l'API : ni avis, ni note, ni utilisateurs.
   await expect(page.getByText(/testimonial|review|rating|users/i)).toHaveCount(0);
@@ -138,7 +151,10 @@ test('l appel final mene au bikefinder', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 });
 
-test('la version arabe est en RTL avec les libelles traduits', async ({ page }) => {
+test('la version arabe est en RTL avec les libelles traduits', async ({ page, request }) => {
+  const home = await readCatalog(request, 'ar-sa', { per_page: '3', sort: 'year_desc' });
+  const city = requiredFacet(home.facets.categories, 'city');
+  const brand = requiredFacet(home.facets.brands, 'trek');
   await page.goto(AR);
 
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
@@ -146,29 +162,46 @@ test('la version arabe est en RTL avec les libelles traduits', async ({ page }) 
   await expect(page.getByRole('heading', { name: 'اكتشف، قارن، ثم اختر', level: 2 })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'الكتالوج بالأرقام', level: 2 })).toBeVisible();
   // Les libelles des tuiles arrivent traduits de l'API, pas du front.
-  await expect(page.getByRole('link', { name: 'دراجات هوائية للمدينة والهجين' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Trek 196 دراجةً' })).toBeVisible();
+  await expect(page.getByRole('link', { name: `${city.label} ${expectedBikeCount('ar-sa', city.count)}`, exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: `${brand.label} ${expectedBikeCount('ar-sa', brand.count)}`, exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'ابدأ دليل اختيار الدراجة' })).toHaveAttribute(
     'href',
     '/ar-sa/finder',
   );
 });
 
-test('le mot du compteur s accorde au nombre, dans les deux langues', async ({ page }) => {
-  // Le generique arabe est « دراجة » (decision du 4 septembre 2026) ; la regle du
-  // nombre — 3 a 10 « دراجات », 11 a 99 l'accusatif « دراجةً », le reste « دراجة » — vient
-  // d'`Intl.PluralRules`, pas d'une liste ecrite a la main. Les decomptes sont
-  // ceux des facettes de l'API.
-  await page.goto(AR);
-  await expect(page.getByRole('link', { name: 'إندورو 4 دراجات' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'سيكلوكروس 1 دراجة' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'للطريق 137 دراجةً' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'تصفح 634 دراجةً' })).toBeVisible();
+test('le mot du compteur s accorde au nombre, dans les deux langues', async ({ page, request }) => {
+  for (const locale of ['ar-sa', 'en-sa'] as const) {
+    const home = await readCatalog(request, locale, { per_page: '3', sort: 'year_desc' });
+    expect(home.facets.categories.length).toBeGreaterThan(0);
+    await page.goto(`/${locale}`);
+    for (const category of home.facets.categories) {
+      await expect(page.getByRole('link', {
+        name: `${category.label} ${expectedBikeCount(locale, category.count)}`, exact: true,
+      })).toBeVisible();
+    }
+    const prefix = locale === 'ar-sa' ? 'تصفح' : 'Browse';
+    await expect(page.getByRole('link', {
+      name: `${prefix} ${expectedBikeCount(locale, home.meta.total)}`, exact: true,
+    })).toBeVisible();
+  }
+});
 
-  // En anglais, le singulier existe aussi : « 1 bike », jamais « 1 bikes ».
-  await page.goto(EN);
-  await expect(page.getByRole('link', { name: 'Cyclocross 1 bike' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Enduro 4 bikes' })).toBeVisible();
+test('l accord couvre aussi les nombres absents du catalogue courant', () => {
+  // Cas linguistiques, pas un instantane du catalogue. Oracle et application
+  // sont verifies contre ces formes litterales, jamais l'un contre l'autre.
+  for (const [count, ar, en] of [
+    [0, '0 دراجة', '0 bikes'], [1, '1 دراجة', '1 bike'], [2, '2 دراجة', '2 bikes'],
+    [3, '3 دراجات', '3 bikes'], [10, '10 دراجات', '10 bikes'], [11, '11 دراجةً', '11 bikes'],
+    [99, '99 دراجةً', '99 bikes'], [100, '100 دراجة', '100 bikes'],
+    [101, '101 دراجة', '101 bikes'], [102, '102 دراجة', '102 bikes'],
+    [103, '103 دراجات', '103 bikes'], [111, '111 دراجةً', '111 bikes'],
+  ] as const) {
+    expect(bikesCount('ar-sa', count)).toBe(ar);
+    expect(bikesCount('en-sa', count)).toBe(en);
+    expect(expectedBikeCount('ar-sa', count)).toBe(ar);
+    expect(expectedBikeCount('en-sa', count)).toBe(en);
+  }
 });
 
 test('en arabe, les fleches « vers la suite » pointent vers la gauche', async ({ page }) => {

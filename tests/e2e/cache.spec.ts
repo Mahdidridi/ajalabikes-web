@@ -1,4 +1,5 @@
 import { expect, test, type APIRequestContext } from '@playwright/test';
+import { currentBuild } from './helpers/catalog-api';
 
 /**
  * Contrat de cache du 2 septembre 2026 (`tasks/2026-09-02-cache-contrat.md`) :
@@ -11,38 +12,47 @@ import { expect, test, type APIRequestContext } from '@playwright/test';
  *    de nouveau servie du cache. La preuve est l'en-tete `x-nextjs-cache` que
  *    Next pose sur toute route ISR (HIT · MISS · STALE · REVALIDATED).
  *
- * Le secret est celui du `.env.local` du serveur teste ; sans variable
- * d'environnement, c'est la valeur locale documentee dans CLAUDE.md.
+ * REVALIDATE_SECRET doit etre exporte explicitement pour le serveur teste.
+ * La suite s'execute avec --workers=1 : le pseudo-tag all invalide aussi les
+ * pages visitees par les autres specs et projets.
  */
-const SECRET = process.env.REVALIDATE_SECRET ?? 'secret-local-de-test';
 const ROUTE = '/api/revalidate';
 
-/**
- * Une fiche PAR PROJET Playwright, qu'aucun autre spec ne visite. Les projets
- * desktop et mobile tournent en parallele : une invalidation lancee par l'un
- * ferait apparaitre un MISS inattendu chez l'autre s'ils partageaient la meme
- * fiche. Les autres specs ne lisent que le Fuel MX, l'Allez Elite et un Farley.
- */
-const FICHES = {
-  desktop: { path: '/en-sa/bikes/giant/anthem-advanced-sl-0', tag: 'build:giant:anthem-advanced-sl-0' },
-  // `addict-10` depuis le 8 septembre 2026 (scraper #5) : l'ancienne adresse
-  // `scott-addict-10-bike` repond 308, et son tag ne purge plus rien.
-  mobile: { path: '/en-sa/bikes/scott/addict-10', tag: 'build:scott:addict-10' },
-} as const;
+function requiredSecret(): string {
+  const secret = process.env.REVALIDATE_SECRET;
+  if (!secret?.trim()) {
+    throw new Error(
+      'REVALIDATE_SECRET est requis pour les tests de revalidation. ' +
+      'Exporter le secret du serveur teste : export REVALIDATE_SECRET="<secret du serveur teste>" ' +
+      '(PowerShell : $env:REVALIDATE_SECRET = "<secret du serveur teste>").',
+    );
+  }
 
-/** La fiche du contrat, lue par d'autres specs — jamais invalidee ici. */
-const FUEL = '/en-sa/bikes/trek/fuel-mx-9-8-xt-gen-7-81563';
+  return secret;
+}
 
-const fiche = (project: string) => FICHES[project as keyof typeof FICHES] ?? FICHES.desktop;
+/** Une marque distincte par projet, avec un slug canonique lu dans le catalogue courant. */
+const fiche = async (request: APIRequestContext, project: string) => {
+  const build = await currentBuild(request, 'en-sa', {
+    brand: project === 'mobile' ? 'scott' : 'giant',
+    sort: 'year_desc',
+  });
+  expect(build.model_path, 'La fiche de cache doit publier son adresse modele').not.toBeNull();
+
+  return { path: build.model_path!, tag: `build:${build.brand.slug}:${build.slug}` };
+};
 
 const cacheStatus = async (request: APIRequestContext, path: string) => {
-  const res = await request.get(path);
+  const res = await request.get(path, { maxRedirects: 0 });
   expect(res.status(), path).toBe(200);
+  expect(['HIT', 'MISS', 'STALE', 'REVALIDATED'], `${path} doit porter x-nextjs-cache`).toContain(
+    res.headers()['x-nextjs-cache'],
+  );
 
   return res.headers()['x-nextjs-cache'];
 };
 
-const revalidate = (request: APIRequestContext, body: unknown, secret: string | null = SECRET) =>
+const revalidate = (request: APIRequestContext, body: unknown, secret: string | null = requiredSecret()) =>
   request.post(ROUTE, {
     headers: secret === null ? {} : { Authorization: `Bearer ${secret}` },
     data: body,
@@ -50,8 +60,7 @@ const revalidate = (request: APIRequestContext, body: unknown, secret: string | 
 
 /**
  * Une page purgee est re-rendue a la requete suivante, puis servie du cache.
- * On attend le HIT en interrogeant, pour rester insensible aux purges que
- * l'autre projet Playwright peut lancer entre-temps (pseudo-tag `all`).
+ * On attend le HIT en interrogeant pour laisser le rendu ISR se terminer.
  */
 const attendreHit = (request: APIRequestContext, path: string) =>
   expect
@@ -106,16 +115,17 @@ test.describe('POST /api/revalidate', () => {
 });
 
 test.describe('une fiche est rendue une fois, puis servie du cache', () => {
-  test('la seconde requete est un HIT', async ({ request }) => {
+  test('la seconde requete est un HIT', async ({ request }, testInfo) => {
+    const { path } = await fiche(request, testInfo.project.name);
     // La premiere requete peut etre le tout premier rendu (MISS) ou non ; la
     // suivante vient du cache.
-    await cacheStatus(request, FUEL);
+    await cacheStatus(request, path);
 
-    await attendreHit(request, FUEL);
+    await attendreHit(request, path);
   });
 
   test('le tag de la fiche la fait re-rendre, puis elle revient du cache', async ({ request }, testInfo) => {
-    const { path, tag } = fiche(testInfo.project.name);
+    const { path, tag } = await fiche(request, testInfo.project.name);
     await attendreHit(request, path);
 
     const res = await revalidate(request, { tags: [tag], reason: 'test e2e : fiche' });
@@ -128,17 +138,15 @@ test.describe('une fiche est rendue une fois, puis servie du cache', () => {
   });
 
   test('le pseudo-tag all purge tout, fiche et accueil compris', async ({ request }, testInfo) => {
-    const { path } = fiche(testInfo.project.name);
+    const { path } = await fiche(request, testInfo.project.name);
     await attendreHit(request, path);
     await attendreHit(request, '/en-sa');
 
     const res = await revalidate(request, { tags: ['all'], reason: 'test e2e : purge totale' });
     expect(res.status()).toBe(200);
 
-    // L'accueil D'ABORD, dans la foulee de la purge : d'autres specs le
-    // visitent en parallele, et une seule visite pendant le re-rendu de la
-    // fiche (ci-dessous) suffirait a le remettre en cache avant qu'on ne
-    // l'observe. La fiche, elle, n'est visitee que par ce projet.
+    // L'accueil D'ABORD, dans la foulee de la purge : sur un serveur partage,
+    // une visite externe peut le remettre en cache pendant le rendu de la fiche.
     expect(await cacheStatus(request, '/en-sa')).not.toBe('HIT');
     expect((await res.json()).revalidated).toEqual(['all']);
     expect(await cacheStatus(request, path)).not.toBe('HIT');

@@ -61,7 +61,8 @@ et confirmer `confirm_cache_invalidation` : **cache.spec.ts invalide reellement 
 globale**. Ni execution automatique, ni secret cree par cette PR. Cible : `PLAYWRIGHT_BASE_URL=https://darrajabikes.com` ;
 tests et executions serialises, echec remonte dans les logs GitHub avec masquage du secret. Aucun rapport brut/trace n'est
 televerse : une erreur reseau Playwright peut inclure l'en-tete Authorization. Le workflow construit aussi Next pour
-les tests d'erreur #10, qui utilisent leurs propres serveurs locaux isoles. Les attentes perimees restent rouges jusqu'a #37.
+les tests d'erreur #10, qui utilisent leurs propres serveurs locaux isoles. Les tests de catalogue lisent leurs attentes
+dans l'API au moment du test (web #37) ; aucun comptage de septembre n'est conserve.
 Pour reproduire sans production, lancer l'API et le Next local de production, fournir leur URL et un secret **local**, puis
 `npm test -- --workers=1 --forbid-only`. La verification croisee du contrat et le deploiement restent hors de cette phase.
 
@@ -131,8 +132,10 @@ ont chacune une page à chemin propre. Les chemins sont construits par `src/lib/
   `generateMetadata`) : si `getBuild` renvoie un build dont `slug` ou `brand.slug` diffère de l'URL — ancien slug résolu
   par la future table `slug_redirects` de l'API, fusion —, `permanentRedirect` (308, mis en cache ISR) vers
   `/{locale}/bikes/{brand.slug}/{slug}`. Un slug inconnu de l'API reste 404. `tests/e2e/redirects.spec.ts` : le cas
-  de redirection est actif, la semence existe cote API ; ses attentes de slug suffixe `-81563` sont perimees et relevent
-  de web #37. Il n'y a aucun `test.fixme` a reactiver.
+  de redirection est actif : son ancienne entree `fuel-mx-9-8-xt` est resolue par l'API au moment du test, puis
+  la destination exacte et son statut 200 direct sont verifies. Le web repond en 308 (`permanentRedirect`) : le 301
+  demande par le texte de #37 contredit le comportement et la documentation existants, sans changement applicatif ici.
+  Il n'y a aucun `test.fixme` a reactiver.
 - **Une seule forme canonique par adresse** (décision du 5 septembre 2026, `../CLAUDE.md` Routes point 6 ; issue #17,
   livrée le 8 septembre) : minuscules, sans slash final, apex sans `www`. Google traite les URL comme sensibles à la
   casse — chaque variante tolérée est un doublon. Trois mécanismes, chacun à sa place : la racine `/` → `/ar-sa` en
@@ -155,7 +158,8 @@ Contrat partagé avec l'API : `../tasks/2026-09-02-cache-contrat.md`. Les tags y
 - **Pages** : fiche vélo, pages marque et catégorie, étapes du finder sont rendues au premier appel puis servies du cache (`revalidate = 86400`, `dynamicParams = true`, `generateStaticParams` vide — sans lui, même vide, Next rend la route à chaque requête). Accueil et racine du finder sont prérendus par locale avec le même `revalidate`. Catalogue et comparateur restent dynamiques (`searchParams`), mais leurs appels API sont cachés.
 - **Route `POST /api/revalidate`** (`src/app/api/revalidate/route.ts`) : `Authorization: Bearer $REVALIDATE_SECRET` (comparaison en temps constant, secret absent = tout refusé), corps `{ "tags": [...], "reason": "..." }`. Réponses : `200 { revalidated, reason, at }` · `401 { "error": "unauthorized" }` · `422 { "error": "tags required" }`. Chaque tag expire immédiatement (`revalidateTag(tag, { expire: 0 })` : la requête suivante re-rend, jamais de page périmée servie après un import) ; `all` = `revalidatePath('/', 'layout')`. Une ligne `[revalidate] {"status","tags","reason","ms"}` par appel dans la sortie du serveur.
 - **Preuve** : l'en-tête `x-nextjs-cache` sur toute page cachée — `MISS` au premier rendu, `HIT` ensuite, de nouveau `MISS` après le tag. Uniquement sous `npm run build && npm start` : `next dev` ne cache rien. Vérifié par `tests/e2e/cache.spec.ts`.
-- **Purger en local** (secret de `.env.local`, jamais commité — `REVALIDATE_SECRET=secret-local-de-test` est la valeur par défaut du spec, surchargeable par la variable d'environnement) :
+- **Purger en local** (secret de `.env.local`, jamais commité ; la valeur suivante est un exemple local uniquement,
+  pas une valeur par defaut du spec) :
 
   ```bash
   curl -X POST http://127.0.0.1:3000/api/revalidate \
@@ -164,6 +168,31 @@ Contrat partagé avec l'API : `../tasks/2026-09-02-cache-contrat.md`. Les tags y
   ```
 
 - **Limite connue** : le cache handler par défaut de Next garde les invalidations de tags **en mémoire du processus** (`tags-manifest.external`) ; le HTML est sur disque, mais avec plusieurs workers PM2 seul celui qui reçoit le webhook purge, les autres servent l'ancienne page jusqu'au filet de 24 h. Un seul worker, ou un cache handler partagé, avant de passer en cluster.
+
+### Tests de catalogue et revalidation (web #37)
+
+- Les six specs accueil/catalogue/collections/SEO/redirections/cache lisent les nombres, facettes et fiches depuis
+  `API_BASE_URL`, avec la locale et les filtres de la page. Les types viennent du contrat genere, aucune API simulee
+  pour ces assertions. Une API indisponible ou une fiche requise absente fait echouer le test, sans valeur de secours.
+- L'API fournit `meta.total`, `count` et `label`, **pas de compteur preformate**. Les attentes de texte utilisent un
+  oracle linguistique independant ; des cas litteraux verifient aussi les formes arabe/anglais de `bikesCount`.
+- `REVALIDATE_SECRET` doit etre exporte dans le processus Playwright et correspondre au serveur teste ; Playwright ne
+  lit pas automatiquement son `.env.local`. Sans secret, tout appel authentifie echoue avec la commande a exporter.
+  Les tests explicites sans secret/mauvais secret restent actifs. Aucun skip, aucune valeur locale implicite.
+- Executer la suite avec **un seul worker**, car le test du tag `all` purge aussi l'accueil partage avec les autres specs.
+  Construire Next, lancer `npm start` dans un autre terminal avec la meme API et le meme secret, puis :
+
+  ```powershell
+  $env:API_BASE_URL = 'http://127.0.0.1:8000/api'
+  $env:PLAYWRIGHT_BASE_URL = 'http://127.0.0.1:3000'
+  $env:REVALIDATE_SECRET = '<secret du serveur local teste>'
+  npx playwright test --workers=1 --forbid-only --reporter=line
+  npx playwright test --workers=1 --forbid-only --reporter=line
+  ```
+
+  Pour une cible distante, l'API doit etre celle du site teste. **Production : accord distinct avant ces commandes**,
+  car les tests invalident reellement son cache. Ne jamais copier le secret dans un rapport ou publier des traces/HTML
+  bruts contenant des appels authentifies ; privilegier le workflow manuel avec les logs masques GitHub.
 
 ## SEO — préparé, verrouillé
 

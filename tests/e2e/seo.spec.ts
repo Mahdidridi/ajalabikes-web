@@ -1,5 +1,7 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
+import type { Build, BuildCard, Locale } from '@/lib/api';
 import { bikeDescription } from '@/lib/seo';
+import { currentBuild, expectedBikeCount, readBuild, readCatalog, requiredFacet } from './helpers/catalog-api';
 
 /**
  * SEO prepare SANS lever le noindex (decisions du 2 septembre 2026, CLAUDE.md
@@ -12,9 +14,67 @@ import { bikeDescription } from '@/lib/seo';
  * memes URL absolues que la prod.
  */
 const SITE = 'https://darrajabikes.com';
-const FUEL = '/bikes/trek/fuel-mx-9-8-xt-gen-7-81563';
-const FUEL_EN = `/en-sa${FUEL}`;
-const FUEL_AR = `/ar-sa${FUEL}`;
+
+const modelPath = (build: Build) => {
+  expect(build.model_path, 'La fiche choisie doit publier son adresse modele').not.toBeNull();
+
+  return build.model_path!;
+};
+
+const localizedBuild = (request: APIRequestContext, locale: Locale, build: Build) =>
+  readBuild(request, locale, build.brand.slug, build.slug);
+
+/** Oracle de presentation independant : les champs et tailles viennent de l'API. */
+const fullDescription = (locale: Locale, build: Build | BuildCard) => {
+  const name = `${build.brand.name} ${build.model_name}${build.year === null ? '' : ` ${build.year_label}`}`;
+  const count = build.sizes.length;
+  const remainder = count % 100;
+  const sizeWord = locale === 'en-sa'
+    ? count === 1 ? 'size' : 'sizes'
+    : remainder >= 3 && remainder <= 10 ? 'مقاسات' : remainder >= 11 && remainder <= 99 ? 'مقاسًا' : 'مقاس';
+  const sizes = count > 0 ? ` (${count} ${sizeWord})` : '';
+
+  return locale === 'en-sa'
+    ? `${name}: full specs, geometry by size${sizes}, components and side-by-side comparison.`
+    : `دراجة ${name}: المواصفات الكاملة، الهندسة حسب المقاس${sizes}، المكونات، والمقارنة مع دراجات أخرى.`;
+};
+
+const expectedDescription = (locale: Locale, build: Build | BuildCard) => {
+  const full = fullDescription(locale, build);
+  if (full.length <= 160) return full;
+
+  const words = full.split(' ');
+  while (words.join(' ').length + 1 > 160) words.pop();
+
+  return `${words.join(' ').replace(/[،,:;(]+$/, '')}…`;
+};
+
+const comparisonQuery = async (request: APIRequestContext) => {
+  const catalog = await readCatalog(request, 'en-sa');
+  const cards = catalog.data.filter((card) => card.model_path !== null).slice(0, 2);
+  expect(cards, 'Deux fiches actuelles sont necessaires pour le comparateur').toHaveLength(2);
+
+  return new URLSearchParams({ bikes: cards.map((card) => `${card.brand.slug}/${card.slug}`).join(',') });
+};
+
+const longDescriptionBuild = async (request: APIRequestContext) => {
+  let cursor: string | undefined;
+  const visited = new Set<string>();
+  do {
+    const catalog = await readCatalog(request, 'en-sa', { per_page: '100', ...(cursor ? { cursor } : {}) });
+    const candidate = catalog.data.find((card) => card.model_path !== null && fullDescription('en-sa', card).length > 160);
+    if (candidate) {
+      return readBuild(request, 'en-sa', candidate.brand.slug, candidate.slug);
+    }
+    cursor = catalog.meta.next_cursor ?? undefined;
+    if (cursor) {
+      expect(visited.has(cursor), 'Le curseur API doit progresser').toBe(false);
+      visited.add(cursor);
+    }
+  } while (cursor);
+
+  throw new Error('Le catalogue doit fournir une fiche dont la description depasse 160 caracteres.');
+};
 
 /** Les liens hreflang de la page, tels que rendus : `{ 'ar-SA': href, … }`. */
 const hreflangs = (page: Page) =>
@@ -38,10 +98,11 @@ const jsonLd = async (page: Page): Promise<JsonLd[]> => {
 const bloc = (blocs: JsonLd[], type: string) => blocs.find((b) => b['@type'] === type);
 
 test.describe('canonical', () => {
-  test('la fiche porte un canonical absolu, sans la query', async ({ page }) => {
-    await page.goto(`${FUEL_EN}?utm_source=test`);
+  test('la fiche porte un canonical absolu, sans la query', async ({ page, request }) => {
+    const path = modelPath(await currentBuild(request, 'en-sa'));
+    await page.goto(`${path}?utm_source=test`);
 
-    await expect(canonical(page)).toHaveAttribute('href', `${SITE}${FUEL_EN}`);
+    await expect(canonical(page)).toHaveAttribute('href', `${SITE}${path}`);
   });
 
   test('le catalogue filtre garde le canonical du catalogue nu', async ({ page }) => {
@@ -54,8 +115,10 @@ test.describe('canonical', () => {
     await expect(canonical(page)).toHaveAttribute('href', `${SITE}/ar-sa/bikes`);
   });
 
-  test('le comparateur et le bikefinder ont un canonical sans query', async ({ page }) => {
-    await page.goto('/en-sa/compare?bikes=trek/farley-5,trek/farley-7&diff=1');
+  test('le comparateur et le bikefinder ont un canonical sans query', async ({ page, request }) => {
+    const query = await comparisonQuery(request);
+    query.set('diff', '1');
+    await page.goto(`/en-sa/compare?${query}`);
     await expect(canonical(page)).toHaveAttribute('href', `${SITE}/en-sa/compare`);
 
     await page.goto('/ar-sa/finder');
@@ -73,24 +136,28 @@ test.describe('canonical', () => {
 });
 
 test.describe('hreflang', () => {
-  test('la fiche declare ar-SA, en-SA et x-default, avec auto-reference', async ({ page }) => {
-    await page.goto(FUEL_EN);
+  test('la fiche declare ar-SA, en-SA et x-default, avec auto-reference', async ({ page, request }) => {
+    const build = await currentBuild(request, 'en-sa');
+    const buildAr = await localizedBuild(request, 'ar-sa', build);
+    await page.goto(modelPath(build));
 
     expect(await hreflangs(page)).toEqual({
-      'ar-SA': `${SITE}${FUEL_AR}`,
-      'en-SA': `${SITE}${FUEL_EN}`,
+      'ar-SA': `${SITE}${modelPath(buildAr)}`,
+      'en-SA': `${SITE}${modelPath(build)}`,
       // Le repli pour les autres langues est l'anglais : les expatries du Golfe.
-      'x-default': `${SITE}${FUEL_EN}`,
+      'x-default': `${SITE}${modelPath(build)}`,
     });
   });
 
-  test('les deux locales d une fiche se pointent mutuellement', async ({ page }) => {
+  test('les deux locales d une fiche se pointent mutuellement', async ({ page, request }) => {
     // Google ignore un hreflang non reciproque : la page arabe doit declarer
     // exactement le meme groupe que la page anglaise, elle-meme comprise.
-    await page.goto(FUEL_EN);
+    const build = await currentBuild(request, 'en-sa');
+    const buildAr = await localizedBuild(request, 'ar-sa', build);
+    await page.goto(modelPath(build));
     const depuisEn = await hreflangs(page);
 
-    await page.goto(FUEL_AR);
+    await page.goto(modelPath(buildAr));
     const depuisAr = await hreflangs(page);
 
     expect(depuisAr).toEqual(depuisEn);
@@ -137,60 +204,70 @@ test.describe('JSON-LD', () => {
     expect(bloc(await jsonLd(page), 'WebSite')).toMatchObject({ inLanguage: 'en' });
   });
 
-  test('la fiche porte un Product sans offre, sans prix, sans note', async ({ page }) => {
-    await page.goto(FUEL_EN);
+  test('la fiche porte un Product sans offre, sans prix, sans note', async ({ page, request }) => {
+    const build = await currentBuild(request, 'en-sa');
+    await page.goto(modelPath(build));
     const produit = bloc(await jsonLd(page), 'Product');
 
     expect(produit).toMatchObject({
       '@context': 'https://schema.org',
-      name: 'Trek Fuel MX 9.8 XT Gen 7',
-      brand: { '@type': 'Brand', name: 'Trek' },
-      url: `${SITE}${FUEL_EN}`,
+      name: `${build.brand.name} ${build.model_name}`,
+      brand: { '@type': 'Brand', name: build.brand.name },
+      url: `${SITE}${modelPath(build)}`,
     });
 
     // Les photos de la galerie, en taille `detail`, en URL absolues.
     const images = produit!.image as string[];
     expect(images.length).toBeGreaterThan(0);
+    expect(images).toEqual(build.images.map((image) => image.sizes.detail.url));
     for (const image of images) expect(image).toMatch(/^https:\/\/.+-detail\.webp$/);
 
     // Le MSRP US n'est pas un prix local : aucune offre. Aucune note fabriquee.
     for (const interdit of ['offers', 'aggregateRating', 'review', 'price']) {
       expect(produit, interdit).not.toHaveProperty(interdit);
     }
-    expect(JSON.stringify(produit)).not.toContain('5,999');
+    if (build.msrp?.formatted) expect(JSON.stringify(produit)).not.toContain(build.msrp.formatted);
   });
 
-  test('le fil d Ariane de la fiche a quatre maillons absolus', async ({ page }) => {
-    await page.goto(FUEL_EN);
+  test('le fil d Ariane de la fiche a quatre maillons absolus', async ({ page, request }) => {
+    const build = await currentBuild(request, 'en-sa');
+    await page.goto(modelPath(build));
     const fil = bloc(await jsonLd(page), 'BreadcrumbList');
 
     const maillons = fil!.itemListElement as { position: number; name: string; item: string }[];
     expect(maillons.map((m) => m.position)).toEqual([1, 2, 3, 4]);
-    expect(maillons.map((m) => m.name)).toEqual(['Home', 'Bikes', 'Trek', 'Fuel MX 9.8 XT Gen 7']);
+    expect(maillons.map((m) => m.name)).toEqual(['Home', 'Bikes', build.brand.name, build.model_name]);
     expect(maillons.map((m) => m.item)).toEqual([
       `${SITE}/en-sa`,
       `${SITE}/en-sa/bikes`,
       // La page marque est figee par la decision du 2 septembre 2026.
-      `${SITE}/en-sa/bikes/trek`,
-      `${SITE}${FUEL_EN}`,
+      `${SITE}/en-sa/bikes/${build.brand.slug}`,
+      `${SITE}${modelPath(build)}`,
     ]);
 
     // Une langue par page : les libelles suivent la locale, les noms restent
     // latins. « الدراجات الهوائية » : le generique complet, que Google affiche a la
     // place de l'URL (decision du 3 septembre 2026).
-    await page.goto(FUEL_AR);
+    const buildAr = await localizedBuild(request, 'ar-sa', build);
+    await page.goto(modelPath(buildAr));
     const filAr = bloc(await jsonLd(page), 'BreadcrumbList');
     const nomsAr = (filAr!.itemListElement as { name: string }[]).map((m) => m.name);
-    expect(nomsAr).toEqual(['الرئيسية', 'الدراجات الهوائية', 'Trek', 'Fuel MX 9.8 XT Gen 7']);
+    expect(nomsAr).toEqual(['الرئيسية', 'الدراجات الهوائية', buildAr.brand.name, buildAr.model_name]);
   });
 
-  test('le catalogue nu porte un ItemList des cartes de la page, le filtre non', async ({ page }) => {
+  test('le catalogue nu porte un ItemList des cartes de la page, le filtre non', async ({ page, request }) => {
+    const catalog = await readCatalog(request, 'en-sa');
     await page.goto('/en-sa/bikes');
     const liste = bloc(await jsonLd(page), 'ItemList');
 
     const elements = liste!.itemListElement as { position: number; url: string }[];
-    expect(elements).toHaveLength(24);
+    expect(elements).toHaveLength(catalog.data.length);
     expect(elements[0].position).toBe(1);
+    expect(elements).toEqual(catalog.data.map((card, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      url: `${SITE}/en-sa/bikes/${card.brand.slug}/${card.slug}`,
+    })));
     for (const e of elements) expect(e.url).toMatch(new RegExp(`^${SITE}/en-sa/bikes/[a-z0-9-]+/[a-z0-9-]+$`));
 
     // Un filtre n'est pas une page : il ne decrit rien a Google.
@@ -198,8 +275,9 @@ test.describe('JSON-LD', () => {
     expect(bloc(await jsonLd(page), 'ItemList')).toBeUndefined();
   });
 
-  test('aucun bloc ne porte de Product hors de la fiche', async ({ page }) => {
-    for (const chemin of ['/en-sa', '/en-sa/bikes', '/en-sa/compare?bikes=trek/farley-5,trek/farley-7']) {
+  test('aucun bloc ne porte de Product hors de la fiche', async ({ page, request }) => {
+    const query = await comparisonQuery(request);
+    for (const chemin of ['/en-sa', '/en-sa/bikes', `/en-sa/compare?${query}`]) {
       await page.goto(chemin);
 
       expect(bloc(await jsonLd(page), 'Product'), chemin).toBeUndefined();
@@ -208,14 +286,14 @@ test.describe('JSON-LD', () => {
 });
 
 test.describe('noindex conserve', () => {
-  test('chaque page reste noindex malgre canonical et hreflang', async ({ page }) => {
+  test('chaque page reste noindex malgre canonical et hreflang', async ({ page, request }) => {
     // Le verrou global tient tant que la levee n'est pas decidee : rien ne
     // s'indexe, meme les pages dont la politique cible est « index ».
     for (const chemin of [
       '/ar-sa',
       '/en-sa/bikes',
       '/en-sa/bikes?brand=trek',
-      FUEL_EN,
+      modelPath(await currentBuild(request, 'en-sa')),
       '/en-sa/compare',
       '/en-sa/finder',
     ]) {
@@ -231,7 +309,7 @@ test.describe('noindex conserve', () => {
     // Next diffère les metadonnees des pages dynamiques dans le <body> pour
     // les navigateurs ; les robots « HTML seulement » (Bingbot ici) doivent les
     // trouver dans le <head>, avant tout script.
-    for (const chemin of [FUEL_EN, '/en-sa/bikes?brand=trek']) {
+    for (const chemin of [modelPath(await currentBuild(request, 'en-sa')), '/en-sa/bikes?brand=trek']) {
       const res = await request.get(chemin, {
         headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Bingbot/2.0; +http://www.bing.com/bingbot.htm)' },
       });
@@ -247,7 +325,9 @@ test.describe('noindex conserve', () => {
 });
 
 test.describe('pages marque et categorie', () => {
-  test('la page marque porte canonical, hreflang reciproques et un fil d Ariane a 3 maillons', async ({ page }) => {
+  test('la page marque porte canonical, hreflang reciproques et un fil d Ariane a 3 maillons', async ({ page, request }) => {
+    const catalog = await readCatalog(request, 'ar-sa', { brand: 'trek', sort: 'year_desc', per_page: '12' });
+    const brand = requiredFacet(catalog.facets.brands, 'trek');
     await page.goto('/ar-sa/bikes/trek');
 
     await expect(canonical(page)).toHaveAttribute('href', `${SITE}/ar-sa/bikes/trek`);
@@ -256,10 +336,10 @@ test.describe('pages marque et categorie', () => {
     expect(liens['en-SA']).toBe(`${SITE}/en-sa/bikes/trek`);
     expect(liens['x-default']).toBe(`${SITE}/en-sa/bikes/trek`);
     // « دراجات Trek » : le generique en tete du titre — jamais « سياكل Trek ».
-    await expect(page).toHaveTitle('دراجات Trek · Darraja Bikes');
+    await expect(page).toHaveTitle(`دراجات ${brand.label} · Darraja Bikes`);
     await expect(page.locator('meta[name="description"]')).toHaveAttribute(
       'content',
-      /^196 دراجةً من Trek: .*الدراجات الهوائية/,
+      `${expectedBikeCount('ar-sa', catalog.meta.total)} من ${brand.label}: المواصفات الكاملة والهندسة حسب المقاس ومقارنة الدراجات الهوائية جنبًا إلى جنب.`,
     );
 
     const fil = bloc(await jsonLd(page), 'BreadcrumbList');
@@ -287,38 +367,44 @@ test.describe('pages marque et categorie', () => {
 test.describe('description des fiches', () => {
   const description = (page: Page) => page.locator('meta[name="description"]').getAttribute('content');
 
-  test('chaque fiche a sa propre description, batie sur ses champs', async ({ page }) => {
-    await page.goto(FUEL_EN);
-    const fuel = await description(page);
+  test('chaque fiche a sa propre description, batie sur ses champs', async ({ page, request }) => {
+    const build = await currentBuild(request, 'en-sa', { sort: 'year_desc' });
+    await page.goto(modelPath(build));
+    const first = await description(page);
     // Marque, modele, millesime tel que l'API le libelle, nombre de tailles publiees.
-    expect(fuel).toBe(
-      'Trek Fuel MX 9.8 XT Gen 7 2027: full specs, geometry by size (5 sizes), components and side-by-side comparison.',
-    );
-    await expect(page.locator('meta[property="og:description"]')).toHaveAttribute('content', fuel!);
+    expect(first).toBe(expectedDescription('en-sa', build));
+    await expect(page.locator('meta[property="og:description"]')).toHaveAttribute('content', first!);
 
-    await page.goto('/en-sa/bikes/trek/farley-5');
-    const farley = await description(page);
-    expect(farley).toContain('Farley 5');
-    expect(farley).not.toBe(fuel);
-    // Plus jamais la signature, partagee hier par les 634 fiches.
-    expect(farley).not.toContain('bike comparison platform');
+    const catalog = await readCatalog(request, 'en-sa');
+    const other = catalog.data.find((card) => card.model_path !== null &&
+      (card.brand.slug !== build.brand.slug || card.slug !== build.slug));
+    expect(other, 'Le catalogue doit fournir une seconde fiche distincte').toBeDefined();
+    const secondBuild = await readBuild(request, 'en-sa', other!.brand.slug, other!.slug);
+    await page.goto(modelPath(secondBuild));
+    const second = await description(page);
+    expect(second).toBe(expectedDescription('en-sa', secondBuild));
+    expect(second).toContain(secondBuild.model_name);
+    expect(second).not.toBe(first);
+    // Plus jamais la signature partagee par toutes les fiches.
+    expect(second).not.toContain('bike comparison platform');
   });
 
-  test('en arabe : « دراجة » en tete, le modele, puis le decompte de tailles accorde', async ({ page }) => {
-    await page.goto(FUEL_AR);
+  test('en arabe : « دراجة » en tete, le modele, puis le decompte de tailles accorde', async ({ page, request }) => {
+    const build = await currentBuild(request, 'ar-sa');
+    await page.goto(modelPath(build));
 
-    expect(await description(page)).toBe(
-      'دراجة Trek Fuel MX 9.8 XT Gen 7 2027: المواصفات الكاملة، الهندسة حسب المقاس (5 مقاسات)، المكونات، والمقارنة مع دراجات أخرى.',
-    );
+    expect(await description(page)).toBe(expectedDescription('ar-sa', build));
   });
 
-  test('une description trop longue est coupee au dernier mot, sous 160 caracteres', async ({ page }) => {
-    // Le nom le plus long du catalogue : 83 caracteres avec le millesime.
-    await page.goto('/en-sa/bikes/specialized/stumpjumper-15-evo-expert-shimano-xt-di2-fox-performance-elite');
+  test('une description trop longue est coupee au dernier mot, sous 160 caracteres', async ({ page, request }) => {
+    const build = await longDescriptionBuild(request);
+    expect(fullDescription('en-sa', build).length).toBeGreaterThan(160);
+    await page.goto(modelPath(build));
     const longue = await description(page);
 
     expect(longue!.length).toBeLessThanOrEqual(160);
-    expect(longue).toMatch(/^Specialized Stumpjumper 15 EVO Expert .*\S…$/);
+    expect(longue).toBe(expectedDescription('en-sa', build));
+    expect(longue).toMatch(/\S…$/);
     expect(longue).not.toContain('comparison.');
   });
 
