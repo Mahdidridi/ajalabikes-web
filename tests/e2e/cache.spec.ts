@@ -1,5 +1,6 @@
 import { expect, test, type APIRequestContext } from '@playwright/test';
 import { currentBuild } from './helpers/catalog-api';
+import { requiredSecret } from './helpers/environment';
 
 /**
  * Contrat de cache du 2 septembre 2026 (`tasks/2026-09-02-cache-contrat.md`) :
@@ -13,23 +14,10 @@ import { currentBuild } from './helpers/catalog-api';
  *    Next pose sur toute route ISR (HIT · MISS · STALE · REVALIDATED).
  *
  * REVALIDATE_SECRET doit etre exporte explicitement pour le serveur teste.
- * La suite s'execute avec --workers=1 : le pseudo-tag all invalide aussi les
+ * La config impose un seul worker : le pseudo-tag all invalide aussi les
  * pages visitees par les autres specs et projets.
  */
 const ROUTE = '/api/revalidate';
-
-function requiredSecret(): string {
-  const secret = process.env.REVALIDATE_SECRET;
-  if (!secret?.trim()) {
-    throw new Error(
-      'REVALIDATE_SECRET est requis pour les tests de revalidation. ' +
-      'Exporter le secret du serveur teste : export REVALIDATE_SECRET="<secret du serveur teste>" ' +
-      '(PowerShell : $env:REVALIDATE_SECRET = "<secret du serveur teste>").',
-    );
-  }
-
-  return secret;
-}
 
 /** Une marque distincte par projet, avec un slug canonique lu dans le catalogue courant. */
 const fiche = async (request: APIRequestContext, project: string) => {
@@ -52,11 +40,17 @@ const cacheStatus = async (request: APIRequestContext, path: string) => {
   return res.headers()['x-nextjs-cache'];
 };
 
-const revalidate = (request: APIRequestContext, body: unknown, secret: string | null = requiredSecret()) =>
-  request.post(ROUTE, {
-    headers: secret === null ? {} : { Authorization: `Bearer ${secret}` },
-    data: body,
-  });
+const revalidate = async (request: APIRequestContext, body: unknown, secret: string | null = requiredSecret()) => {
+  try {
+    return await request.post(ROUTE, {
+      headers: secret === null ? {} : { Authorization: `Bearer ${secret}` },
+      data: body, maxRedirects: 0, timeout: 15_000,
+    });
+  } catch {
+    // Une exception Playwright brute peut contenir l'en-tete Authorization.
+    throw new Error('Revalidation inaccessible : verifier le Next teste et son secret, sans publier ce dernier.');
+  }
+};
 
 /**
  * Une page purgee est re-rendue a la requete suivante, puis servie du cache.

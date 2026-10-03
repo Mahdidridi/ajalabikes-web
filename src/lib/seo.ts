@@ -145,9 +145,10 @@ const BIKE_DESCRIPTION: Record<Locale, (name: string, sizes: string | null) => s
 function clamp(text: string): string {
   if (text.length <= DESCRIPTION_MAX) return text;
 
-  const coupe = text.slice(0, DESCRIPTION_MAX - 1);
+  // Inclure la frontiere : une espace a l'index 159 termine un mot qui tient.
+  const coupe = text.slice(0, DESCRIPTION_MAX);
   const dernierEspace = coupe.lastIndexOf(' ');
-  const entier = dernierEspace > 0 ? coupe.slice(0, dernierEspace) : coupe;
+  const entier = dernierEspace > 0 ? coupe.slice(0, dernierEspace) : coupe.slice(0, -1);
 
   return `${entier.replace(/[\s،,:;(]+$/, '')}…`;
 }

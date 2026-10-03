@@ -1,15 +1,14 @@
 import { expect, type APIRequestContext } from '@playwright/test';
 import type { Build, CatalogPage, Locale } from '@/lib/api';
 import type { operations } from '@/types/api';
-
-const API = (process.env.API_BASE_URL ?? 'http://127.0.0.1:8000/api').replace(/\/$/, '');
+import { requiredApiBaseUrl } from './environment';
 
 export async function readCatalog(
   request: APIRequestContext,
   locale: Locale,
   params: Record<string, string> = {},
 ): Promise<CatalogPage> {
-  const url = `${API}/v1/${locale}/builds?${new URLSearchParams(params)}`;
+  const url = `${requiredApiBaseUrl()}/v1/${locale}/builds?${new URLSearchParams(params)}`;
   const response = await request.get(url, { headers: { Accept: 'application/json' } });
   expect(response.status(), `Catalogue API requis : ${url}`).toBe(200);
   return response.json();
@@ -21,7 +20,7 @@ export async function readBuild(
   brand: string,
   slug: string,
 ): Promise<Build> {
-  const url = `${API}/v1/${locale}/builds/${encodeURIComponent(brand)}/${encodeURIComponent(slug)}`;
+  const url = `${requiredApiBaseUrl()}/v1/${locale}/builds/${encodeURIComponent(brand)}/${encodeURIComponent(slug)}`;
   const response = await request.get(url, { headers: { Accept: 'application/json' } });
   expect(response.status(), `Fiche API requise : ${url}`).toBe(200);
   const payload: operations['builds.show']['responses'][200]['content']['application/json'] = await response.json();

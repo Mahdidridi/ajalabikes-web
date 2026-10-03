@@ -1,3 +1,4 @@
+/** @jsxImportSource react */
 import Link from 'next/link';
 import type { Facets, Locale } from '@/lib/api';
 import { catalogPath, categoryPath, hasCategoryPage } from '@/lib/routes';

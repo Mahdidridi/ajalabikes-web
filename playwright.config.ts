@@ -1,12 +1,14 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * Le parcours a besoin des deux serveurs : l'API Laravel sur 8000, le front sur 3000.
- * L'API doit etre lancee a part (php artisan serve) — Playwright ne demarre que le front.
+ * Le Next de production est lance a part, avec la meme API_BASE_URL explicite
+ * que Playwright. Voir CLAUDE.md pour les trois variables requises et la purge.
  */
 export default defineConfig({
   testDir: './tests/e2e',
   timeout: 60_000,
+  workers: 1,
+  globalSetup: './tests/e2e/global-setup.ts',
   // PLAYWRIGHT_BASE_URL permet de rejouer la suite contre un deploiement (ex. la prod).
   use: { baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'http://127.0.0.1:3000', locale: 'ar-SA' },
   projects: [
@@ -16,9 +18,11 @@ export default defineConfig({
   /*
    * Les deux serveurs sont lances A PART, volontairement :
    *
-   *   terminal 1   cd ../ajalabikes-api && php artisan serve --port=8000
-   *   terminal 2   npm run build && npm start
-   *   terminal 3   npx playwright test
+   *   serveur     exporter API_BASE_URL et REVALIDATE_SECRET, build puis start
+   *   tests       exporter ces memes variables et PLAYWRIGHT_BASE_URL, npm test
+   *
+   * Le setup invalide all avant les lectures ; workers=1 empeche les purges
+   * concurrentes entre specs/projets. --workers>1 est refuse explicitement.
    *
    * Pas de `webServer` ici pour deux raisons. D'abord le parcours a besoin de
    * l'API Laravel, que Playwright ne sait pas demarrer. Ensuite il faut le serveur

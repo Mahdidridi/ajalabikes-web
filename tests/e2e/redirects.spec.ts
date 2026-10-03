@@ -20,6 +20,8 @@ const ANCIEN = '/en-sa/bikes/trek/fuel-mx-9-8-xt';
  */
 const destination = async (request: Parameters<typeof readBuild>[0]) => {
   const build = await readBuild(request, 'en-sa', 'trek', 'fuel-mx-9-8-xt');
+  expect(build.brand.name).toBe('Trek');
+  expect(build.model_name).toBe('Fuel MX 9.8 XT Gen 7');
   expect(build.model_path, 'L ancienne fiche doit publier son adresse modele').not.toBeNull();
   expect(build.model_path).not.toBe(ANCIEN);
 
@@ -27,11 +29,8 @@ const destination = async (request: Parameters<typeof readBuild>[0]) => {
 };
 
 const redirectLocation = (response: APIResponse) => {
-  // A froid, Next peut emettre deux Location identiques. Les verifier toutes
-  // evite la concatenation de headers(), sans accepter de destination differente.
   const locations = response.headersArray().filter((header) => header.name.toLowerCase() === 'location');
-  expect(locations.length, 'La redirection doit porter Location').toBeGreaterThan(0);
-  expect(new Set(locations.map((header) => header.value)).size).toBe(1);
+  expect(locations, 'La redirection doit porter exactement une ligne Location').toHaveLength(1);
   const location = new URL(locations[0].value, response.url());
   expect(location.origin).toBe(new URL(response.url()).origin);
 

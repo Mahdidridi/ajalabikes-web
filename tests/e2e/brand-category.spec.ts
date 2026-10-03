@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { CATEGORY_SLUGS, categoryKeyOf, categorySlug, hasCategoryPage } from '@/lib/routes';
 import { currentBuild, expectedBikeCount, readCatalog, requiredFacet } from './helpers/catalog-api';
+import { expectArabicCategory, expectFacetSubset, expectLatinBrand } from './helpers/catalog-invariants';
 
 /**
  * Pages marque et catégorie — décision du 2 septembre 2026 (rapport SEO, § 1) :
@@ -20,6 +21,13 @@ const ROAD_EN = '/en-sa/road-bikes';
 test('la page marque arabe est en RTL et porte le nom, le compteur et les catégories de l API', async ({ page, request }) => {
   const catalog = await readCatalog(request, 'ar-sa', { brand: 'trek', sort: 'year_desc', per_page: '12' });
   const brand = requiredFacet(catalog.facets.brands, 'trek');
+  expectLatinBrand(brand.label);
+  expect(brand.label).toBe('Trek');
+  const all = await readCatalog(request, 'ar-sa');
+  expectFacetSubset(catalog.facets.categories, all.facets.categories, catalog.meta.total);
+  for (const category of catalog.facets.categories.filter((bucket) => bucket.key !== 'uncategorized')) {
+    expectArabicCategory(category.label);
+  }
   await page.goto(TREK_AR);
 
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
@@ -46,7 +54,7 @@ test('la page marque arabe est en RTL et porte le nom, le compteur et les catég
     .toEqual(catalog.facets.categories.map((c) => c.key));
 
   // La grille : les cartes du catalogue, toutes de la marque.
-  const cartes = page.getByRole('link').filter({ has: page.locator('img') });
+  const cartes = page.locator('main a.rounded-xl').filter({ has: page.locator('h2') });
   expect(catalog.data.length).toBeGreaterThan(0);
   await expect(cartes).toHaveCount(catalog.data.length);
   for (const carte of await cartes.all()) {
@@ -68,6 +76,9 @@ test('une marque inconnue rend 404', async ({ page }) => {
 test('la page catégorie anglaise porte le libellé de l API, ses marques et ses cartes', async ({ page, request }) => {
   const catalog = await readCatalog(request, 'en-sa', { category: 'road', sort: 'year_desc', per_page: '12' });
   const category = requiredFacet(catalog.facets.categories, 'road');
+  const all = await readCatalog(request, 'en-sa');
+  expectFacetSubset(catalog.facets.brands, all.facets.brands, catalog.meta.total);
+  for (const brand of catalog.facets.brands) expectLatinBrand(brand.label);
   await page.goto(ROAD_EN);
 
   await expect(page.locator('html')).toHaveAttribute('dir', 'ltr');
@@ -89,7 +100,7 @@ test('la page catégorie anglaise porte le libellé de l API, ses marques et ses
     await expect(tile).toHaveAttribute('href', `/en-sa/bikes?brand=${brand.key}&category=road`);
   }
 
-  const cartes = page.getByRole('link').filter({ has: page.locator('img') });
+  const cartes = page.locator('main a.rounded-xl').filter({ has: page.locator('h2') });
   expect(catalog.data.length).toBeGreaterThan(0);
   await expect(cartes).toHaveCount(catalog.data.length);
 
@@ -114,6 +125,7 @@ test('le slug de catégorie est parlant, lu dans la table, et vaut dans les deux
   await expect(page).toHaveURL(/\/ar-sa\/electric-mountain-bikes$/);
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
   const ar = await readCatalog(request, 'ar-sa', { category: 'e_mtb', sort: 'year_desc', per_page: '12' });
+  expectArabicCategory(requiredFacet(ar.facets.categories, 'e_mtb').label);
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(requiredFacet(ar.facets.categories, 'e_mtb').label);
   await expect(page.locator('main header > p')).toBeVisible();
@@ -232,8 +244,8 @@ test('les deux pages ne sont pas indexables', async ({ page }) => {
 
 test('les deux pages sont rendues une fois puis servies du cache', async ({ request }) => {
   // Même schéma que la fiche : ISR, tag `catalog`. La preuve est l'en-tête
-  // `x-nextjs-cache` ; on attend le HIT en interrogeant, pour rester
-  // insensible aux purges que `cache.spec` lance en parallèle.
+  // `x-nextjs-cache` ; on attend le HIT en interrogeant pour laisser le rendu
+  // ISR se terminer ; la config serialise toutes les purges.
   for (const chemin of [TREK_EN, ROAD_EN]) {
     await request.get(chemin);
 
