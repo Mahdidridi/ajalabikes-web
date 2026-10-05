@@ -1,0 +1,68 @@
+diff --git a/node_modules/next/dist/build/templates/app-page-runtime.js b/node_modules/next/dist/build/templates/app-page-runtime.js
+index f1ab03f..2df4047 100644
+--- a/node_modules/next/dist/build/templates/app-page-runtime.js
++++ b/node_modules/next/dist/build/templates/app-page-runtime.js
+@@ -1179,6 +1179,12 @@ function createAppPageEntrypoint({ tree, page, pathname, require: __next_app_req
+                     if (finished) return null;
+                 }
+                 if (cachedData.headers) {
++                    /**
++                     * Darraja Bikes #42, 2026-10-05: replay through Next's existing
++                     * wrapper so cold ISR does not append headers already set by render.
++                     * Backport of vercel/next.js#95913; keep distinct header values.
++                     */
++                    const response = new _node.NodeNextResponse(res);
+                     const headers = {
+                         ...cachedData.headers
+                     };
+@@ -1189,13 +1195,13 @@ function createAppPageEntrypoint({ tree, page, pathname, require: __next_app_req
+                         if (typeof value === 'undefined') continue;
+                         if (Array.isArray(value)) {
+                             for (const v of value){
+-                                res.appendHeader(key, v);
++                                response.appendHeader(key, v);
+                             }
+                         } else if (typeof value === 'number') {
+                             value = value.toString();
+-                            res.appendHeader(key, value);
++                            response.appendHeader(key, value);
+                         } else {
+-                            res.appendHeader(key, value);
++                            response.appendHeader(key, value);
+                         }
+                     }
+                 }
+diff --git a/node_modules/next/dist/esm/build/templates/app-page-runtime.js b/node_modules/next/dist/esm/build/templates/app-page-runtime.js
+index 1970588..b11d9fb 100644
+--- a/node_modules/next/dist/esm/build/templates/app-page-runtime.js
++++ b/node_modules/next/dist/esm/build/templates/app-page-runtime.js
+@@ -1194,6 +1194,12 @@ export function createAppPageEntrypoint({ tree, page, pathname, require: __next_
+                     if (finished) return null;
+                 }
+                 if (cachedData.headers) {
++                    /**
++                     * Darraja Bikes #42, 2026-10-05: replay through Next's existing
++                     * wrapper so cold ISR does not append headers already set by render.
++                     * Backport of vercel/next.js#95913; keep distinct header values.
++                     */
++                    const response = new NodeNextResponse(res);
+                     const headers = {
+                         ...cachedData.headers
+                     };
+@@ -1204,13 +1210,13 @@ export function createAppPageEntrypoint({ tree, page, pathname, require: __next_
+                         if (typeof value === 'undefined') continue;
+                         if (Array.isArray(value)) {
+                             for (const v of value){
+-                                res.appendHeader(key, v);
++                                response.appendHeader(key, v);
+                             }
+                         } else if (typeof value === 'number') {
+                             value = value.toString();
+-                            res.appendHeader(key, value);
++                            response.appendHeader(key, value);
+                         } else {
+-                            res.appendHeader(key, value);
++                            response.appendHeader(key, value);
+                         }
+                     }
+                 }
