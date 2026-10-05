@@ -1,5 +1,6 @@
 import { expect, test, type APIResponse } from '@playwright/test';
 import { currentBuild, readBuild } from './helpers/catalog-api';
+import { requiredSecret } from './helpers/environment';
 
 /**
  * Une fiche, une URL. Quand l'API resout un ancien slug — table
@@ -44,6 +45,54 @@ test('un ancien slug redirige en permanent vers le slug vivant', async ({ reques
   expect(res.status()).toBe(308);
   expect(redirectLocation(res).href).toBe(new URL(vivant, res.url()).href);
 });
+
+for (const { locale, lang } of [{ locale: 'en-sa', lang: 'en' }, { locale: 'ar-sa', lang: 'ar' }] as const) {
+  const ancien = `/${locale}/bikes/trek/fuel-mx-9-8-xt`;
+  const vivant = `/${locale}/bikes/trek/fuel-mx-9-8-xt-gen-7`;
+
+  test(`${locale} : Location unique au MISS, au HIT et apres revalidation`, async ({ request }) => {
+    const build = await readBuild(request, locale, 'trek', 'fuel-mx-9-8-xt');
+    expect(build.model_path).toBe(vivant);
+    const secret = requiredSecret();
+
+    // Two cycles prove that invalidating a cached redirect preserves the fix.
+    for (let cycle = 0; cycle < 2; cycle++) {
+      let purge: APIResponse;
+      try {
+        purge = await request.post('/api/revalidate', {
+          headers: { Authorization: `Bearer ${secret}` },
+          data: { tags: ['build:trek:fuel-mx-9-8-xt'], reason: 'test e2e : redirection ISR' },
+          maxRedirects: 0, timeout: 15_000,
+        });
+      } catch {
+        throw new Error('Revalidation inaccessible : verifier le Next teste et son secret, sans publier ce dernier.');
+      }
+      expect(purge.status()).toBe(200);
+      expect((await purge.json()).revalidated).toEqual(['build:trek:fuel-mx-9-8-xt']);
+
+      for (const cache of ['MISS', 'HIT']) {
+        const res = await request.get(ancien, { maxRedirects: 0 });
+        expect(res.status()).toBe(308);
+        expect(res.headers()['x-nextjs-cache']).toBe(cache);
+        expect(redirectLocation(res).href).toBe(new URL(vivant, res.url()).href);
+        expect(res.headers()['x-robots-tag']).toBe('noindex, nofollow');
+        expect(res.headers()['cache-control']).toContain('s-maxage=86400');
+      }
+    }
+
+    const target = await request.get(vivant, { maxRedirects: 0 });
+    expect(target.status()).toBe(200);
+    expect(target.headersArray().filter((header) => header.name.toLowerCase() === 'location')).toHaveLength(0);
+  });
+
+  test(`${locale} : le navigateur arrive directement sur la fiche vivante`, async ({ page }) => {
+    const response = await page.goto(ancien);
+    expect(response?.status()).toBe(200);
+    await expect(page).toHaveURL(new RegExp(`${vivant}$`));
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Fuel MX 9.8 XT Gen 7');
+    await expect(page.locator('html')).toHaveAttribute('lang', lang);
+  });
+}
 
 test('le slug vivant est servi tel quel, sans redirection', async ({ request }) => {
   const res = await request.get(await destination(request), { maxRedirects: 0 });

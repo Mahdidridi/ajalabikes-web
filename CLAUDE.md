@@ -136,8 +136,8 @@ ont chacune une page à chemin propre. Les chemins sont construits par `src/lib/
   la destination exacte et son statut 200 direct sont verifies. Le web repond en 308 (`permanentRedirect`) : le 301
   demande par le texte de #37 contredit le comportement et la documentation existants, sans changement applicatif ici.
   Il n'y a aucun `test.fixme` a reactiver.
-  Le test exige exactement une ligne `Location`. Le doublon reproduit a froid (`MISS`, deux lignes identiques,
-  une seule au `HIT`) est suivi dans web #42 ; aucun dedoublonnage ni prechauffage ne le masque dans les tests.
+  Le test exige exactement une ligne `Location`, au `MISS`, au `HIT` et apres revalidation du tag, en EN/AR.
+  Voir la decision datee web #42 ci-dessous ; aucun dedoublonnage ni prechauffage ne le masque dans les tests.
 - **Une seule forme canonique par adresse** (décision du 5 septembre 2026, `../CLAUDE.md` Routes point 6 ; issue #17,
   livrée le 8 septembre) : minuscules, sans slash final, apex sans `www`. Google traite les URL comme sensibles à la
   casse — chaque variante tolérée est un doublon. Trois mécanismes, chacun à sa place : la racine `/` → `/ar-sa` en
@@ -151,6 +151,37 @@ ont chacune une page à chemin propre. Les chemins sont construits par `src/lib/
   `skipTrailingSlashRedirect: true` — la redirection native de Next se déclenchait avant le proxy et `/EN-SA/Bikes/`
   coûtait deux sauts ; `www` → apex est une règle nginx du site Forge (301, un saut), pas du code.
   `tests/e2e/redirects.spec.ts` couvre les six cas.
+
+### Decision du 5 octobre 2026 - web #42, en-tetes des redirections ISR
+
+- **Cause** : Next 16.3.0 ecrit `Location` pendant le rendu, puis son replay ISR appelle le `appendHeader`
+  natif de Node avec la meme valeur. Une reproduction minimale executee sans proxy, `next.config`, API ni
+  `generateMetadata` reproduit deux lignes au `MISS`, une au `HIT`. Ce n'est pas le double appel a `resolve()`.
+  References : [Next #82117](https://github.com/vercel/next.js/issues/82117),
+  [PR amont #95913](https://github.com/vercel/next.js/pull/95913), encore ouverte a cette date.
+- **Decision** : backporter le replay via `NodeNextResponse.appendHeader`, le wrapper deja present dans Next,
+  avec `patches/next+16.3.0.patch` (templates CJS et ESM). Ce wrapper n'ajoute pas une valeur deja presente,
+  mais conserve les valeurs distinctes des en-tetes multiples. Aucun filtre HTTP global ni suppression en sortie.
+  Les pages, `permanentRedirect`, proxy, statut 308, ISR 86400 et tags restent inchanges.
+- **Installation** : `patch-package` 8.0.1 est une dependance de production, appliquee avec `--error-on-fail`
+  au `postinstall` et au `prebuild`. `npm ci` puis `npm run build` suffisent ; ne pas appeler `next build`
+  directement apres une installation avec `--ignore-scripts`. Un patch incompatible doit faire echouer le build.
+  Next reste fixe a 16.3.0 : aucune montee de version decidee ici. A chaque mise a jour Next, revoir ce patch,
+  puis le supprimer seulement apres preuve de correction amont et regression MISS/HIT/revalidation verte.
+  Une difference de version seule produit un avertissement de patch-package si le patch s'applique encore :
+  le verrou de version reste package.json/package-lock.json, pas l'option --error-on-fail.
+- **Portee mesuree avant correction** : ancien slug EN/AR et deux URL millesimees ont le doublon au MISS ;
+  racine `/` vers `/ar-sa`, casse et slash final n'en ont pas (redirections avant le rendu ISR).
+  Les millesimes sont observes seulement : leur politique reste du ressort de #15. Aucun second ancien slug
+  renomme n'a ete identifie parmi les autres candidats testes (404 API), sans en inventer un pour la preuve.
+- **Production observee sans purge** : le 5 octobre a 15:41:45 UTC, le GET arabe de l'ancien slug rend
+  308/MISS avec une seule Location, puis HIT avec une seule ; a 15:47:17 UTC, une URL millesimee arabe fait
+  de meme en HTTP/2. Noindex intact. Aucun doublon visible a l'interface publique sur ces echantillons ;
+  l'origine Next derriere nginx n'a pas ete inspectee et aucun diagnostic nginx n'est affirme.
+  La redirection racine ne porte deja pas X-Robots-Tag en local avant le patch ; ce comportement reste hors #42.
+- **Decisions toujours ouvertes** : choix 301/308, autorisation des deux E2E de production #37,
+  libelle arabe `scope.unresolved`, valeurs unresolved de la mention commune et memoisation de date API.
+  Cette PR ne tranche aucun de ces points et n'autorise ni purge distante ni deploiement.
 
 ## Cache — rendre une fois, invalider au changement
 

@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "postinstall": "patch-package --error-on-fail",
     "dev": "next dev",
+    "prebuild": "patch-package --error-on-fail",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -15,6 +17,7 @@
   },
   "dependencies": {
     "next": "16.3.0",
+    "patch-package": "8.0.1",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },
