@@ -41,7 +41,7 @@ La cible est une CI qui télécharge `openapi.json` depuis une release identifi�
 ```bash
 npm run dev
 npm run typecheck && npm run lint && npm run build
-npm test                    # desktop + mobile + RTL
+npm test                    # desktop + mobile + RTL, apres la recette E2E ci-dessous
 ```
 
 ### CI - phase 1 (web #14)
@@ -64,7 +64,7 @@ televerse : une erreur reseau Playwright peut inclure l'en-tete Authorization. L
 les tests d'erreur #10, qui utilisent leurs propres serveurs locaux isoles. Les tests de catalogue lisent leurs attentes
 dans l'API au moment du test (web #37) ; aucun comptage de septembre n'est conserve.
 Pour reproduire sans production, lancer l'API et le Next local de production, fournir leur URL et un secret **local**, puis
-`npm test -- --workers=1 --forbid-only`. La verification croisee du contrat et le deploiement restent hors de cette phase.
+`npm test`. La config impose un worker et purge le cache du Next cible avant les specs. La verification croisee du contrat et le deploiement restent hors de cette phase.
 
 ### Piège vérifié le 10 août 2026 — l'interactivité ne se teste pas en `npm run dev`
 
@@ -136,6 +136,8 @@ ont chacune une page à chemin propre. Les chemins sont construits par `src/lib/
   la destination exacte et son statut 200 direct sont verifies. Le web repond en 308 (`permanentRedirect`) : le 301
   demande par le texte de #37 contredit le comportement et la documentation existants, sans changement applicatif ici.
   Il n'y a aucun `test.fixme` a reactiver.
+  Le test exige exactement une ligne `Location`. Le doublon reproduit a froid (`MISS`, deux lignes identiques,
+  une seule au `HIT`) est suivi dans web #42 ; aucun dedoublonnage ni prechauffage ne le masque dans les tests.
 - **Une seule forme canonique par adresse** (décision du 5 septembre 2026, `../CLAUDE.md` Routes point 6 ; issue #17,
   livrée le 8 septembre) : minuscules, sans slash final, apex sans `www`. Google traite les URL comme sensibles à la
   casse — chaque variante tolérée est un doublon. Trois mécanismes, chacun à sa place : la racine `/` → `/ar-sa` en
@@ -176,22 +178,35 @@ Contrat partagé avec l'API : `../tasks/2026-09-02-cache-contrat.md`. Les tags y
   pour ces assertions. Une API indisponible ou une fiche requise absente fait echouer le test, sans valeur de secours.
 - L'API fournit `meta.total`, `count` et `label`, **pas de compteur preformate**. Les attentes de texte utilisent un
   oracle linguistique independant ; des cas litteraux verifient aussi les formes arabe/anglais de `bikesCount`.
-- `REVALIDATE_SECRET` doit etre exporte dans le processus Playwright et correspondre au serveur teste ; Playwright ne
-  lit pas automatiquement son `.env.local`. Sans secret, tout appel authentifie echoue avec la commande a exporter.
+- `API_BASE_URL` et `REVALIDATE_SECRET` doivent etre exportes dans le processus Playwright et correspondre au serveur teste ; Playwright ne
+  lit pas automatiquement son `.env.local`. Aucune API locale de secours n'est utilisee. Le secret est rogne avant usage.
+  Sans ces variables, le setup echoue avant tout POST avec la commande a exporter.
   Les tests explicites sans secret/mauvais secret restent actifs. Aucun skip, aucune valeur locale implicite.
-- Executer la suite avec **un seul worker**, car le test du tag `all` purge aussi l'accueil partage avec les autres specs.
-  Construire Next, lancer `npm start` dans un autre terminal avec la meme API et le meme secret, puis :
+- La config impose **un seul worker**, car le tag `all` purge aussi l'accueil partage avec les autres specs.
+  Le `globalSetup` purge `all` une fois avant les specs : les pages et les attentes repartent du meme catalogue,
+  meme si le cache Next sur disque a survecu au build. Une surcharge `--workers>1` est refusee.
+  Ne pas lancer deux suites contre le meme Next. Recette locale PowerShell, depuis le worktree :
+
+  Terminal serveur (API de production en lecture seule, Next et secret locaux) :
 
   ```powershell
-  $env:API_BASE_URL = 'http://127.0.0.1:8000/api'
-  $env:PLAYWRIGHT_BASE_URL = 'http://127.0.0.1:3000'
-  $env:REVALIDATE_SECRET = '<secret du serveur local teste>'
-  npx playwright test --workers=1 --forbid-only --reporter=line
-  npx playwright test --workers=1 --forbid-only --reporter=line
+  $env:API_BASE_URL = 'https://api.darrajabikes.com/api'
+  $env:REVALIDATE_SECRET = 'secret-local-de-test'
+  npm run build
+  node node_modules/next/dist/bin/next start --hostname 127.0.0.1 --port 3101
+  ```
+
+  Terminal tests (meme API et meme secret que le terminal serveur) :
+
+  ```powershell
+  $env:API_BASE_URL = 'https://api.darrajabikes.com/api'
+  $env:PLAYWRIGHT_BASE_URL = 'http://127.0.0.1:3101'
+  $env:REVALIDATE_SECRET = 'secret-local-de-test'
+  npm test
   ```
 
   Pour une cible distante, l'API doit etre celle du site teste. **Production : accord distinct avant ces commandes**,
-  car les tests invalident reellement son cache. Ne jamais copier le secret dans un rapport ou publier des traces/HTML
+  car le setup ET les tests invalident reellement son cache, meme pour une selection de specs. Ne jamais copier le secret dans un rapport ou publier des traces/HTML
   bruts contenant des appels authentifies ; privilegier le workflow manuel avec les logs masques GitHub.
 
 ## SEO — préparé, verrouillé

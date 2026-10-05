@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { bikesCount } from '@/lib/vocabulary';
 import { expectedBikeCount, readCatalog, requiredFacet } from './helpers/catalog-api';
+import { expectArabicCategory, expectLatinBrand } from './helpers/catalog-invariants';
 
 const AR = '/ar-sa';
 const EN = '/en-sa';
@@ -78,15 +79,11 @@ test('l apercu montre trois cartes, les memes que le catalogue', async ({ page, 
   const home = await readCatalog(request, 'en-sa', { per_page: '3', sort: 'year_desc' });
   await page.goto(EN);
 
-  // Les seules images de la page sont les cartes — le meme composant que le
-  // catalogue, donc les memes liens vers les fiches.
-  const cartes = page.getByRole('link').filter({ has: page.locator('img') });
+  const cartes = page.locator('main a.rounded-xl').filter({ has: page.locator('h2') });
   await expect(cartes).toHaveCount(home.data.length);
   expect(home.data.length).toBeGreaterThan(0);
-  await expect(cartes.first()).toHaveAttribute(
-    'href',
-    /\/en-sa\/bikes\/(trek|specialized|giant|canyon|scott)\//,
-  );
+  const hrefs = await cartes.evaluateAll((links) => links.map((link) => link.getAttribute('href')));
+  expect(hrefs).toEqual(home.data.map((bike) => `/en-sa/bikes/${bike.brand.slug}/${bike.slug}`));
 
   // « Voir tout » rouvre exactement le tri de l'apercu dans le catalogue :
   // l'accueil ne met en avant aucun velo que l'API n'ordonne pas elle-meme.
@@ -157,6 +154,11 @@ test('la version arabe est en RTL avec les libelles traduits', async ({ page, re
   const brand = requiredFacet(home.facets.brands, 'trek');
   await page.goto(AR);
 
+  for (const category of home.facets.categories.filter((bucket) => bucket.key !== 'uncategorized')) {
+    expectArabicCategory(category.label);
+  }
+  for (const item of home.facets.brands) expectLatinBrand(item.label);
+  expect(brand.label).toBe('Trek');
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
   await expect(page.getByRole('heading', { name: SIGNATURE_AR, level: 1 })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'اكتشف، قارن، ثم اختر', level: 2 })).toBeVisible();
