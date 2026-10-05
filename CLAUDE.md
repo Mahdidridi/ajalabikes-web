@@ -242,6 +242,18 @@ Contrat partagé avec l'API : `../tasks/2026-09-02-cache-contrat.md`. Les tags y
 
 ## SEO — préparé, verrouillé
 
+### Decision du 5 octobre 2026 - web #18, catchalls hreflang
+
+Application de la decision du 5 septembre : `hreflangGroup()` ajoute `ar` vers `ar-sa` et `en` vers
+`en-sa`, en plus de `ar-SA`, `en-SA` et `x-default` vers `en-sa`. Ces deux catchalls restent fixes sur
+`sa` quand d'autres pays seront servis ; aucune route `/ar` ou `/en` n'est creee.
+Les huit types de page passant par `seoFor()` heritent du groupe : accueil, catalogue (nu ou filtre),
+fiche velo, marque, categorie, comparateur, entree du finder et etapes du finder. Meme groupe depuis
+les deux locales, canonical propre inchange. Le sitemap consomme deja ce helper : ses tests de
+politique cible, avec verrou simule a `false`, attendent aussi les cinq liens. Son code ne change pas.
+`INDEXING_LOCKED`, le noindex global, `robots.txt`, le sitemap servi vide et la signature de `seoFor`
+restent inchanges. Aucun deploiement ni levee du verrou n'est autorise par cette livraison.
+
 Décisions du 2 septembre 2026 (`../CLAUDE.md`, « Routes et locales », points 1 à 5 ; rapport `../notes/seo-strategie-2026-09-02.md`). Tout est en place **sans lever le noindex**.
 
 - **`src/lib/seo.ts` — `seoFor({ locale, path, title?, description?, indexable? })`**, appelé par chaque page (`generateMetadata`) : canonical absolu, auto-référent, **sans query** (`SITE_URL` = `https://darrajabikes.com`, `metadataBase` posé dans le layout) ; hreflang `ar-SA` / `en-SA` dérivés de `LOCALES` (`ae` y entrera tout seul le jour où il sera servi) + `x-default` → `en-sa` ; Open Graph (`locale`, `alternateLocale`, `url`, `siteName`) ; `robots`. La réciprocité des hreflang vient de là : toutes les pages émettent le même groupe. Titre = libellé existant de la page + ` · Darraja Bikes` ; fiche = `bikeTitle` (marque, modèle, millésime tel que libellé par l'API, seulement s'il est connu) ; description absente = signature — **sauf la fiche, qui a la sienne** : `bikeDescription(locale, build)` (« دراجة {marque} {modèle} {année} : المواصفات الكاملة، الهندسة حسب المقاس ({n} مقاسات)… » / « {brand} {model} {year}: full specs, geometry by size ({n} sizes)… »), bâtie sur les champs rendus par l'API, un champ absent omis (millésime inconnu, aucune taille), coupée au dernier mot entier au-delà de 160 caractères. La catégorie n'y entre pas tant que `BuildResource` ne l'expose pas.
