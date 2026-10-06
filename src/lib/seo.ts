@@ -88,7 +88,7 @@ export function absoluteUrl(locale: Locale, path = ''): string {
   return `${SITE_URL}/${locale}${relatif}`;
 }
 
-/** `{ 'ar-SA': url, 'en-SA': url, 'x-default': url }` — la forme des `alternates.languages` de Next. */
+/** Locales regionales, catchalls ar/en et x-default : `alternates.languages` de Next. */
 type HreflangGroup = Record<string, string> & { 'x-default': string };
 
 /**
@@ -98,10 +98,15 @@ type HreflangGroup = Record<string, string> & { 'x-default': string };
  * `<xhtml:link>` du sitemap : les deux disent la meme chose, par construction.
  * `ae` entrera ici le jour ou `LOCALES` le servira, pas avant : un hreflang
  * vers un 404 fait sortir la page du groupe.
+ * Decision du 5 septembre 2026, appliquee le 5 octobre (web #18) : les
+ * catchalls `ar` / `en` restent fixes sur `ar-sa` / `en-sa`, meme a l'ouverture
+ * d'autres pays. `x-default` reste sur `en-sa` ; aucune nouvelle route.
  */
 export function hreflangGroup(path = ''): HreflangGroup {
   return {
     ...Object.fromEntries(LOCALES.map((l) => [hreflangOf(l), absoluteUrl(l, path)])),
+    ar: absoluteUrl('ar-sa', path),
+    en: absoluteUrl('en-sa', path),
     'x-default': absoluteUrl(DEFAULT_LOCALE, path),
   };
 }

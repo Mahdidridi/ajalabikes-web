@@ -87,13 +87,33 @@ test.describe('politique cible, verrou simule', () => {
     expect(urls.filter((u) => u.includes('uncategorized') || u.includes('unicycle'))).toEqual([]);
     expect(urls.filter((u) => u.includes('e-mtb') || u.includes('e_mtb'))).toEqual([]);
 
-    // Le meme groupe que le <head> de la page : ar-SA, en-SA, x-default vers l'anglais.
+    // Le meme groupe a cinq liens que le <head>, sans creer d'URL /ar ou /en.
     const fiche = entrees.find((e) => e.url === `${SITE}/ar-sa/bikes/trek/fuel-mx-9-8-xt-gen-7-81563`);
     expect(fiche?.alternates?.languages).toEqual({
       'ar-SA': `${SITE}/ar-sa/bikes/trek/fuel-mx-9-8-xt-gen-7-81563`,
+      ar: `${SITE}/ar-sa/bikes/trek/fuel-mx-9-8-xt-gen-7-81563`,
       'en-SA': `${SITE}/en-sa/bikes/trek/fuel-mx-9-8-xt-gen-7-81563`,
+      en: `${SITE}/en-sa/bikes/trek/fuel-mx-9-8-xt-gen-7-81563`,
       'x-default': `${SITE}/en-sa/bikes/trek/fuel-mx-9-8-xt-gen-7-81563`,
     });
+
+    // Reciprocite de chaque type de page du sitemap, verrou simule seulement.
+    for (const path of [
+      '', '/bikes', '/finder', '/bikes/trek', '/bikes/specialized',
+      '/road-bikes', '/electric-mountain-bikes',
+      '/bikes/trek/fuel-mx-9-8-xt-gen-7-81563', '/bikes/specialized/allez-elite',
+    ]) {
+      for (const locale of ['ar-sa', 'en-sa']) {
+        const entry = entrees.find((e) => e.url === `${SITE}/${locale}${path}`);
+        expect(entry?.alternates?.languages).toEqual({
+          'ar-SA': `${SITE}/ar-sa${path}`,
+          ar: `${SITE}/ar-sa${path}`,
+          'en-SA': `${SITE}/en-sa${path}`,
+          en: `${SITE}/en-sa${path}`,
+          'x-default': `${SITE}/en-sa${path}`,
+        });
+      }
+    }
 
     // Rien d'invente : ni lastmod, ni changefreq, ni priority — et jamais de query.
     for (const entree of entrees) {

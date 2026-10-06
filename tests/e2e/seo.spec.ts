@@ -1,13 +1,13 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 import type { Build, BuildCard, Locale } from '@/lib/api';
-import { bikeDescription } from '@/lib/seo';
+import { bikeDescription, hreflangGroup, seoFor } from '@/lib/seo';
 import { currentBuild, expectedBikeCount, readBuild, readCatalog, requiredFacet } from './helpers/catalog-api';
 import { expectLatinBrand } from './helpers/catalog-invariants';
 
 /**
  * SEO prepare SANS lever le noindex (decisions du 2 septembre 2026, CLAUDE.md
  * « Routes et locales » points 1 a 5) : canonical absolu et sans query,
- * hreflang reciproques ar-SA / en-SA / x-default, JSON-LD assemble depuis
+ * hreflang reciproques ar-SA / ar / en-SA / en / x-default, JSON-LD assemble depuis
  * l'API — et `noindex` toujours present sur chaque page.
  *
  * L'hote canonique est celui de la production : les balises disent ou vit la
@@ -92,12 +92,14 @@ const longDescriptionBuild = async (request: APIRequestContext) => {
 };
 
 /** Les liens hreflang de la page, tels que rendus : `{ 'ar-SA': href, … }`. */
-const hreflangs = (page: Page) =>
-  page
-    .locator('link[rel="alternate"][hreflang]')
-    .evaluateAll((liens) =>
-      Object.fromEntries(liens.map((l) => [l.getAttribute('hreflang'), l.getAttribute('href')])),
-    );
+const hreflangs = async (page: Page) => {
+  const links = page.locator('link[rel="alternate"][hreflang]');
+  // Compter avant Object.fromEntries : une cle dupliquee ne doit pas disparaitre.
+  await expect(links).toHaveCount(5);
+  return links.evaluateAll((liens) =>
+    Object.fromEntries(liens.map((l) => [l.getAttribute('hreflang'), l.getAttribute('href')])),
+  );
+};
 
 const canonical = (page: Page) => page.locator('link[rel="canonical"]');
 
@@ -151,14 +153,16 @@ test.describe('canonical', () => {
 });
 
 test.describe('hreflang', () => {
-  test('la fiche declare ar-SA, en-SA et x-default, avec auto-reference', async ({ page, request }) => {
+  test('la fiche declare cinq alternates, avec auto-reference et catchalls sa', async ({ page, request }) => {
     const build = await currentBuild(request, 'en-sa');
     const buildAr = await localizedBuild(request, 'ar-sa', build);
     await page.goto(modelPath(build));
 
     expect(await hreflangs(page)).toEqual({
       'ar-SA': `${SITE}${modelPath(buildAr)}`,
+      ar: `${SITE}${modelPath(buildAr)}`,
       'en-SA': `${SITE}${modelPath(build)}`,
+      en: `${SITE}${modelPath(build)}`,
       // Le repli pour les autres langues est l'anglais : les expatries du Golfe.
       'x-default': `${SITE}${modelPath(build)}`,
     });
@@ -176,6 +180,13 @@ test.describe('hreflang', () => {
     const depuisAr = await hreflangs(page);
 
     expect(depuisAr).toEqual(depuisEn);
+    expect(depuisAr).toEqual({
+      'ar-SA': `${SITE}${modelPath(buildAr)}`,
+      ar: `${SITE}${modelPath(buildAr)}`,
+      'en-SA': `${SITE}${modelPath(build)}`,
+      en: `${SITE}${modelPath(build)}`,
+      'x-default': `${SITE}${modelPath(build)}`,
+    });
     await expect(canonical(page)).toHaveAttribute('href', depuisAr['ar-SA']!);
   });
 
@@ -184,7 +195,9 @@ test.describe('hreflang', () => {
 
     expect(await hreflangs(page)).toEqual({
       'ar-SA': `${SITE}/ar-sa/bikes`,
+      ar: `${SITE}/ar-sa/bikes`,
       'en-SA': `${SITE}/en-sa/bikes`,
+      en: `${SITE}/en-sa/bikes`,
       'x-default': `${SITE}/en-sa/bikes`,
     });
   });
@@ -194,7 +207,59 @@ test.describe('hreflang', () => {
     await page.goto('/en-sa');
 
     const liens = await hreflangs(page);
-    expect(Object.keys(liens).sort()).toEqual(['ar-SA', 'en-SA', 'x-default']);
+    expect(Object.keys(liens).sort()).toEqual(['ar', 'ar-SA', 'en', 'en-SA', 'x-default']);
+  });
+
+  for (const [name, path] of [
+    ['accueil', ''],
+    ['catalogue', '/bikes'],
+    ['marque', '/bikes/trek'],
+    ['categorie', '/road-bikes'],
+    ['comparateur', '/compare'],
+    ['finder', '/finder'],
+    ['etape finder', '/finder/mountain'],
+  ]) {
+    test(`${name} : cinq alternates identiques depuis les deux locales`, async ({ page }) => {
+      const expected = {
+        'ar-SA': `${SITE}/ar-sa${path}`,
+        ar: `${SITE}/ar-sa${path}`,
+        'en-SA': `${SITE}/en-sa${path}`,
+        en: `${SITE}/en-sa${path}`,
+        'x-default': `${SITE}/en-sa${path}`,
+      };
+      for (const locale of ['ar-sa', 'en-sa']) {
+        const response = await page.goto(`/${locale}${path}`);
+        expect(response?.status()).toBe(200);
+        expect(await hreflangs(page)).toEqual(expected);
+        await expect(canonical(page)).toHaveCount(1);
+        await expect(canonical(page)).toHaveAttribute('href', `${SITE}/${locale}${path}`);
+      }
+    });
+  }
+
+  test('fonctions pures : catchalls sa, reciprocite et URL sans etat d interface', () => {
+    for (const [input, path] of [
+      ['', ''],
+      ['/', ''],
+      ['bikes/trek/marlin-7/?utm_source=test#geometry', '/bikes/trek/marlin-7'],
+    ]) {
+      const expected = {
+        'ar-SA': `${SITE}/ar-sa${path}`,
+        ar: `${SITE}/ar-sa${path}`,
+        'en-SA': `${SITE}/en-sa${path}`,
+        en: `${SITE}/en-sa${path}`,
+        'x-default': `${SITE}/en-sa${path}`,
+      };
+      expect(hreflangGroup(input)).toEqual(expected);
+      for (const locale of ['ar-sa', 'en-sa'] as const) {
+        const metadata = seoFor({ locale, path: input });
+        expect(metadata.alternates).toEqual({
+          canonical: `${SITE}/${locale}${path}`,
+          languages: expected,
+        });
+        expect(metadata.robots).toEqual({ index: false, follow: false });
+      }
+    }
   });
 });
 
@@ -339,8 +404,8 @@ test.describe('noindex conserve', () => {
       const head = (await res.text()).split('</head>')[0].toLowerCase();
 
       expect(head, chemin).toContain('rel="canonical"');
-      expect(head, chemin).toContain('hreflang="ar-sa"');
-      expect(head, chemin).toContain('hreflang="x-default"');
+      const languages = Array.from(head.matchAll(/hreflang="([^"]+)"/g), (match) => match[1]);
+      expect(languages.sort(), chemin).toEqual(['ar', 'ar-sa', 'en', 'en-sa', 'x-default']);
       expect(head, chemin).toContain('noindex');
     }
   });
@@ -356,9 +421,13 @@ test.describe('pages marque et categorie', () => {
 
     await expect(canonical(page)).toHaveAttribute('href', `${SITE}/ar-sa/bikes/trek`);
     const liens = await hreflangs(page);
-    expect(liens['ar-SA']).toBe(`${SITE}/ar-sa/bikes/trek`);
-    expect(liens['en-SA']).toBe(`${SITE}/en-sa/bikes/trek`);
-    expect(liens['x-default']).toBe(`${SITE}/en-sa/bikes/trek`);
+    expect(liens).toEqual({
+      'ar-SA': `${SITE}/ar-sa/bikes/trek`,
+      ar: `${SITE}/ar-sa/bikes/trek`,
+      'en-SA': `${SITE}/en-sa/bikes/trek`,
+      en: `${SITE}/en-sa/bikes/trek`,
+      'x-default': `${SITE}/en-sa/bikes/trek`,
+    });
     // « دراجات Trek » : le generique en tete du titre — jamais « سياكل Trek ».
     await expect(page).toHaveTitle(`دراجات ${brand.label} · Darraja Bikes`);
     await expect(page.locator('meta[name="description"]')).toHaveAttribute(
@@ -377,8 +446,13 @@ test.describe('pages marque et categorie', () => {
 
     await expect(canonical(page)).toHaveAttribute('href', `${SITE}/en-sa/road-bikes`);
     const liens = await hreflangs(page);
-    expect(liens['ar-SA']).toBe(`${SITE}/ar-sa/road-bikes`);
-    expect(liens['x-default']).toBe(`${SITE}/en-sa/road-bikes`);
+    expect(liens).toEqual({
+      'ar-SA': `${SITE}/ar-sa/road-bikes`,
+      ar: `${SITE}/ar-sa/road-bikes`,
+      'en-SA': `${SITE}/en-sa/road-bikes`,
+      en: `${SITE}/en-sa/road-bikes`,
+      'x-default': `${SITE}/en-sa/road-bikes`,
+    });
     await expect(page.locator('meta[name="robots"]').first()).toHaveAttribute('content', /noindex/);
 
     const fil = bloc(await jsonLd(page), 'BreadcrumbList');
