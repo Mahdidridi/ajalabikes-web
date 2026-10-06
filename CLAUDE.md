@@ -242,21 +242,9 @@ Contrat partagé avec l'API : `../tasks/2026-09-02-cache-contrat.md`. Les tags y
 
 ## SEO — préparé, verrouillé
 
-### Decision du 5 octobre 2026 - web #18, catchalls hreflang
-
-Application de la decision du 5 septembre : `hreflangGroup()` ajoute `ar` vers `ar-sa` et `en` vers
-`en-sa`, en plus de `ar-SA`, `en-SA` et `x-default` vers `en-sa`. Ces deux catchalls restent fixes sur
-`sa` quand d'autres pays seront servis ; aucune route `/ar` ou `/en` n'est creee.
-Les huit types de page passant par `seoFor()` heritent du groupe : accueil, catalogue (nu ou filtre),
-fiche velo, marque, categorie, comparateur, entree du finder et etapes du finder. Meme groupe depuis
-les deux locales, canonical propre inchange. Le sitemap consomme deja ce helper : ses tests de
-politique cible, avec verrou simule a `false`, attendent aussi les cinq liens. Son code ne change pas.
-`INDEXING_LOCKED`, le noindex global, `robots.txt`, le sitemap servi vide et la signature de `seoFor`
-restent inchanges. Aucun deploiement ni levee du verrou n'est autorise par cette livraison.
-
 Décisions du 2 septembre 2026 (`../CLAUDE.md`, « Routes et locales », points 1 à 5 ; rapport `../notes/seo-strategie-2026-09-02.md`). Tout est en place **sans lever le noindex**.
 
-- **`src/lib/seo.ts` — `seoFor({ locale, path, title?, description?, indexable? })`**, appelé par chaque page (`generateMetadata`) : canonical absolu, auto-référent, **sans query** (`SITE_URL` = `https://darrajabikes.com`, `metadataBase` posé dans le layout) ; hreflang `ar-SA` / `en-SA` dérivés de `LOCALES` (`ae` y entrera tout seul le jour où il sera servi) + `x-default` → `en-sa` ; Open Graph (`locale`, `alternateLocale`, `url`, `siteName`) ; `robots`. La réciprocité des hreflang vient de là : toutes les pages émettent le même groupe. Titre = libellé existant de la page + ` · Darraja Bikes` ; fiche = `bikeTitle` (marque, modèle, millésime tel que libellé par l'API, seulement s'il est connu) ; description absente = signature — **sauf la fiche, qui a la sienne** : `bikeDescription(locale, build)` (« دراجة {marque} {modèle} {année} : المواصفات الكاملة، الهندسة حسب المقاس ({n} مقاسات)… » / « {brand} {model} {year}: full specs, geometry by size ({n} sizes)… »), bâtie sur les champs rendus par l'API, un champ absent omis (millésime inconnu, aucune taille), coupée au dernier mot entier au-delà de 160 caractères. La catégorie n'y entre pas tant que `BuildResource` ne l'expose pas.
+- **`src/lib/seo.ts` — `seoFor({ locale, path, title?, description?, indexable? })`**, appelé par chaque page (`generateMetadata`) : canonical absolu, auto-référent, **sans query** (`SITE_URL` = `https://darrajabikes.com`, `metadataBase` posé dans le layout) ; hreflang `ar-SA` / `en-SA` dérivés de `LOCALES` (`ae` y entrera tout seul le jour où il sera servi), catchalls `ar` → `ar-sa` et `en` → `en-sa` (fixes sur `sa`, voir ci-dessous) + `x-default` → `en-sa` ; Open Graph (`locale`, `alternateLocale`, `url`, `siteName`) ; `robots`. La réciprocité des hreflang vient de là : toutes les pages émettent le même groupe. Titre = libellé existant de la page + ` · Darraja Bikes` ; fiche = `bikeTitle` (marque, modèle, millésime tel que libellé par l'API, seulement s'il est connu) ; description absente = signature — **sauf la fiche, qui a la sienne** : `bikeDescription(locale, build)` (« دراجة {marque} {modèle} {année} : المواصفات الكاملة، الهندسة حسب المقاس ({n} مقاسات)… » / « {brand} {model} {year}: full specs, geometry by size ({n} sizes)… »), bâtie sur les champs rendus par l'API, un champ absent omis (millésime inconnu, aucune taille), coupée au dernier mot entier au-delà de 160 caractères. La catégorie n'y entre pas tant que `BuildResource` ne l'expose pas.
 - **Vocabulaire arabe mesuré — `src/lib/vocabulary.ts`** (décision du 4 septembre 2026, `../CLAUDE.md` « Routes et
   locales » point 6, mesures dans `../notes/vocabulaire-verification-2026-09-04.md`) : le générique « vélo » est
   « دراجة / دراجات ». **« سيكل » a été retiré du site** — l'autocomplétion saoudienne le rend d'abord comme médicament
@@ -283,6 +271,16 @@ Décisions du 2 septembre 2026 (`../CLAUDE.md`, « Routes et locales », points 
 - **`robots.txt` et `sitemap.xml` — générés, derrière le verrou.** `src/app/robots.ts` rend `robotsRules(INDEXING_LOCKED)` (`src/lib/seo.ts`) : verrouillé, `User-Agent: *` / `Disallow: /` sans ligne `Sitemap:` — le contenu de l'ancien `public/robots.txt`, supprimé (un fichier statique ne coexiste pas avec la route ; Next écrit `User-Agent` avec sa capitale, la casse d'un champ est libre) ; déverrouillé, tout permis sauf `/{locale}/compare?`, `/*per_page=`, `/api/`, plus `Sitemap: https://darrajabikes.com/sitemap.xml`. `src/app/sitemap.ts` rend `sitemapEntries(INDEXING_LOCKED, données)` (`src/lib/sitemap.ts`, fonction pure) : verrouillé, un `urlset` vide sans appel à l'API ; déverrouillé, un seul fichier (≈ 1 300 URL) par locale servie — accueil, catalogue nu, `/finder`, pages marque (facette `brands`), pages catégorie (facette `categories` sauf `uncategorized`, slug de `routes.ts`), toutes les fiches, lues par `getCatalog` à `per_page=800` (borne haute de l'API, ramenée silencieusement, absente du contrat) puis par curseur — chacune avec son groupe hreflang (`hreflangGroup`, le même que le `<head>`). **Pas de `lastmod`** tant que l'API n'expose pas de date de changement fiable ; ni `changefreq` ni `priority`. `revalidate = 86400`, re-rendu sur le tag `catalog`.
 - **Tests** : `tests/e2e/seo.spec.ts` — canonical, hreflang réciproques, JSON-LD, noindex, et le `<head>` reçu par un robot sans JavaScript (UA Bingbot : Next diffère sinon les métadonnées des pages dynamiques dans le `<body>`). `tests/e2e/sitemap.spec.ts` — les routes telles que servies (verrou posé) et les fonctions pures avec le verrou simulé à `false` : la politique cible se vérifie sans le lever. Son premier test échoue le jour de la levée : voulu, il dit de mettre à jour les attentes.
 - **Avant la levée** : droits d'images documentés · `indexable` + `last_changed_at` exposés par l'API (contrat régénéré, puis `lastmod` dans le sitemap) · Search Console · mesure TTFB depuis Riyad · audit crawler et Rich Results Test. **Le jour J** : `INDEXING_LOCKED` à `false` **et** retrait de l'en-tête `X-Robots-Tag` de `next.config.ts`, ensemble — `robots.txt` et le sitemap suivent d'eux-mêmes.
+
+### Catchalls hreflang — décision du 5 septembre 2026, appliquée le 5 octobre (web #18)
+
+`hreflangGroup()` ajoute `ar` → `ar-sa` et `en` → `en-sa` à `ar-SA`, `en-SA` et `x-default` → `en-sa` : cinq liens.
+Ces deux catchalls restent fixes sur `sa` quand d'autres pays seront servis (`en-ae` entrera dans le groupe sans
+déplacer `en`) ; aucune route `/ar` ou `/en` n'est créée. Les huit types de page passant par `seoFor()` héritent du
+groupe : accueil, catalogue (nu ou filtré), fiche vélo, marque, catégorie, comparateur, entrée du finder et étapes du
+finder — même groupe depuis les deux locales, canonical propre inchangé. Le sitemap consomme déjà ce helper : ses
+tests de politique cible, verrou simulé à `false`, attendent aussi les cinq liens ; son code ne change pas.
+`INDEXING_LOCKED`, le noindex global, `robots.txt`, le sitemap servi vide et la signature de `seoFor` restent inchangés.
 
 ## Pages d'erreur (web #10)
 
