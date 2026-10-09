@@ -1,3 +1,4 @@
+/** @jsxImportSource react */
 import Link from 'next/link';
 import type { FinderQuestion, Locale } from '@/lib/api';
 
@@ -30,6 +31,27 @@ export function finderCopy(locale: Locale) {
 /** La profondeur maximale observée de l'arbre : universe → power → usage → budget. */
 const PROFONDEUR = 4;
 
+/**
+ * Teinte de chaque tuile de la QUESTION RACINE (clé d'option → classe) — décision du
+ * 9 octobre 2026 (fondateur) : les quatre teintes du bikefinder de Trek plus un jaune pour
+ * Kids ; valeurs, contrastes et justification dans `globals.css` (`--tone-*`).
+ * Gravel prend le bleu de l'« E-Bike » de Trek, libre ici puisque l'assistance électrique
+ * est une question de deuxième niveau — si une tuile « électrique » devient racine, elle
+ * recevra sa propre teinte. Écarté : Gravel en lavande comme « Road or Gravel » chez Trek
+ * (deux tuiles identiques, le bleu inutilisé).
+ * Seule la racine est teintée ; les écrans suivants restent neutres. Une clé que l'API
+ * ajouterait n'a pas de teinte et garde la tuile neutre — jamais une teinte devinée.
+ * Les classes sont écrites en entier : Tailwind ne génère que ce qu'il lit. Un `Map`, pas un
+ * objet littéral : `TONES['constructor']` y rendrait la fonction héritée d'`Object`.
+ */
+const TONES: ReadonlyMap<string, string> = new Map([
+  ['road', 'bg-tone-lavender'],
+  ['mountain', 'bg-tone-sage'],
+  ['gravel-cx', 'bg-tone-sky'],
+  ['city-fitness', 'bg-tone-peach'],
+  ['kids', 'bg-tone-butter'],
+]);
+
 export function FinderQuestionScreen({
   locale,
   question,
@@ -45,6 +67,7 @@ export function FinderQuestionScreen({
   const base = `/${locale}/finder`;
   const parent = steps.length > 1 ? `${base}/${steps.slice(0, -1).join('/')}` : base;
   const tiles = question.kind === 'tiles';
+  const tinted = tiles && steps.length === 0;
 
   return (
     <div>
@@ -84,18 +107,22 @@ export function FinderQuestionScreen({
             : 'mt-8 flex max-w-xl flex-col gap-3'
         }
       >
-        {question.options.map((option) => (
-          <li key={option.key}>
-            <Link
-              href={`/${locale}/finder/${[...steps, option.key].join('/')}`}
-              className={`block rounded-xl border border-border bg-white p-4 text-start transition hover:border-accent hover:shadow-lg dark:bg-transparent dark:hover:shadow-none ${
-                tiles ? 'min-h-28 sm:min-h-32' : ''
-              }`}
-            >
-              <span className="font-semibold">{option.label}</span>
-            </Link>
-          </li>
-        ))}
+        {question.options.map((option) => {
+          const tone = tinted ? TONES.get(option.key) : undefined;
+
+          return (
+            <li key={option.key}>
+              <Link
+                href={`/${locale}/finder/${[...steps, option.key].join('/')}`}
+                className={`block rounded-xl border p-4 text-start transition hover:border-accent hover:shadow-lg dark:hover:shadow-none ${
+                  tone ? `${tone} border-transparent text-tone-ink` : 'border-border bg-white dark:bg-transparent'
+                } ${tiles ? 'min-h-28 sm:min-h-32' : ''}`}
+              >
+                <span className="font-semibold">{option.label}</span>
+              </Link>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

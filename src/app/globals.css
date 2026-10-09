@@ -16,6 +16,22 @@
   --border: #e5e5e3;
   --muted: #6b6b68;
   --accent: #0f766e;
+  /*
+   * Teintes des tuiles de la QUESTION RACINE du bikefinder — décision du 9 octobre 2026
+   * (fondateur). Lavande, sauge, bleu et pêche sont les quatre teintes du bikefinder de
+   * Trek, relevées au pixel sur sa page. Le jaune de Kids est une proposition : la seule
+   * famille de teinte absente de cette palette (le rose était à 15,7 de la lavande, trop
+   * proche). IDENTIQUES en clair et en sombre, avec une encre fixe : un fond pastel ne
+   * suit pas le thème, son texte non plus — donc jamais redéfinies plus bas.
+   * Contraste de l'encre sur chaque teinte : 9,9 · 6,5 · 6,8 · 10,4 · 12,7 (seuil AA : 4,5).
+   * L'attribution aux tuiles est dans `app/[locale]/finder/question.tsx`.
+   */
+  --tone-lavender: #d0b9d3;
+  --tone-sage: #83a487;
+  --tone-sky: #6ca8bb;
+  --tone-peach: #ffb495;
+  --tone-butter: #f6d77c;
+  --tone-ink: #171717;
   color-scheme: light;
 }
 
@@ -54,6 +70,12 @@
   --color-border: var(--border);
   --color-muted: var(--muted);
   --color-accent: var(--accent);
+  --color-tone-lavender: var(--tone-lavender);
+  --color-tone-sage: var(--tone-sage);
+  --color-tone-sky: var(--tone-sky);
+  --color-tone-peach: var(--tone-peach);
+  --color-tone-butter: var(--tone-butter);
+  --color-tone-ink: var(--tone-ink);
   --font-sans: var(--font-sans), var(--font-arabic), system-ui, sans-serif;
   --font-mono: var(--font-mono), ui-monospace, monospace;
 }
