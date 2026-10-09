@@ -116,3 +116,81 @@ for (const scheme of ['light', 'dark'] as const) {
     }
   });
 }
+
+/*
+ * Illustrations des tuiles — decision du 9 octobre 2026 (fondateur) : Road et Mountain d'abord.
+ * Le rendu des attributs est teste dans `finder-tones.spec.tsx` ; ici, la vraie page : l'image
+ * est CHARGEE (un 404 laisserait une image cassee), ENTIERE dans sa tuile, aux proportions
+ * reservees, et les tuiles d'une meme rangee ont la meme hauteur, illustrees ou non.
+ */
+for (const locale of ['en-sa', 'ar-sa'] as const) {
+  test(`${locale} : road et mountain montrent leur illustration, entiere, dans leur tuile`, async ({ page }) => {
+    await page.goto(`/${locale}/finder`);
+
+    for (const cle of ['road', 'mountain']) {
+      const tuile = page.locator(`main ul a[href="/${locale}/finder/${cle}"]`);
+      const image = tuile.locator('img');
+      await expect(image).toBeVisible();
+
+      // Chargee : un fichier absent laisserait une largeur naturelle nulle.
+      await expect
+        .poll(() => image.evaluate((el: HTMLImageElement) => (el.complete ? el.naturalWidth : 0)), { message: cle })
+        .toBeGreaterThan(0);
+
+      // Entiere : jamais rognee, sa boite tient dans celle de la tuile.
+      const t = await tuile.boundingBox();
+      const i = await image.boundingBox();
+      if (!t || !i) throw new Error(`${cle} : boite introuvable`);
+      expect(i.x, `${cle} : bord debut`).toBeGreaterThanOrEqual(t.x);
+      expect(i.y, `${cle} : bord haut`).toBeGreaterThanOrEqual(t.y);
+      expect(i.x + i.width, `${cle} : bord fin`).toBeLessThanOrEqual(t.x + t.width);
+      expect(i.y + i.height, `${cle} : bord bas`).toBeLessThanOrEqual(t.y + t.height);
+
+      // Proportions reservees (attributs width/height) = celles du fichier servi. Pour une image a
+      // `srcset` en largeurs, `naturalWidth` est corrige de la densite puis arrondi au pixel CSS (155 x 84
+      // ici : 1 % de bruit) : on relit donc les vraies dimensions du fichier choisi, sans `srcset`.
+      const ratios = await image.evaluate(async (el: HTMLImageElement) => {
+        const brut = new Image();
+        brut.src = el.currentSrc;
+        await brut.decode();
+        return {
+          reserve: Number(el.getAttribute('width')) / Number(el.getAttribute('height')),
+          fichier: brut.naturalWidth / brut.naturalHeight,
+          choisi: el.currentSrc,
+        };
+      });
+      expect(Math.abs(ratios.reserve - ratios.fichier) / ratios.fichier, `${cle} : ${JSON.stringify(ratios)}`).toBeLessThan(0.01);
+    }
+  });
+}
+
+test('les tuiles d une meme rangee ont la meme hauteur, illustrees ou non', async ({ page }) => {
+  await page.goto(EN);
+
+  const boites = await page.locator('main ul a').evaluateAll((els) =>
+    els.map((el) => {
+      const r = el.getBoundingClientRect();
+      return { haut: Math.round(r.top), hauteur: Math.round(r.height) };
+    }),
+  );
+  expect(boites.length).toBeGreaterThan(0);
+
+  const rangees = new Map<number, number[]>();
+  for (const { haut, hauteur } of boites) rangees.set(haut, [...(rangees.get(haut) ?? []), hauteur]);
+  for (const [haut, hauteurs] of rangees) {
+    expect(new Set(hauteurs).size, `rangee a ${haut} px : hauteurs ${hauteurs}`).toBe(1);
+  }
+});
+
+// Quatre fichiers, noms versionnes (`-v1`) : le cache peut etre immuable, un remplacement change le nom.
+for (const nom of ['road', 'mountain']) {
+  for (const largeur of [320, 480]) {
+    test(`/finder-art/${nom}-${largeur}-v1.webp est servi en WebP et immuable`, async ({ request }) => {
+      const reponse = await request.get(`/finder-art/${nom}-${largeur}-v1.webp`);
+
+      expect(reponse.status()).toBe(200);
+      expect(reponse.headers()['content-type']).toBe('image/webp');
+      expect(reponse.headers()['cache-control']).toBe('public, max-age=31536000, immutable');
+    });
+  }
+}

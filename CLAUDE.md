@@ -310,7 +310,7 @@ neutres. Demande du fondateur, d'après la page du bikefinder de Trek (sa captur
   le jaune beurre `#F6D77C` de Kids est une proposition, choisie par le fondateur. Jaune parce que c'est la seule famille de
   teinte absente de cette palette ; le rose a été écarté (écart de couleur ΔE76 de 15,7 à la lavande, contre au moins 27,4
   entre deux teintes de Trek). Variante écartée : `#F4D35E`, plus vive.
-- **Attribution** (table `TONES`, `src/app/[locale]/finder/question.tsx`) : Road lavande · Mountain sauge · **Gravel &
+- **Attribution** (table `TILES`, `src/app/[locale]/finder/question.tsx`, teinte et illustration) : Road lavande · Mountain sauge · **Gravel &
   cyclocross bleu** · City & fitness pêche · Kids jaune. Le bleu est celui de l'« E-Bike » chez Trek, libre ici parce que
   l'assistance électrique est une question de deuxième niveau ; si une tuile « électrique » devient racine, elle recevra sa
   propre teinte. Écarté : Gravel en lavande comme « Road or Gravel » chez Trek (deux tuiles identiques, bleu inutilisé).
@@ -322,6 +322,35 @@ neutres. Demande du fondateur, d'après la page du bikefinder de Trek (sa captur
   `tests/e2e/finder-tones.spec.tsx` (la règle « racine seulement » et la clé inconnue, sur des questions synthétiques ; le
   composant porte `@jsxImportSource react`, convention des specs `.tsx`). Changer une teinte = ces deux specs, `globals.css`
   et `question.tsx` dans le même commit.
+
+### Illustrations des tuiles — Road et Mountain (décision du 9 octobre 2026)
+
+Demande du fondateur : des images dans les blocs de couleur, en commençant par Road et Mountain ; Gravel, City et Kids
+gardent leur couleur seule en attendant leurs illustrations. Mise en page validée par lui sur un aperçu de la vraie page.
+
+- **Provenance et droits** : deux PNG à fond transparent fournis par le fondateur le 9 octobre 2026
+  (`road_bike_endurace_illustration_dessinee_main.png`, 1672×941 ; `velo_illustration_dessinee_main.png`, 1673×940 ; dossier
+  `Downloads/velos/illustration`, originaux conservés hors dépôt). **Déclarées créées de zéro (par lui ou par une IA), pas
+  d'après une photo de constructeur** — sa réponse du 9 octobre 2026 à la règle « Images » du `CLAUDE.md` racine. Toute
+  nouvelle illustration repasse par cette question ; une illustration tirée d'une photo de constructeur relève de la posture
+  droits d'images encore à trancher avant la levée du noindex.
+- **Mise en page** : vélo ENTIER, jamais rogné, collé en bas de la tuile, libellé inchangé en haut ; **jamais retourné en
+  arabe** (miroiter l'image ferait passer la transmission du côté opposé). Les tuiles de la racine sont des colonnes flex dont
+  la cellule `li` s'étire : toutes les tuiles d'une rangée ont la hauteur de la plus haute (128 → 155 px sur grand écran).
+  Décorative : `alt=""`, le nom accessible reste le libellé.
+- **Fichiers** : `public/finder-art/{road,mountain}-{320,480}-v1.webp`, 25–27 Ko à 320 px et 46–50 Ko à 480 px, servis en
+  `srcset` en largeurs avec un `sizes` calculé sur la grille (2, 3 puis 5 colonnes). Le `-v1` est la version : remplacer une
+  image = un nouveau nom, jamais l'ancien écrasé, parce que `next.config.ts` les sert en
+  `Cache-Control: public, max-age=31536000, immutable` (Next sert `public/` en `max-age=0` par défaut). Un `<img>` et non
+  `next/image` : le loader du site est global et réservé aux médias de l'API (règle 3).
+- **Recette d'une illustration** (Pillow) : rogner à l'emprise visible (alpha > 6) plus 3 px, redimensionner en Lanczos à
+  320 et 480 px de large, WebP qualité 70, `alpha_quality` 90, `method` 6 ; contrôler les bords sur la teinte réelle de la
+  tuile (aucun halo). Les dimensions réservées (`width` / `height` de `TILES`) sont celles du fichier de 480 px.
+- **Ajouter une illustration** : fichiers dans `public/finder-art/`, entrée `art` dans `TILES` (`question.tsx`),
+  `ILLUSTRATIONS` dans `tests/e2e/finder-tones.spec.tsx` et ce paragraphe, dans le même commit.
+- **Tests** : `finder-tones.spec.tsx` (attributs, deux largeurs, décorative, aucune image hors racine ni sur une tuile sans
+  illustration) ; `finder.spec.ts` (image chargée, entière dans sa tuile, proportions réservées = fichier, hauteurs égales par
+  rangée, fichiers servis en WebP immuable).
 
 ## Budgets performance
 
