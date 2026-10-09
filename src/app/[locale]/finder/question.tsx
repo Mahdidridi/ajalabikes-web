@@ -49,21 +49,23 @@ type Tile = { tone: string; art?: TileArt };
  * elle recevra sa propre teinte. Écarté : Gravel en lavande comme « Road or Gravel » chez Trek
  * (deux tuiles identiques, le bleu inutilisé).
  *
- * ILLUSTRATION — décision du 9 octobre 2026 (fondateur) : Road et Mountain d'abord, les trois
- * autres gardent leur couleur seule en attendant les leurs. Fichiers
- * `public/finder-art/{file}-{320|480}-v1.webp` (WebP à fond transparent, rognés à l'emprise du
- * vélo ; recette dans `CLAUDE.md`), noms versionnés donc cache immuable (`next.config.ts`).
- * Fournies par le fondateur, déclarées créées de zéro (par lui ou par une IA), pas d'après une
- * photo de constructeur. Vélo ENTIER, collé en bas de la tuile, jamais rogné, et jamais
- * retourné en arabe : miroiter l'image ferait passer la transmission du côté opposé, ce qu'un
- * cycliste verrait tout de suite. Décorative (`alt=""`) : le nom accessible reste le libellé.
+ * ILLUSTRATION — décisions du 9 octobre 2026 (fondateur) : les cinq tuiles portent leur
+ * illustration, Road et Mountain d'abord, les trois autres le même jour. Elle applique la
+ * direction visuelle du projet — un système d'illustrations éditoriales dessinées à la main,
+ * `CLAUDE.md` racine, « Direction visuelle ». Fichiers `public/finder-art/{file}-{320|480}-v1.webp`
+ * (WebP à fond transparent, rognés à l'emprise du vélo ; recette dans `CLAUDE.md`), noms
+ * versionnés donc cache immuable (`next.config.ts`). Fournies par le fondateur, qui les déclare
+ * créées de zéro (par lui ou par une IA), pas d'après une photo de constructeur. Vélo ENTIER,
+ * collé en bas de la tuile, jamais rogné, et jamais retourné en arabe : miroiter l'image ferait
+ * passer la transmission du côté opposé, ce qu'un cycliste verrait tout de suite. Décorative
+ * (`alt=""`) : le nom accessible reste le libellé.
  */
 const TILES: ReadonlyMap<string, Tile> = new Map<string, Tile>([
   ['road', { tone: 'bg-tone-lavender', art: { file: 'road', width: 480, height: 277 } }],
   ['mountain', { tone: 'bg-tone-sage', art: { file: 'mountain', width: 480, height: 263 } }],
-  ['gravel-cx', { tone: 'bg-tone-sky' }],
-  ['city-fitness', { tone: 'bg-tone-peach' }],
-  ['kids', { tone: 'bg-tone-butter' }],
+  ['gravel-cx', { tone: 'bg-tone-sky', art: { file: 'gravel', width: 480, height: 281 } }],
+  ['city-fitness', { tone: 'bg-tone-peach', art: { file: 'city', width: 480, height: 276 } }],
+  ['kids', { tone: 'bg-tone-butter', art: { file: 'kids', width: 480, height: 267 } }],
 ]);
 
 /** Largeurs servies pour chaque illustration, en `srcset`. */
