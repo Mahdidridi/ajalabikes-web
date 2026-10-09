@@ -37,6 +37,16 @@ const nextConfig: NextConfig = {
         source: '/:path*',
         headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
       },
+      {
+        /**
+         * Illustrations des tuiles du bikefinder (`public/finder-art`, decision du
+         * 9 octobre 2026). Next sert `public/` en `max-age=0` faute de savoir si un
+         * fichier change ; ceux-ci portent leur version dans le nom (`road-480-v1.webp`) :
+         * remplacer une image change son adresse, le cache peut donc etre immuable.
+         */
+        source: '/finder-art/:path*',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+      },
     ];
   },
 
