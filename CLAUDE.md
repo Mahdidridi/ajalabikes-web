@@ -347,7 +347,8 @@ par lui sur un aperçu de la vraie page.
   noindex.
 - **Mise en page** : vélo ENTIER, jamais rogné, collé en bas de la tuile, libellé inchangé en haut ; **jamais retourné en
   arabe** (miroiter l'image ferait passer la transmission du côté opposé). Les tuiles de la racine sont des colonnes flex dont
-  la cellule `li` s'étire : toutes les tuiles d'une rangée ont la hauteur de la plus haute (128 → 155 px sur grand écran).
+  la cellule `li` s'étire : toutes les tuiles d'une rangée ont la hauteur de la plus haute (128 → 156 px sur grand écran, mesuré
+  avec les cinq illustrations).
   Décorative : `alt=""`, le nom accessible reste le libellé.
 - **Fichiers** : `public/finder-art/{road,mountain,gravel,city,kids}-{320,480}-v1.webp` (le nom de base n'est pas toujours la
   clé d'option : `gravel-cx` → `gravel`, `city-fitness` → `city`), 22–27 Ko à 320 px et 41–50 Ko à 480 px, servis en
