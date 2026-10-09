@@ -301,6 +301,28 @@ tests de politique cible, verrou simulé à `false`, attendent aussi les cinq li
   Les autres specs conservent leur serveur externe. Les captures sont des pieces jointes du rapport Playwright,
   jamais des fichiers committes. Les nouveaux libelles arabes restent soumis a la validation du fondateur.
 
+## Bikefinder — teintes de la question racine (décision du 9 octobre 2026)
+
+Les cinq tuiles de la **première** question (`/{locale}/finder`) portent chacune une teinte ; les écrans suivants restent
+neutres. Demande du fondateur, d'après la page du bikefinder de Trek (sa capture, teintes relevées au pixel).
+
+- **Palette** : lavande `#D0B9D3`, vert sauge `#83A487`, bleu `#6CA8BB` et pêche `#FFB495` sont les quatre teintes de Trek ;
+  le jaune beurre `#F6D77C` de Kids est une proposition, choisie par le fondateur. Jaune parce que c'est la seule famille de
+  teinte absente de cette palette ; le rose a été écarté (écart de couleur ΔE76 de 15,7 à la lavande, contre au moins 27,4
+  entre deux teintes de Trek). Variante écartée : `#F4D35E`, plus vive.
+- **Attribution** (table `TONES`, `src/app/[locale]/finder/question.tsx`) : Road lavande · Mountain sauge · **Gravel &
+  cyclocross bleu** · City & fitness pêche · Kids jaune. Le bleu est celui de l'« E-Bike » chez Trek, libre ici parce que
+  l'assistance électrique est une question de deuxième niveau ; si une tuile « électrique » devient racine, elle recevra sa
+  propre teinte. Écarté : Gravel en lavande comme « Road or Gravel » chez Trek (deux tuiles identiques, bleu inutilisé).
+- **Thème** : mêmes teintes en clair et en sombre, encre fixe `#171717` (contraste d'au moins 6,5:1, seuil AA 4,5). Tokens
+  `--tone-*` de `globals.css`, jamais redéfinis par le thème sombre.
+- **Clé inconnue** : une option que l'API ajouterait n'a pas de teinte et garde la tuile neutre — jamais une teinte devinée.
+  Pure présentation : aucune règle métier, aucun champ d'API, le contrat n'est pas touché.
+- **Tests** : `tests/e2e/finder.spec.ts` (les cinq fonds exacts en AR et EN, contraste du texte en clair et en sombre) et
+  `tests/e2e/finder-tones.spec.tsx` (la règle « racine seulement » et la clé inconnue, sur des questions synthétiques ; le
+  composant porte `@jsxImportSource react`, convention des specs `.tsx`). Changer une teinte = ces deux specs, `globals.css`
+  et `question.tsx` dans le même commit.
+
 ## Budgets performance
 
 LCP ≤ 2,5 s p75 mobile · INP ≤ 200 ms · CLS ≤ 0,1 · TTFB page cachée ≤ 800 ms depuis le Golfe
