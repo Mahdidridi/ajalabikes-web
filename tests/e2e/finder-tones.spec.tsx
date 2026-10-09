@@ -36,7 +36,7 @@ test('un ecran suivant ne teinte ni n illustre rien, meme sur les cles de la rac
   await expect(page.locator('img')).toHaveCount(0);
 });
 
-test('une cle inconnue a la racine garde la tuile neutre, jamais une teinte devinee', async ({ page }) => {
+test('une cle inconnue a la racine garde la tuile neutre et sans image, jamais une teinte devinee', async ({ page }) => {
   // `constructor` et `__proto__` : la table ne les definit pas, mais un objet litteral les heriterait.
   const inconnues = ['electric', 'constructor', '__proto__'];
   await page.setContent(rendu(tuiles('road', ...inconnues), []));
@@ -49,24 +49,30 @@ test('une cle inconnue a la racine garde la tuile neutre, jamais une teinte devi
     await expect(tuile).not.toHaveClass(/bg-tone-/);
     await expect(tuile).toHaveClass(/bg-white/);
   }
+  // Une seule image dans la page : celle du temoin. Les cles inconnues n'en ont pas.
+  await expect(page.locator('img')).toHaveCount(1);
 });
 
 /*
- * Illustrations des tuiles — decision du 9 octobre 2026 (fondateur) : Road et Mountain d'abord ;
- * Gravel, City et Kids gardent leur couleur seule en attendant les leurs. Decoratives (`alt=""`) :
- * le nom accessible d'une tuile reste son libelle. Deux largeurs en `srcset`, dimensions reservees
- * (pas de saut de mise en page). Changer une illustration = ce tableau, `finder/question.tsx`,
- * `public/finder-art/` (nom versionne) et `CLAUDE.md` dans le meme commit.
+ * Illustrations des tuiles — decisions du 9 octobre 2026 (fondateur) : Road et Mountain d'abord,
+ * puis les trois autres le meme jour ; les cinq tuiles de la racine portent leur illustration.
+ * Decoratives (`alt=""`) : le nom accessible d'une tuile reste son libelle. Deux largeurs en
+ * `srcset`, dimensions reservees (pas de saut de mise en page). `fichier` est le nom de base
+ * servi, different de la cle d'option pour Gravel et City. Changer une illustration = ce tableau,
+ * `finder/question.tsx`, `public/finder-art/` (nom versionne) et `CLAUDE.md` dans le meme commit.
  */
 const ILLUSTRATIONS = {
-  road: { largeur: 480, hauteur: 277 },
-  mountain: { largeur: 480, hauteur: 263 },
+  road: { fichier: 'road', largeur: 480, hauteur: 277 },
+  mountain: { fichier: 'mountain', largeur: 480, hauteur: 263 },
+  'gravel-cx': { fichier: 'gravel', largeur: 480, hauteur: 281 },
+  'city-fitness': { fichier: 'city', largeur: 480, hauteur: 276 },
+  kids: { fichier: 'kids', largeur: 480, hauteur: 267 },
 } as const;
 
-test('road et mountain portent une illustration decorative, dimensionnee, en deux largeurs', async ({ page }) => {
-  await page.setContent(rendu(tuiles('road', 'mountain', 'kids'), []));
+test('chaque tuile de la racine porte une illustration decorative, dimensionnee, en deux largeurs', async ({ page }) => {
+  await page.setContent(rendu(tuiles(...Object.keys(ILLUSTRATIONS)), []));
 
-  for (const [cle, { largeur, hauteur }] of Object.entries(ILLUSTRATIONS)) {
+  for (const [cle, { fichier, largeur, hauteur }] of Object.entries(ILLUSTRATIONS)) {
     // Decorative : le nom accessible du lien est le libelle, pas un texte de l'image.
     const tuile = page.getByRole('link', { name: cle, exact: true });
     await expect(tuile).toHaveCount(1);
@@ -74,18 +80,12 @@ test('road et mountain portent une illustration decorative, dimensionnee, en deu
     const image = tuile.locator('img');
     await expect(image).toHaveCount(1);
     await expect(image).toHaveAttribute('alt', '');
-    await expect(image).toHaveAttribute('src', `/finder-art/${cle}-480-v1.webp`);
+    await expect(image).toHaveAttribute('src', `/finder-art/${fichier}-480-v1.webp`);
     await expect(image).toHaveAttribute(
       'srcset',
-      `/finder-art/${cle}-320-v1.webp 320w, /finder-art/${cle}-480-v1.webp 480w`,
+      `/finder-art/${fichier}-320-v1.webp 320w, /finder-art/${fichier}-480-v1.webp 480w`,
     );
     await expect(image).toHaveAttribute('width', String(largeur));
     await expect(image).toHaveAttribute('height', String(hauteur));
   }
-});
-
-test('une tuile sans illustration reste une couleur seule', async ({ page }) => {
-  await page.setContent(rendu(tuiles('gravel-cx', 'city-fitness', 'kids', 'electric'), []));
-
-  await expect(page.locator('img')).toHaveCount(0);
 });

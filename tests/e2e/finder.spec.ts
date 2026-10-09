@@ -118,16 +118,16 @@ for (const scheme of ['light', 'dark'] as const) {
 }
 
 /*
- * Illustrations des tuiles — decision du 9 octobre 2026 (fondateur) : Road et Mountain d'abord.
- * Le rendu des attributs est teste dans `finder-tones.spec.tsx` ; ici, la vraie page : l'image
- * est CHARGEE (un 404 laisserait une image cassee), ENTIERE dans sa tuile, aux proportions
- * reservees, et les tuiles d'une meme rangee ont la meme hauteur, illustrees ou non.
+ * Illustrations des tuiles — decisions du 9 octobre 2026 (fondateur) : Road et Mountain d'abord,
+ * puis les trois autres le meme jour. Le rendu des attributs est teste dans `finder-tones.spec.tsx` ;
+ * ici, la vraie page : l'image est CHARGEE (un 404 laisserait une image cassee), ENTIERE dans sa
+ * tuile, aux proportions reservees, et les tuiles d'une meme rangee ont la meme hauteur.
  */
 for (const locale of ['en-sa', 'ar-sa'] as const) {
-  test(`${locale} : road et mountain montrent leur illustration, entiere, dans leur tuile`, async ({ page }) => {
+  test(`${locale} : chaque tuile montre son illustration, entiere, dans sa tuile`, async ({ page }) => {
     await page.goto(`/${locale}/finder`);
 
-    for (const cle of ['road', 'mountain']) {
+    for (const cle of ['road', 'mountain', 'gravel-cx', 'city-fitness', 'kids']) {
       const tuile = page.locator(`main ul a[href="/${locale}/finder/${cle}"]`);
       const image = tuile.locator('img');
       await expect(image).toBeVisible();
@@ -182,8 +182,8 @@ test('les tuiles d une meme rangee ont la meme hauteur, illustrees ou non', asyn
   }
 });
 
-// Quatre fichiers, noms versionnes (`-v1`) : le cache peut etre immuable, un remplacement change le nom.
-for (const nom of ['road', 'mountain']) {
+// Dix fichiers, noms versionnes (`-v1`) : le cache peut etre immuable, un remplacement change le nom.
+for (const nom of ['road', 'mountain', 'gravel', 'city', 'kids']) {
   for (const largeur of [320, 480]) {
     test(`/finder-art/${nom}-${largeur}-v1.webp est servi en WebP et immuable`, async ({ request }) => {
       const reponse = await request.get(`/finder-art/${nom}-${largeur}-v1.webp`);
