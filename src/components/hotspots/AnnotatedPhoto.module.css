@@ -135,8 +135,8 @@
   height: 0.5em;
 }
 
-/* Couleur foncée : un trait sous le texte, jamais un surlignage qui le couvrirait. */
-.scene[data-accent-mode='line'] .main::after {
+/* Couleur foncée : un trait sous le texte, jamais un surlignage qui le couvrirait (mode posé sur <html> par AccentPicker). */
+:global(:root[data-hotspot-accent-mode='line']) .main::after {
   bottom: -2px;
   height: 2px;
   -webkit-mask: none;

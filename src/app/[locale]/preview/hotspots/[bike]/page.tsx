@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { BuildDetails } from '@/components/BuildDetails';
+import { AccentPicker } from '@/components/hotspots/AccentPicker';
 import { handFontsClassName } from '@/components/hotspots/fonts';
 import { getBuild, isLocale } from '@/lib/api';
 import { PILOT_COPY, pilotBike, pilotFor } from '@/lib/hotspot-pilot';
@@ -39,5 +40,10 @@ export default async function HotspotPilotPreview({ params }: Props) {
     ? { bike, locale, copy: PILOT_COPY[locale], fontClassName: handFontsClassName }
     : undefined;
 
-  return <BuildDetails build={build} locale={locale} annotated={annotated} />;
+  return (
+    <>
+      {annotated && <AccentPicker category={bike.category} locale={locale} />}
+      <BuildDetails build={build} locale={locale} annotated={annotated} />
+    </>
+  );
 }

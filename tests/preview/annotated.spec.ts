@@ -77,3 +77,17 @@ test('talon image bloquée : aucun point, une alerte', async ({ page }) => {
   await expect(page.locator('[data-annotated] [role="alert"]')).toBeVisible();
   await expect(page.locator('[data-annotated] [data-dot]')).toHaveCount(0);
 });
+
+test('sélecteur de couleur : le noir passe le soulignement en trait, la teinte de catégorie le colore', async ({ page }) => {
+  await open(page, 'en-sa', 1440);
+  const underline = () =>
+    page.locator('[data-annotated] [data-main]').first().evaluate((el) => {
+      const after = getComputedStyle(el, '::after');
+      return { color: after.backgroundColor, height: after.height };
+    });
+  expect((await underline()).color).toBe('rgb(246, 215, 124)');
+  await page.locator('[data-accent-picker] [data-preset="ink"]').click();
+  expect(await underline()).toEqual({ color: 'rgb(23, 23, 23)', height: '2px' });
+  await page.locator('[data-accent-picker] [data-preset="category"]').click();
+  expect((await underline()).color).toBe('rgb(131, 164, 135)');
+});
