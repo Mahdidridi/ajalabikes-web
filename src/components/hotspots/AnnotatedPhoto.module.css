@@ -109,17 +109,23 @@
   position: relative;
   z-index: 0;
   font-family: var(--font-hand-latin), var(--font-hand-arabic), var(--font-sans), var(--font-arabic), system-ui, sans-serif;
-  font-size: clamp(16px, 1.65cqw, 23px);
+  font-size: clamp(15px, 1.5cqw, 21px);
   font-weight: 600;
-  line-height: 1.15;
+  line-height: 1.2;
 }
 
+/* Un morceau de la ligne principale (de part et d'autre du « · ») ne se coupe jamais. */
 .segment {
+  position: relative;
+  z-index: 0;
   white-space: nowrap;
 }
 
-/* Le soulignement : un coup de pinceau de la couleur d'accent, glissé sous la caractéristique. */
-.main::after {
+/*
+ * Le soulignement : un coup de pinceau de la couleur d'accent sous CHAQUE morceau, pour qu'une ligne
+ * principale repliée sur deux lignes reste soulignée morceau par morceau, jamais d'un bord à l'autre.
+ */
+.segment::after {
   content: '';
   position: absolute;
   z-index: -1;
@@ -131,12 +137,12 @@
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 24' preserveAspectRatio='none'%3E%3Cpath d='M3 14C35 8 70 16 105 10S170 7 197 12L196 19C165 22 128 15 92 20S30 21 4 20Z'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
 }
 
-.note[data-active] .main::after {
+.note[data-active] .segment::after {
   height: 0.5em;
 }
 
 /* Couleur foncée : un trait sous le texte, jamais un surlignage qui le couvrirait (mode posé sur <html> par AccentPicker). */
-:global(:root[data-hotspot-accent-mode='line']) .main::after {
+:global(:root[data-hotspot-accent-mode='line']) .segment::after {
   bottom: -2px;
   height: 2px;
   -webkit-mask: none;

@@ -172,7 +172,7 @@ export const PILOT_BIKES: readonly PilotBike[] = [
     points: [
       {
         id: 'dropper', kind: 'seatpost', entered: true,
-        dot: { x: 35.25, y: 21.67 }, label: { x: 33, y: 7, align: 'top' },
+        dot: { x: 35.25, y: 21.67 }, label: { x: 22.5, y: 27, align: 'left' },
         main: { 'en-sa': 'Giant Contact Switch SL · 110 / 140 mm', 'ar-sa': 'Giant Contact Switch SL · 110 / 140 مم' },
         part: { 'en-sa': 'Dropper post · by size', 'ar-sa': 'عمود سرج قابل للخفض · حسب المقاس' },
         note: {
@@ -183,7 +183,7 @@ export const PILOT_BIKES: readonly PilotBike[] = [
       },
       {
         id: 'shock', kind: 'shock', entered: true,
-        dot: { x: 48, y: 37.17 }, label: { x: 12, y: 30, align: 'left' },
+        dot: { x: 48, y: 37.17 }, label: { x: 42, y: 14, align: 'top' },
         main: { 'en-sa': 'RockShox SidLuxe Ultimate · 120 mm', 'ar-sa': 'RockShox SidLuxe Ultimate · 120 مم' },
         part: { 'en-sa': 'Rear shock', 'ar-sa': 'ممتص الصدمات الخلفي' },
         note: {
@@ -194,7 +194,7 @@ export const PILOT_BIKES: readonly PilotBike[] = [
       },
       {
         id: 'frame', kind: 'frame', entered: true,
-        dot: { x: 61.88, y: 27.5 }, label: { x: 64, y: 7, align: 'top' },
+        dot: { x: 61.88, y: 27.5 }, label: { x: 64, y: 14, align: 'top' },
         main: { 'en-sa': 'Advanced SL composite', 'ar-sa': 'كومبوزيت Advanced SL' },
         part: { 'en-sa': 'Frame', 'ar-sa': 'الهيكل' },
         note: {
@@ -205,7 +205,7 @@ export const PILOT_BIKES: readonly PilotBike[] = [
       },
       {
         id: 'fork', kind: 'fork', entered: true,
-        dot: { x: 73.63, y: 47 }, label: { x: 88, y: 30, align: 'right' },
+        dot: { x: 73.63, y: 47 }, label: { x: 77.5, y: 40, align: 'right' },
         main: { 'en-sa': 'RockShox Sid Ultimate 3P · 120 mm', 'ar-sa': 'RockShox Sid Ultimate 3P · 120 مم' },
         part: { 'en-sa': 'Suspension fork', 'ar-sa': 'الشوكة المعلّقة' },
         note: {
@@ -216,7 +216,7 @@ export const PILOT_BIKES: readonly PilotBike[] = [
       },
       {
         id: 'tyres', kind: 'tyre', entered: true,
-        dot: { x: 92, y: 77.5 }, label: { x: 80, y: 94, align: 'bottom' },
+        dot: { x: 92, y: 77.5 }, label: { x: 77.5, y: 70, align: 'right' },
         main: { 'en-sa': 'Maxxis Aspen · 29 x 2.4 in', 'ar-sa': 'Maxxis Aspen · 29×2.4 بوصة' },
         part: { 'en-sa': 'Tyres', 'ar-sa': 'الإطارات' },
         note: {
@@ -227,7 +227,7 @@ export const PILOT_BIKES: readonly PilotBike[] = [
       },
       {
         id: 'crankset', kind: 'crankset', entered: true,
-        dot: { x: 41.75, y: 63.5 }, label: { x: 40, y: 94, align: 'bottom' },
+        dot: { x: 41.75, y: 63.5 }, label: { x: 50, y: 86, align: 'bottom' },
         main: { 'en-sa': 'SRAM XX SL · Quark power meter', 'ar-sa': 'SRAM XX SL · مقياس قدرة Quark' },
         part: { 'en-sa': 'Crankset', 'ar-sa': 'مجموعة الدوّاسات' },
         note: {
@@ -238,7 +238,7 @@ export const PILOT_BIKES: readonly PilotBike[] = [
       },
       {
         id: 'derailleur', kind: 'drivetrain', entered: true,
-        dot: { x: 20.75, y: 71 }, label: { x: 12, y: 74, align: 'left' },
+        dot: { x: 20.75, y: 71 }, label: { x: 22.5, y: 66, align: 'left' },
         main: { 'en-sa': 'SRAM XX SL Eagle Transmission · 12 speeds', 'ar-sa': 'SRAM XX SL Eagle Transmission · 12 سرعة' },
         part: { 'en-sa': 'Rear derailleur', 'ar-sa': 'المُبدّل الخلفي' },
         note: {
@@ -261,7 +261,7 @@ export const PILOT_BIKES: readonly PilotBike[] = [
     points: [
       {
         id: 'seatpost', kind: 'seatpost', entered: true,
-        dot: { x: 33.5, y: 27.33 }, label: { x: 30, y: 7, align: 'top' },
+        dot: { x: 33.5, y: 27.33 }, label: { x: 22.5, y: 30, align: 'left' },
         main: { 'en-sa': 'Madone aero · carbon', 'ar-sa': 'Madone aero · كربون' },
         part: { 'en-sa': 'Seatpost', 'ar-sa': 'عمود السرج' },
         note: {
@@ -272,7 +272,7 @@ export const PILOT_BIKES: readonly PilotBike[] = [
       },
       {
         id: 'frame', kind: 'frame', entered: true,
-        dot: { x: 56, y: 56.17 }, label: { x: 58, y: 7, align: 'top' },
+        dot: { x: 55, y: 35.5 }, label: { x: 50, y: 14, align: 'top' },
         main: { 'en-sa': 'OCLV 500 Series carbon', 'ar-sa': 'كربون OCLV 500 Series' },
         part: { 'en-sa': 'Frame', 'ar-sa': 'الهيكل' },
         note: {
@@ -283,7 +283,7 @@ export const PILOT_BIKES: readonly PilotBike[] = [
       },
       {
         id: 'handlebar', kind: 'handlebar', entered: true,
-        dot: { x: 73, y: 29.17 }, label: { x: 88, y: 18, align: 'right' },
+        dot: { x: 73, y: 29.17 }, label: { x: 70, y: 14, align: 'top' },
         main: { 'en-sa': 'Bontrager Comp · alloy', 'ar-sa': 'Bontrager Comp · سبيكة معدنية' },
         part: { 'en-sa': 'Handlebar', 'ar-sa': 'المقود' },
         note: {
@@ -294,7 +294,7 @@ export const PILOT_BIKES: readonly PilotBike[] = [
       },
       {
         id: 'fork', kind: 'fork', entered: true,
-        dot: { x: 75, y: 56.33 }, label: { x: 88, y: 46, align: 'right' },
+        dot: { x: 75, y: 56.33 }, label: { x: 77.5, y: 48, align: 'right' },
         main: { 'en-sa': 'Madone Gen 8 · carbon', 'ar-sa': 'Madone Gen 8 · كربون' },
         part: { 'en-sa': 'Fork', 'ar-sa': 'الشوكة' },
         note: {
@@ -305,7 +305,7 @@ export const PILOT_BIKES: readonly PilotBike[] = [
       },
       {
         id: 'tyres', kind: 'tyre', entered: true,
-        dot: { x: 93.13, y: 90.33 }, label: { x: 82, y: 95, align: 'bottom' },
+        dot: { x: 93.13, y: 90.33 }, label: { x: 72, y: 86, align: 'bottom' },
         main: { 'en-sa': 'Bontrager Aeolus Pro · 700 x 28 mm', 'ar-sa': 'Bontrager Aeolus Pro · 700×28 مم' },
         part: { 'en-sa': 'Tyres', 'ar-sa': 'الإطارات' },
         note: {
@@ -316,7 +316,7 @@ export const PILOT_BIKES: readonly PilotBike[] = [
       },
       {
         id: 'wheels', kind: 'wheels', entered: true,
-        dot: { x: 10, y: 70 }, label: { x: 12, y: 50, align: 'left' },
+        dot: { x: 10, y: 70 }, label: { x: 22.5, y: 56, align: 'left' },
         main: { 'en-sa': 'Bontrager Aeolus Elite 50 · carbon', 'ar-sa': 'Bontrager Aeolus Elite 50 · كربون' },
         part: { 'en-sa': 'Wheels', 'ar-sa': 'العجلات' },
         note: {
@@ -327,7 +327,7 @@ export const PILOT_BIKES: readonly PilotBike[] = [
       },
       {
         id: 'drivetrain', kind: 'drivetrain', entered: true,
-        dot: { x: 21.88, y: 76 }, label: { x: 30, y: 95, align: 'bottom' },
+        dot: { x: 21.88, y: 76 }, label: { x: 36, y: 86, align: 'bottom' },
         main: { 'en-sa': 'Shimano 105 Di2 · 2 x 12', 'ar-sa': 'Shimano 105 Di2 · 2×12' },
         part: { 'en-sa': 'Drivetrain', 'ar-sa': 'مجموعة النقل' },
         note: {
@@ -350,7 +350,7 @@ export const PILOT_BIKES: readonly PilotBike[] = [
     points: [
       {
         id: 'frame', kind: 'frame', entered: true,
-        dot: { x: 56, y: 56.67 }, label: { x: 50, y: 7, align: 'top' },
+        dot: { x: 52, y: 38.5 }, label: { x: 48, y: 14, align: 'top' },
         main: { 'en-sa': '300 Series Alpha aluminium', 'ar-sa': 'ألومنيوم 300 Series Alpha' },
         part: { 'en-sa': 'Frame', 'ar-sa': 'الهيكل' },
         note: {
@@ -361,7 +361,7 @@ export const PILOT_BIKES: readonly PilotBike[] = [
       },
       {
         id: 'handlebar', kind: 'handlebar', entered: true,
-        dot: { x: 72.5, y: 28.67 }, label: { x: 88, y: 18, align: 'right' },
+        dot: { x: 72.5, y: 28.67 }, label: { x: 70, y: 14, align: 'top' },
         main: { 'en-sa': 'Bontrager Elite Gravel · alloy', 'ar-sa': 'Bontrager Elite Gravel · سبيكة معدنية' },
         part: { 'en-sa': 'Handlebar', 'ar-sa': 'المقود' },
         note: {
@@ -372,7 +372,7 @@ export const PILOT_BIKES: readonly PilotBike[] = [
       },
       {
         id: 'fork', kind: 'fork', entered: true,
-        dot: { x: 75.13, y: 59.5 }, label: { x: 88, y: 48, align: 'right' },
+        dot: { x: 75.13, y: 59.5 }, label: { x: 77.5, y: 48, align: 'right' },
         main: { 'en-sa': 'Checkpoint · full carbon', 'ar-sa': 'Checkpoint · كربون بالكامل' },
         part: { 'en-sa': 'Fork', 'ar-sa': 'الشوكة' },
         note: {
@@ -383,7 +383,7 @@ export const PILOT_BIKES: readonly PilotBike[] = [
       },
       {
         id: 'tyres', kind: 'tyre', entered: true,
-        dot: { x: 93.88, y: 91.17 }, label: { x: 82, y: 95, align: 'bottom' },
+        dot: { x: 93.88, y: 91.17 }, label: { x: 72, y: 86, align: 'bottom' },
         main: { 'en-sa': 'Bontrager Girona Pro · 700 x 42 mm', 'ar-sa': 'Bontrager Girona Pro · 700×42 مم' },
         part: { 'en-sa': 'Tyres', 'ar-sa': 'الإطارات' },
         note: {
@@ -394,7 +394,7 @@ export const PILOT_BIKES: readonly PilotBike[] = [
       },
       {
         id: 'wheels', kind: 'wheels', entered: true,
-        dot: { x: 9, y: 75 }, label: { x: 12, y: 50, align: 'left' },
+        dot: { x: 9, y: 75 }, label: { x: 22.5, y: 56, align: 'left' },
         main: { 'en-sa': 'Bontrager Paradigm 23', 'ar-sa': 'Bontrager Paradigm 23' },
         part: { 'en-sa': 'Wheels', 'ar-sa': 'العجلات' },
         note: {
@@ -405,7 +405,7 @@ export const PILOT_BIKES: readonly PilotBike[] = [
       },
       {
         id: 'drivetrain', kind: 'drivetrain', entered: true,
-        dot: { x: 20, y: 83.33 }, label: { x: 30, y: 95, align: 'bottom' },
+        dot: { x: 20, y: 83.33 }, label: { x: 36, y: 86, align: 'bottom' },
         main: { 'en-sa': 'SRAM Apex XPLR · 12 speeds', 'ar-sa': 'SRAM Apex XPLR · 12 سرعة' },
         part: { 'en-sa': 'Drivetrain', 'ar-sa': 'مجموعة النقل' },
         note: {
@@ -428,7 +428,7 @@ export const PILOT_BIKES: readonly PilotBike[] = [
     points: [
       {
         id: 'headlight', kind: 'light', entered: true,
-        dot: { x: 63.5, y: 10 }, label: { x: 70, y: 6, align: 'top' },
+        dot: { x: 63.5, y: 10 }, label: { x: 72, y: 17, align: 'top' },
         main: { 'en-sa': 'Lezyne E500+', 'ar-sa': 'Lezyne E500+' },
         part: { 'en-sa': 'Headlight', 'ar-sa': 'المصباح الأمامي' },
         note: {
@@ -439,7 +439,7 @@ export const PILOT_BIKES: readonly PilotBike[] = [
       },
       {
         id: 'rack', kind: 'rack', entered: true,
-        dot: { x: 21, y: 31 }, label: { x: 22, y: 6, align: 'top' },
+        dot: { x: 21, y: 31 }, label: { x: 28, y: 17, align: 'top' },
         main: { 'en-sa': 'Turbo SL Rack · 27 kg', 'ar-sa': 'Turbo SL Rack · 27 كجم' },
         part: { 'en-sa': 'Rear rack', 'ar-sa': 'حامل الأمتعة' },
         note: {
@@ -450,7 +450,7 @@ export const PILOT_BIKES: readonly PilotBike[] = [
       },
       {
         id: 'battery', kind: 'battery', entered: true,
-        dot: { x: 56, y: 42 }, label: { x: 46, y: 6, align: 'top' },
+        dot: { x: 56, y: 42 }, label: { x: 50, y: 17, align: 'top' },
         main: { 'en-sa': 'Specialized SL2-520 · 520 Wh', 'ar-sa': 'Specialized SL2-520 · 520 واط ساعة' },
         part: { 'en-sa': 'Battery · fully integrated', 'ar-sa': 'البطارية · مدمجة بالكامل' },
         note: {
@@ -461,7 +461,7 @@ export const PILOT_BIKES: readonly PilotBike[] = [
       },
       {
         id: 'brakes', kind: 'brake', entered: true,
-        dot: { x: 75, y: 61 }, label: { x: 88, y: 50, align: 'right' },
+        dot: { x: 75, y: 61 }, label: { x: 77.5, y: 44, align: 'right' },
         main: { 'en-sa': 'Tektro HD-R510 · 160 mm discs', 'ar-sa': 'Tektro HD-R510 · أقراص 160 مم' },
         part: { 'en-sa': 'Brakes · hydraulic disc', 'ar-sa': 'الفرامل · قرصية هيدروليكية' },
         note: {
@@ -478,7 +478,7 @@ export const PILOT_BIKES: readonly PilotBike[] = [
       },
       {
         id: 'tyres', kind: 'tyre', entered: true,
-        dot: { x: 92.5, y: 62 }, label: { x: 88, y: 82, align: 'right' },
+        dot: { x: 92.5, y: 62 }, label: { x: 77.5, y: 66, align: 'right' },
         main: { 'en-sa': 'Specialized Hemisphere · 47 mm', 'ar-sa': 'Specialized Hemisphere · 47 مم' },
         part: { 'en-sa': 'Tyres', 'ar-sa': 'الإطارات' },
         note: {
@@ -493,7 +493,7 @@ export const PILOT_BIKES: readonly PilotBike[] = [
       },
       {
         id: 'motor', kind: 'motor', entered: true,
-        dot: { x: 48, y: 63 }, label: { x: 50, y: 95, align: 'bottom' },
+        dot: { x: 48, y: 63 }, label: { x: 54, y: 83, align: 'bottom' },
         main: { 'en-sa': 'Specialized 1.2 SL System', 'ar-sa': 'Specialized 1.2 SL System' },
         part: { 'en-sa': 'Motor', 'ar-sa': 'المحرّك' },
         note: {
@@ -504,7 +504,7 @@ export const PILOT_BIKES: readonly PilotBike[] = [
       },
       {
         id: 'frame', kind: 'frame', entered: true,
-        dot: { x: 40, y: 50 }, label: { x: 12, y: 46, align: 'left' },
+        dot: { x: 40, y: 50 }, label: { x: 22.5, y: 44, align: 'left' },
         main: { 'en-sa': 'Vado SL · step-through', 'ar-sa': 'Vado SL · هيكل منخفض' },
         part: { 'en-sa': 'Frame', 'ar-sa': 'الهيكل' },
         note: {
@@ -515,7 +515,7 @@ export const PILOT_BIKES: readonly PilotBike[] = [
       },
       {
         id: 'derailleur', kind: 'drivetrain', entered: true,
-        dot: { x: 23, y: 81 }, label: { x: 22, y: 95, align: 'bottom' },
+        dot: { x: 23, y: 81 }, label: { x: 22.5, y: 70, align: 'left' },
         main: { 'en-sa': 'Shimano Cues · 11 speeds', 'ar-sa': 'Shimano Cues · 11 سرعة' },
         part: { 'en-sa': 'Rear derailleur', 'ar-sa': 'المُبدّل الخلفي' },
         note: {

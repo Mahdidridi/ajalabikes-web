@@ -75,7 +75,9 @@ export function AnnotatedPhoto({ image, config }: { image: Media; config: Annota
     value.split(SEPARATOR).map((segment, i) => (
       <span key={i}>
         {i > 0 && SEPARATOR}
-        <span className={styles.segment}>{text(segment)}</span>
+        <span className={styles.segment} data-segment>
+          {text(segment)}
+        </span>
       </span>
     ));
 
@@ -180,13 +182,16 @@ export function AnnotatedPhoto({ image, config }: { image: Media; config: Annota
                   data-active={p.id === selected ? '' : undefined}
                   className={`${styles.note} ${styles[p.label.align]}`}
                   style={{ left: `${p.label.x}%`, top: `${p.label.y}%` }}
-                  dir={dir}
-                  lang={lang}
+                  // Conteneur en ltr : l'alignement contre le trait est PHYSIQUE (une note à gauche du vélo
+                  // s'aligne à droite), quel que soit le sens de lecture ; seuls les textes portent la langue.
+                  dir="ltr"
                 >
-                  <span data-main className={styles.main}>
+                  <span data-main className={styles.main} dir={dir} lang={lang}>
                     {mainLine(p.main[locale])}
                   </span>
-                  <span className={styles.part}>{text(p.part[locale])}</span>
+                  <span className={styles.part} dir={dir} lang={lang}>
+                    {text(p.part[locale])}
+                  </span>
                 </div>
               ))}
             </>

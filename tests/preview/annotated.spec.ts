@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { pilotBike } from '../../src/lib/hotspot-pilot';
+import { PILOT_BIKES, pilotBike } from '../../src/lib/hotspot-pilot';
 
 /**
  * Composition annotée du pilote (web #49, étape 1) sur le Talon : le serveur d'aperçu tourne
@@ -52,8 +52,16 @@ for (const locale of ['ar-sa', 'en-sa']) {
 
 test('talon ar-sa : tout le latin d’une ligne principale est isolé dans <bdi>', async ({ page }) => {
   await open(page, 'ar-sa', 1440);
+  // Tout texte latin, à n'importe quelle profondeur sous la ligne principale, doit avoir un <bdi> pour ancêtre.
   const orphelins = await page.locator('[data-annotated] [data-main]').evaluateAll((els) =>
-    els.filter((el) => [...el.childNodes].some((n) => n.nodeType === Node.TEXT_NODE && /[A-Za-z]/.test(n.textContent ?? ''))).length,
+    els.reduce((total, el) => {
+      const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+      let count = 0;
+      for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+        if (/[A-Za-z]/.test(n.textContent ?? '') && !n.parentElement?.closest('bdi')) count++;
+      }
+      return total + count;
+    }, 0),
   );
   expect(orphelins).toBe(0);
   await expect(page.locator('[data-annotated] [data-main] bdi').first()).toBeVisible();
@@ -81,7 +89,7 @@ test('talon image bloquée : aucun point, une alerte', async ({ page }) => {
 test('sélecteur de couleur : le noir passe le soulignement en trait, la teinte de catégorie le colore', async ({ page }) => {
   await open(page, 'en-sa', 1440);
   const underline = () =>
-    page.locator('[data-annotated] [data-main]').first().evaluate((el) => {
+    page.locator('[data-annotated] [data-main] [data-segment]').first().evaluate((el) => {
       const after = getComputedStyle(el, '::after');
       return { color: after.backgroundColor, height: after.height };
     });
@@ -90,4 +98,48 @@ test('sélecteur de couleur : le noir passe le soulignement en trait, la teinte 
   expect(await underline()).toEqual({ color: 'rgb(23, 23, 23)', height: '2px' });
   await page.locator('[data-accent-picker] [data-preset="category"]').click();
   expect((await underline()).color).toBe('rgb(131, 164, 135)');
+});
+
+for (const bike of PILOT_BIKES.filter((b) => b.key !== 'talon')) {
+  for (const locale of ['ar-sa', 'en-sa']) {
+    test(`${bike.key} ${locale} 1440 : une note par point, hors photo, sans chevauchement`, async ({ page }) => {
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await page.goto(`/${locale}/preview/hotspots/${bike.key}`);
+      await page.evaluate(() => document.fonts.ready.then(() => undefined));
+      const scene = page.locator(`[data-annotated="${bike.key}"]`);
+      await expect(scene.locator('[data-dot]')).toHaveCount(bike.points.length);
+      await expect(scene.locator('[data-note]:visible')).toHaveCount(bike.points.length);
+      const photo = (await scene.locator('img').first().boundingBox())!;
+      const notes = await Promise.all((await scene.locator('[data-note]').all()).map(async (n) => (await n.boundingBox())!));
+      const sceneBox = (await scene.boundingBox())!;
+      notes.forEach((note, i) => {
+        expect(overlap(note, photo), `${bike.points[i].id} sur la photo`).toBe(false);
+        expect(note.x >= sceneBox.x && note.x + note.width <= sceneBox.x + sceneBox.width, `${bike.points[i].id} hors scène`).toBe(true);
+        notes.slice(i + 1).forEach((other, j) => expect(overlap(note, other), `${bike.points[i].id} / ${bike.points[i + j + 1].id}`).toBe(false));
+      });
+    });
+  }
+}
+
+test('anthem : une autre photo de la galerie s’affiche sans aucun point, la photo de tête les retrouve', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/en-sa/preview/hotspots/anthem');
+  const dots = page.locator('[data-annotated] [data-dot]');
+  await expect(dots).toHaveCount(pilotBike('anthem')!.points.length);
+  await page.getByRole('button', { name: 'Photo 2 of 12' }).click();
+  await expect(page.locator('[data-annotated]')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Photo 1 of 12' }).click();
+  await expect(dots).toHaveCount(pilotBike('anthem')!.points.length);
+});
+
+test('talon ar-sa : alignement physique contre le trait (note de gauche alignée à droite, note de droite à gauche)', async ({ page }) => {
+  await open(page, 'ar-sa', 1440);
+  const edges = async (id: string) => {
+    const note = page.locator('[data-annotated] [data-note]').nth(talon.points.findIndex((p) => p.id === id));
+    return { main: (await note.locator('[data-main]').boundingBox())!, part: (await note.locator('[data-main] + span').boundingBox())! };
+  };
+  const left = await edges('derailleur');
+  expect(Math.abs(left.main.x + left.main.width - (left.part.x + left.part.width)), 'note de gauche').toBeLessThan(2);
+  const right = await edges('fork');
+  expect(Math.abs(right.main.x - right.part.x), 'note de droite').toBeLessThan(2);
 });
