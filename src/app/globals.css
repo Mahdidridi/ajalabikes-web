@@ -32,6 +32,8 @@
   --tone-peach: #ffb495;
   --tone-butter: #f6d77c;
   --tone-ink: #171717;
+  /* Couleur d'accent des notes du pilote de hotspots (web #49) : une seule variable, réglable. */
+  --hotspot-accent: var(--tone-butter);
   color-scheme: light;
 }
 

@@ -4,6 +4,7 @@ import { BikeGallery } from '@/components/BikeGallery';
 import { ComponentList } from '@/components/ComponentList';
 import { JsonLd } from '@/components/JsonLd';
 import { SizePicker } from '@/components/SizePicker';
+import type { AnnotatedConfig } from '@/components/hotspots/AnnotatedPhoto';
 import type { Build, Locale } from '@/lib/api';
 import { sizeCatalogue } from '@/lib/images';
 import { buildBreadcrumbJsonLd, productJsonLd } from '@/lib/jsonld';
@@ -51,15 +52,26 @@ const COPY = {
  * pour qu'une autre route puisse rendre la MEME fiche (aperçu du pilote web #49).
  * Le rendu public est inchangé : vérifié en comparant le HTML de six fiches
  * avant et après l'extraction (décision du 10 octobre 2026).
+ *
+ * `annotated` : aperçu du pilote seulement. La fiche s'élargit (1264 px) pour laisser aux notes
+ * leurs marges autour de la photo — choix à valider par le fondateur sur la planche du Talon.
  */
-export function BuildDetails({ build, locale }: { build: Build; locale: Locale }) {
+export function BuildDetails({
+  build,
+  locale,
+  annotated,
+}: {
+  build: Build;
+  locale: Locale;
+  annotated?: AnnotatedConfig;
+}) {
   const t = COPY[locale];
   // Le contrat marque les lignes nullable (filtrage cote API) : on ne garde
   // que les lignes reelles, sans jamais en fabriquer.
   const highlights = build.highlights.flatMap((h) => (h ? [h] : []));
 
   return (
-    <main className="mx-auto flex w-full max-w-4xl flex-col gap-8 p-6">
+    <main className={`mx-auto flex w-full ${annotated ? 'max-w-[1264px]' : 'max-w-4xl'} flex-col gap-8 p-6`}>
       {/* Fil d'Ariane et produit pour Google — tout vient de `build`, sans
           offre ni prix : le MSRP US n'est pas un prix local. */}
       <JsonLd data={buildBreadcrumbJsonLd(locale, build)} />
@@ -122,6 +134,7 @@ export function BuildDetails({ build, locale }: { build: Build; locale: Locale }
 
       <BikeGallery
         images={build.images}
+        annotated={annotated}
         labels={{
           thumbnails: t.thumbnails,
           // Composes ici, cote serveur : une fonction ne franchit pas la

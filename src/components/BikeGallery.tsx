@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import { useState } from 'react';
+import { AnnotatedPhoto, type AnnotatedConfig } from '@/components/hotspots/AnnotatedPhoto';
 import { sizeCatalogue, type Media } from '@/lib/images';
 
 type Labels = {
@@ -25,8 +26,20 @@ type Labels = {
  *
  * L'ordre vient de l'API — l'image de tete est la premiere. Le front ne trie
  * pas : ce serait une seconde regle a maintenir en face de celle de Laravel.
+ *
+ * `annotated` (apercu du pilote web #49 seulement, jamais sur une fiche publique) : la photo de
+ * tete est annotee si, et seulement si, c'est la photo exacte du pilote ; toute autre vue reste
+ * une photo ordinaire, sans aucun point.
  */
-export function BikeGallery({ images, labels }: { images: Media[]; labels: Labels }) {
+export function BikeGallery({
+  images,
+  labels,
+  annotated,
+}: {
+  images: Media[];
+  labels: Labels;
+  annotated?: AnnotatedConfig;
+}) {
   const [actif, setActif] = useState(0);
 
   // Une image absente ne casse pas la page.
@@ -34,10 +47,14 @@ export function BikeGallery({ images, labels }: { images: Media[]; labels: Label
 
   const image = images[Math.min(actif, images.length - 1)];
   const grande = image.sizes.detail;
+  const annotee = annotated && actif === 0 && image.id === annotated.bike.media.id;
 
   return (
     <figure className="flex flex-col gap-3">
       <div className="overflow-hidden border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
+        {annotee ? (
+          <AnnotatedPhoto image={image} config={annotated} />
+        ) : (
         <Image
           // Le catalogue des quatre tailles, lu par le loader. Il ne fabrique
           // aucune URL : il choisit parmi celles que l'API a fournies.
@@ -52,6 +69,7 @@ export function BikeGallery({ images, labels }: { images: Media[]; labels: Label
           // flottaison : la charger en differe repousserait le LCP.
           priority
         />
+        )}
       </div>
 
       {images.length > 1 && (

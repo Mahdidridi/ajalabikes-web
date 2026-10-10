@@ -78,7 +78,7 @@ export const PILOT_BIKES: readonly PilotBike[] = [
     points: [
       {
         id: 'seatpost', kind: 'seatpost', entered: true,
-        dot: { x: 36, y: 28.17 }, label: { x: 33, y: 8, align: 'top' },
+        dot: { x: 36, y: 28.17 }, label: { x: 22.5, y: 30, align: 'left' },
         main: { 'en-sa': 'Giant Sport', 'ar-sa': 'Giant Sport' },
         part: { 'en-sa': 'Seatpost', 'ar-sa': 'عمود السرج' },
         note: {
@@ -89,7 +89,7 @@ export const PILOT_BIKES: readonly PilotBike[] = [
       },
       {
         id: 'frame', kind: 'frame', entered: true,
-        dot: { x: 52.75, y: 45 }, label: { x: 60, y: 8, align: 'top' },
+        dot: { x: 50, y: 32.5 }, label: { x: 54, y: 14, align: 'top' },
         main: { 'en-sa': 'ALUXX aluminium', 'ar-sa': 'ألومنيوم ALUXX' },
         part: { 'en-sa': 'Frame', 'ar-sa': 'الهيكل' },
         note: {
@@ -100,7 +100,7 @@ export const PILOT_BIKES: readonly PilotBike[] = [
       },
       {
         id: 'fork', kind: 'fork', entered: true,
-        dot: { x: 70.63, y: 36.33 }, label: { x: 88, y: 24, align: 'right' },
+        dot: { x: 70.63, y: 36.33 }, label: { x: 77.5, y: 32, align: 'right' },
         main: { 'en-sa': 'Giant SXC32-2 · 80 / 100 mm', 'ar-sa': 'Giant SXC32-2 · 80 / 100 مم' },
         part: { 'en-sa': 'Suspension fork · by size', 'ar-sa': 'الشوكة المعلّقة · حسب المقاس' },
         note: {
@@ -117,7 +117,7 @@ export const PILOT_BIKES: readonly PilotBike[] = [
       },
       {
         id: 'brake', kind: 'brake', entered: true,
-        dot: { x: 76.5, y: 57.33 }, label: { x: 88, y: 58, align: 'right' },
+        dot: { x: 76.5, y: 57.33 }, label: { x: 77.5, y: 62, align: 'right' },
         main: { 'en-sa': 'Tektro HD M3121 · 180 mm disc', 'ar-sa': 'Tektro HD M3121 · قرص 180 مم' },
         part: { 'en-sa': 'Front brake · hydraulic disc', 'ar-sa': 'الفرامل الأمامية · قرصية هيدروليكية' },
         note: {
@@ -133,7 +133,7 @@ export const PILOT_BIKES: readonly PilotBike[] = [
       },
       {
         id: 'tyres', kind: 'tyre', entered: true,
-        dot: { x: 92, y: 75.67 }, label: { x: 80, y: 94, align: 'bottom' },
+        dot: { x: 92, y: 75.67 }, label: { x: 72, y: 87, align: 'bottom' },
         main: { 'en-sa': 'Maxxis Rekon · 27.5 or 29 in', 'ar-sa': 'Maxxis Rekon · 27.5 أو 29 بوصة' },
         part: { 'en-sa': 'Tyres · by size', 'ar-sa': 'الإطارات · حسب المقاس' },
         note: {
@@ -149,7 +149,7 @@ export const PILOT_BIKES: readonly PilotBike[] = [
       },
       {
         id: 'derailleur', kind: 'drivetrain', entered: true,
-        dot: { x: 20.75, y: 69 }, label: { x: 12, y: 72, align: 'left' },
+        dot: { x: 20.75, y: 69 }, label: { x: 22.5, y: 64, align: 'left' },
         main: { 'en-sa': 'microSHIFT Advent · 11 speeds', 'ar-sa': 'microSHIFT Advent · 11 سرعة' },
         part: { 'en-sa': 'Rear derailleur', 'ar-sa': 'المُبدّل الخلفي' },
         note: {
@@ -535,9 +535,23 @@ export const PILOT_BIKES: readonly PilotBike[] = [
 
 /** Textes d'interface du composant, déjà composés (règle des composants client). */
 export const PILOT_COPY = {
-  'en-sa': { toggle: 'Annotations', close: 'Close', point: 'Point', unavailable: 'Photo unavailable' },
-  'ar-sa': { toggle: 'الشروح', close: 'إغلاق', point: 'النقطة', unavailable: 'الصورة غير متاحة' },
-} as const satisfies Record<Locale, { toggle: string; close: string; point: string; unavailable: string }>;
+  'en-sa': {
+    toggle: 'Annotations',
+    close: 'Close',
+    point: 'Point',
+    unavailable: 'Photo unavailable',
+    hint: 'Tap a number to see the part.',
+  },
+  'ar-sa': {
+    toggle: 'الشروح',
+    close: 'إغلاق',
+    point: 'النقطة',
+    unavailable: 'الصورة غير متاحة',
+    hint: 'المس رقمًا لترى القطعة.',
+  },
+} as const satisfies Record<Locale, { toggle: string; close: string; point: string; unavailable: string; hint: string }>;
+
+export type PilotCopy = (typeof PILOT_COPY)[Locale];
 
 export function pilotBike(key: string): PilotBike | null {
   return PILOT_BIKES.find((bike) => bike.key === key) ?? null;

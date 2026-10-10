@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { BuildDetails } from '@/components/BuildDetails';
+import { handFontsClassName } from '@/components/hotspots/fonts';
 import { getBuild, isLocale } from '@/lib/api';
-import { pilotBike } from '@/lib/hotspot-pilot';
+import { PILOT_COPY, pilotBike, pilotFor } from '@/lib/hotspot-pilot';
 
 /**
  * Aperçu LOCAL du pilote de hotspots éditoriaux (web #49, étape 1 — décisions du fondateur du
@@ -33,5 +34,10 @@ export default async function HotspotPilotPreview({ params }: Props) {
   const build = await getBuild(locale, bike.brand, bike.slug);
   if (!build) notFound();
 
-  return <BuildDetails build={build} locale={locale} />;
+  // Une photo ou une identité qui ne correspond plus au pilote : fiche ordinaire, sans aucun point.
+  const annotated = pilotFor(build, key)
+    ? { bike, locale, copy: PILOT_COPY[locale], fontClassName: handFontsClassName }
+    : undefined;
+
+  return <BuildDetails build={build} locale={locale} annotated={annotated} />;
 }
