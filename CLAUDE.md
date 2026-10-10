@@ -365,6 +365,61 @@ par lui sur un aperçu de la vraie page.
   une clé inconnue) ; `finder.spec.ts` (image chargée, entière dans sa tuile, proportions réservées = fichier, hauteurs égales
   par rangée, dix fichiers servis en WebP immuable).
 
+## Pilote des hotspots éditoriaux (web #49, étape 1) — décisions du fondateur du 10 octobre 2026
+
+La vraie photo de la fiche, intacte, avec autour des notes « de connaisseur » à l'esprit dessiné à la main (direction
+visuelle du 9 octobre, `../CLAUDE.md`). Spec : issue #49, réécrite le 10 octobre avec les décisions du fondateur.
+
+- **Aperçu LOCAL seulement** : `/{locale}/preview/hotspots/{talon|anthem|madone|checkpoint|vado}` rend 404 sans
+  `BIKE_HOTSPOT_PREVIEW=1`, avant toute lecture de paramètre ou de l'API ; `noindex` ; jamais lié ; **jamais déployé sans
+  décision distincte du fondateur** — les valeurs saisies pour le pilote ne se déploient pas. Les fiches publiques ne passent
+  pas par là : HTML de six fiches identique avant et après (seule la place de `<meta name="next-size-adjust">` change sur le
+  premier rendu après un build neuf).
+- **`BuildDetails`** porte le corps de la fiche, partagé par la page publique et l'aperçu. `annotated` élargit la fiche à
+  1264 px pour laisser aux notes leurs marges (à valider par le fondateur).
+- **Données : `src/lib/hotspot-pilot.ts`** — cinq vélos ; chaque point a `dot` (en % de la photo `detail`), `label` (en % de
+  la scène, côté `left|right|top|bottom`), une ligne principale (marque + modèle + chiffre clé), le nom de la pièce et une note
+  de connaisseur en EN et AR (explique, ne juge jamais), et ses **sources citées mot pour mot** (`equipment_specs`,
+  `components[].description`, `sizes[].wheel_size`). `entered: true` = valeur que l'API ne sert pas sous forme normalisée,
+  saisie pour le pilote. `pilotFor()` refuse toute autre photo ou identité : la fiche retombe alors sur la galerie ordinaire.
+  Terminologie arabe de l'API (`الهيكل` = cadre, `الإطار` = pneu). Pièges : « Max brake rotor sizes » et « Max fork travel »
+  (Trek) sont des compatibilités, jamais l'équipement monté.
+- **Composant : `src/components/hotspots/AnnotatedPhoto.tsx`** — scène à proportions fixes (photo à 52 % de la largeur,
+  marges de 24 %), points positionnés en % de la photo, traits SVG (Bézier déterministe, `leader.ts`, `vector-effect:
+  non-scaling-stroke`), notes dans les marges. La ligne principale ne se coupe qu'au « · » et chaque morceau porte son
+  soulignement `--hotspot-accent` (défaut `--tone-butter`, `globals.css`). Polices : Caveat (latin) + Aref Ruqaa (arabe),
+  chargées par la seule route d'aperçu (`fonts.ts`). Sous 900 px de conteneur : points seuls, une explication sous la photo
+  (fermeture, Échap, retour du focus). Fond clair et encre fixes dans les deux thèmes. **Conteneur des notes en `ltr`** :
+  l'alignement contre le trait est physique ; seuls les textes portent `dir="rtl"`, et tout latin passe par `<bdi>`. Image
+  en erreur : aucun point, une alerte. Photo jamais retournée.
+- **`AccentPicker`** (aperçu seulement) : jaune, noir (en trait sous le texte), teinte de la catégorie, couleur libre,
+  surlignage ou trait ; écrit `--hotspot-accent` et `data-hotspot-accent-mode` sur `<html>`. La couleur retenue par le
+  fondateur deviendra la valeur de la variable.
+- **Tests** : `playwright.hotspot-preview.config.ts` (`tests/preview`, un worker, desktop + mobile, serveur local lancé à la
+  main, aucune purge) — `pilot-data` (sources contre l'API réelle, identité, photo différente), `flag` (404 sans drapeau,
+  fiche publique sans annotation), `annotated` (cinq vélos AR/EN : notes hors photo, dans la scène, sans chevauchement ;
+  mobile ; `<bdi>` ; thème sombre ; image bloquée ; sélecteur ; vignettes ; alignement arabe).
+- **Captures** : `scripts/hotspot-pilot-captures.mjs` écrit dans `HOTSPOT_CAPTURE_DIR`, **obligatoirement hors du dépôt**
+  (dépôt public, photos de constructeur) — en pratique `../notes/design-references/hotspots-pilot/`.
+
+Recette (PowerShell, depuis le worktree) :
+
+```powershell
+$env:API_BASE_URL = 'https://api.darrajabikes.com/api'
+npm run build
+$env:BIKE_HOTSPOT_PREVIEW = '1'
+node node_modules/next/dist/bin/next start --hostname 127.0.0.1 --port 3149
+# autre terminal, même API_BASE_URL :
+$env:PLAYWRIGHT_BASE_URL = 'http://127.0.0.1:3149'
+npx playwright test -c playwright.hotspot-preview.config.ts
+```
+
+Lancer ce serveur depuis l'outil PowerShell : depuis Bash, `Start-Process` laisse le serveur tenir la sortie de Bash ouverte
+et la commande ne rend jamais la main.
+
+**Restent** : relecture des textes arabes par le fondateur ; choix de la couleur et de la largeur ; puis la généralisation
+(positions et textes servis par Laravel, analyse des photos par le scraper), à cadrer après le bilan du pilote.
+
 ## Budgets performance
 
 LCP ≤ 2,5 s p75 mobile · INP ≤ 200 ms · CLS ≤ 0,1 · TTFB page cachée ≤ 800 ms depuis le Golfe
