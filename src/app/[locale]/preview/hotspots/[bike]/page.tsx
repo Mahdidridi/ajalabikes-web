@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { BuildDetails } from '@/components/BuildDetails';
 import { AccentPicker } from '@/components/hotspots/AccentPicker';
+import { AnnotatedPhoto } from '@/components/hotspots/AnnotatedPhoto';
 import { handFontsClassName } from '@/components/hotspots/fonts';
 import { getBuild, isLocale } from '@/lib/api';
 import { PILOT_COPY, pilotBike, pilotFor } from '@/lib/hotspot-pilot';
@@ -36,8 +37,17 @@ export default async function HotspotPilotPreview({ params }: Props) {
   if (!build) notFound();
 
   // Une photo ou une identité qui ne correspond plus au pilote : fiche ordinaire, sans aucun point.
+  // La composition est rendue ICI et passée à la galerie : seule cette route importe le composant.
   const annotated = pilotFor(build, key)
-    ? { bike, locale, copy: PILOT_COPY[locale], fontClassName: handFontsClassName }
+    ? {
+        imageId: bike.media.id,
+        photo: (
+          <AnnotatedPhoto
+            image={build.images[0]}
+            config={{ bike, locale, copy: PILOT_COPY[locale], fontClassName: handFontsClassName }}
+          />
+        ),
+      }
     : undefined;
 
   return (

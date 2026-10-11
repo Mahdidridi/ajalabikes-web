@@ -124,6 +124,8 @@
 /*
  * Le soulignement : un coup de pinceau de la couleur d'accent sous CHAQUE morceau, pour qu'une ligne
  * principale repliée sur deux lignes reste soulignée morceau par morceau, jamais d'un bord à l'autre.
+ * `--hotspot-accent` n'est définie que par AccentPicker : sans lui, le jaune beurre. Rien dans `globals.css`,
+ * pour qu'une fiche publique ne porte rien du pilote.
  */
 .segment::after {
   content: '';
@@ -132,7 +134,7 @@
   inset-inline: -3%;
   bottom: 0.02em;
   height: 0.36em;
-  background: var(--hotspot-accent);
+  background: var(--hotspot-accent, var(--tone-butter));
   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 24' preserveAspectRatio='none'%3E%3Cpath d='M3 14C35 8 70 16 105 10S170 7 197 12L196 19C165 22 128 15 92 20S30 21 4 20Z'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 24' preserveAspectRatio='none'%3E%3Cpath d='M3 14C35 8 70 16 105 10S170 7 197 12L196 19C165 22 128 15 92 20S30 21 4 20Z'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
 }

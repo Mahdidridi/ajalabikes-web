@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { createServer } from 'node:net';
 import { resolve } from 'node:path';
-import { expect, test } from '@playwright/test';
+import { expect, test, type APIRequestContext } from '@playwright/test';
 import { PILOT_BIKES } from '../../src/lib/hotspot-pilot';
 
 /**
@@ -68,6 +68,35 @@ test('la fiche publique ne porte jamais d’annotation, drapeau présent', async
   for (const bike of PILOT_BIKES) {
     const response = await request.get(`/en-sa/bikes/${bike.brand}/${bike.slug}`);
     expect(response.status(), bike.key).toBe(200);
-    expect(await response.text(), bike.key).not.toContain('data-annotated');
+    const html = await response.text();
+    expect(html, bike.key).not.toContain('data-annotated');
+    // Relecture du 10 octobre : la charge RSC portait `"annotated":"$undefined"` (guillemets échappés dans le HTML),
+    // invisible au témoin HTML, qui retire les <script>.
+    expect(html, `${bike.key} : clé annotated dans la charge RSC`).not.toMatch(/\\?"annotated\\?"\s*:/);
+  }
+});
+
+/** Le code et les styles du pilote, tels qu'ils apparaissent dans les fichiers construits. */
+const PILOT_CODE = /data-annotated|AnnotatedPhoto|hotspot-accent/;
+
+/** Le contenu des fichiers JS et CSS que la page `path` fait charger. */
+async function servedAssets(request: APIRequestContext, path: string): Promise<Map<string, string>> {
+  const html = await (await request.get(path)).text();
+  const assets = new Map<string, string>();
+  for (const asset of new Set(html.match(/\/_next\/static\/[^"'\s\\]+\.(?:js|css)/g) ?? [])) {
+    assets.set(asset, await (await request.get(asset)).text());
+  }
+  return assets;
+}
+
+// Relecture du 10 octobre : la galerie publique importait le composant d'aperçu, et chaque fiche chargeait son code et
+// sa feuille de style (10 Ko de CSS bloquant) sans jamais le rendre.
+test('la fiche publique ne charge ni le code ni les styles du pilote ; l’aperçu, si', async ({ request }) => {
+  const preview = await servedAssets(request, '/ar-sa/preview/hotspots/talon');
+  expect([...preview.values()].some((body) => PILOT_CODE.test(body)), 'détection : l’aperçu charge le pilote').toBe(true);
+  for (const bike of PILOT_BIKES) {
+    for (const [asset, body] of await servedAssets(request, `/ar-sa/bikes/${bike.brand}/${bike.slug}`)) {
+      expect(PILOT_CODE.test(body), `${bike.key} : ${asset}`).toBe(false);
+    }
   }
 });

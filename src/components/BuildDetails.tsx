@@ -1,10 +1,9 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { BikeGallery } from '@/components/BikeGallery';
+import { BikeGallery, type GalleryAnnotation } from '@/components/BikeGallery';
 import { ComponentList } from '@/components/ComponentList';
 import { JsonLd } from '@/components/JsonLd';
 import { SizePicker } from '@/components/SizePicker';
-import type { AnnotatedConfig } from '@/components/hotspots/AnnotatedPhoto';
 import type { Build, Locale } from '@/lib/api';
 import { sizeCatalogue } from '@/lib/images';
 import { buildBreadcrumbJsonLd, productJsonLd } from '@/lib/jsonld';
@@ -53,8 +52,9 @@ const COPY = {
  * Le rendu public est inchangé : vérifié en comparant le HTML de six fiches
  * avant et après l'extraction (décision du 10 octobre 2026).
  *
- * `annotated` : aperçu du pilote seulement. La fiche s'élargit (1264 px) pour laisser aux notes
- * leurs marges autour de la photo — choix à valider par le fondateur sur la planche du Talon.
+ * `annotated` : aperçu du pilote seulement, composition rendue par la route d'aperçu. La fiche
+ * s'élargit (1264 px) pour laisser aux notes leurs marges autour de la photo — choix à valider
+ * par le fondateur sur la planche du Talon.
  */
 export function BuildDetails({
   build,
@@ -63,7 +63,7 @@ export function BuildDetails({
 }: {
   build: Build;
   locale: Locale;
-  annotated?: AnnotatedConfig;
+  annotated?: GalleryAnnotation;
 }) {
   const t = COPY[locale];
   // Le contrat marque les lignes nullable (filtrage cote API) : on ne garde
@@ -134,7 +134,9 @@ export function BuildDetails({
 
       <BikeGallery
         images={build.images}
-        annotated={annotated}
+        // Clé posée seulement sur l'aperçu : `annotated={undefined}` écrirait `"annotated":"$undefined"`
+        // dans la charge RSC de chaque fiche publique (relecture du 10 octobre 2026).
+        {...(annotated && { annotated })}
         labels={{
           thumbnails: t.thumbnails,
           // Composes ici, cote serveur : une fonction ne franchit pas la
