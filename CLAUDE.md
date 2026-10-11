@@ -370,9 +370,11 @@ par lui sur un aperçu de la vraie page.
 La vraie photo de la fiche, intacte, avec autour des notes « de connaisseur » à l'esprit dessiné à la main (direction
 visuelle du 9 octobre, `../CLAUDE.md`). Spec : issue #49, réécrite le 10 octobre avec les décisions du fondateur.
 
-- **Aperçu LOCAL seulement** : `/{locale}/preview/hotspots/{talon|anthem|madone|checkpoint|vado}` rend 404 sans
-  `BIKE_HOTSPOT_PREVIEW=1`, avant toute lecture de paramètre ou de l'API ; `noindex` ; jamais lié ; **jamais déployé sans
-  décision distincte du fondateur** — les valeurs saisies pour le pilote ne se déploient pas. Les fiches publiques ne passent
+- **Aperçu derrière un drapeau** : `/{locale}/preview/hotspots/{talon|anthem|madone|checkpoint|vado}` rend 404 sans
+  `BIKE_HOTSPOT_PREVIEW=1`, avant toute lecture de paramètre ou de l'API ; `noindex` ; jamais lié. **Décision du fondateur
+  du 11 octobre 2026 : l'aperçu est en ligne** (drapeau dans le `.env` de production, liens non publiés) pour qu'il le voie
+  sur son téléphone — elle lève, pour ces cinq pages seulement, la règle du 10 octobre « les valeurs saisies pour le pilote ne
+  se déploient pas » ; retirer le drapeau referme l'aperçu (404) sans redéployer. Les fiches publiques ne passent
   pas par là : HTML de six fiches identique avant et après, `<script>` exclus (seule la place de
   `<meta name="next-size-adjust">` change sur le premier rendu après un build neuf). Depuis la relecture du 10 octobre, une
   fiche publique ne charge ni le code ni les styles du pilote, et sa charge RSC ne porte aucune clé `annotated` :

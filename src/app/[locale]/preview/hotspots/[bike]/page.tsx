@@ -8,12 +8,16 @@ import { getBuild, isLocale } from '@/lib/api';
 import { PILOT_COPY, pilotBike, pilotFor } from '@/lib/hotspot-pilot';
 
 /**
- * Aperçu LOCAL du pilote de hotspots éditoriaux (web #49, étape 1 — décisions du fondateur du
+ * Aperçu du pilote de hotspots éditoriaux (web #49, étape 1 — décisions du fondateur du
  * 10 octobre 2026) : les cinq fiches pilotes dans la vraie fiche de l'application.
  *
  * Fermé par défaut : sans `BIKE_HOTSPOT_PREVIEW=1`, 404 avant toute lecture de paramètre ou de
- * l'API. Jamais indexé (`robots` ici, en plus du layout et de `X-Robots-Tag`), jamais lié, jamais
- * déployé sans décision distincte du fondateur. Les fiches publiques ne passent pas par ici.
+ * l'API. Jamais indexé (`robots` ici, en plus du layout et de `X-Robots-Tag`), jamais lié. Les fiches
+ * publiques ne passent pas par ici.
+ *
+ * Décision du fondateur du 11 octobre 2026 : l'aperçu est EN LIGNE (drapeau posé dans le `.env` de
+ * production) pour qu'il le voie sur son téléphone — liens non publiés, fiches publiques inchangées.
+ * Retirer le drapeau le referme (404) sans redéployer le code.
  */
 export const dynamic = 'force-dynamic';
 
