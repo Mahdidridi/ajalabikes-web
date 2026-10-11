@@ -383,8 +383,10 @@ visuelle du 9 octobre, `../CLAUDE.md`). Spec : issue #49, réécrite le 10 octob
 - **Données : `src/lib/hotspot-pilot.ts`** — cinq vélos ; chaque point a `dot` (en % de la photo `detail`), `label` (en % de
   la scène, côté `left|right|top|bottom`), une ligne principale (marque + modèle + chiffre clé), le nom de la pièce et une note
   de connaisseur en EN et AR (explique, ne juge jamais), et ses **sources citées mot pour mot** (`equipment_specs`,
-  `components[].description`, `sizes[].wheel_size`). `entered: true` = valeur que l'API ne sert pas sous forme normalisée,
-  saisie pour le pilote. `pilotFor()` refuse toute autre photo ou identité : la fiche retombe alors sur la galerie ordinaire.
+  `components[].description`, `sizes[].wheel_size`). Saisi ou servi se lit **à la source, jamais au point** (`isEntered`) :
+  une valeur tirée d'un texte libre (`components`) a été saisie pour le pilote, c'est ce que Laravel devra servir ;
+  `equipment_specs` et `sizes` sont servis normalisés (relecture du 10 octobre : un drapeau par point, posé sur les 34, ne
+  distinguait plus rien). `pilotFor()` refuse toute autre photo ou identité : la fiche retombe alors sur la galerie ordinaire.
   Terminologie arabe de l'API (`الهيكل` = cadre, `الإطار` = pneu). Pièges : « Max brake rotor sizes » et « Max fork travel »
   (Trek) sont des compatibilités, jamais l'équipement monté.
 - **Composant : `src/components/hotspots/AnnotatedPhoto.tsx`** — scène à proportions fixes (photo à 52 % de la largeur,
@@ -393,7 +395,13 @@ visuelle du 9 octobre, `../CLAUDE.md`). Spec : issue #49, réécrite le 10 octob
   soulignement `--hotspot-accent`, posée seulement par `AccentPicker` (repli `--tone-butter` dans le module CSS ; rien dans
   `globals.css`, que chaque fiche publique charge). Polices : Caveat (latin) + Aref Ruqaa (arabe),
   chargées par la seule route d'aperçu (`fonts.ts`). Sous 900 px de conteneur : points seuls, une explication sous la photo
-  (fermeture, Échap, retour du focus). Fond clair et encre fixes dans les deux thèmes. **Conteneur des notes en `ltr`** :
+  (fermeture, Échap, retour du focus). **Cible tactile** (relecture du 10 octobre) : un disque de diamètre min(44 px, distance
+  au point voisin le plus proche), calculée par le composant (`--reach`) — deux cibles ne se recouvrent jamais, un toucher va
+  toujours au point le plus proche, jamais moins de 24 px (WCAG 2.5.8) à 320 px, ancres inchangées. **Panneau stable** :
+  l'indication et toutes les explications partagent une cellule de grille, seule la choisie est visible (les autres `inert`) —
+  la hauteur est celle de la plus longue à cette largeur, la sélection ne déplace rien ; un morceau plus long que la ligne
+  s'y replie dans sa propre boîte. Masquer les notes rend le focus à la case. Fond clair et encre fixes dans les deux
+  thèmes. **Conteneur des notes en `ltr`** :
   l'alignement contre le trait est physique ; seuls les textes portent `dir="rtl"`, et tout latin passe par `<bdi>`, découpé
   par `bidi.ts` : la ponctuation de phrase (`. , : ;`) reste à l'arabe, le signe d'un nom (`E500+`, `Go!`, `20"`) reste au
   nom, et une parenthèse n'entre dans le `<bdi>` qu'avec sa jumelle — sinon « Madone. » rend son point entre le nom et
@@ -404,11 +412,17 @@ visuelle du 9 octobre, `../CLAUDE.md`). Spec : issue #49, réécrite le 10 octob
 - **Tests** : `playwright.hotspot-preview.config.ts` (`tests/preview`, un worker, desktop + mobile, serveur local lancé à la
   main, aucune purge) — `pilot-data` (sources contre l'API réelle, identité, photo différente), `flag` (404 sans drapeau,
   fiche publique sans annotation, sans clé RSC, sans code ni style du pilote dans ses fichiers), `bidi-runs` (découpe du
-  latin), `annotated` (cinq vélos AR/EN : notes hors photo, dans la scène, sans chevauchement ; mobile ; `<bdi>` sans
+  latin), `annotated` (cinq vélos AR/EN à 960, 1024 et 1440 px : notes hors photo, dans la scène, sans chevauchement ; à 320
+  et 390 px : panneau, Échap, hauteur constante, rien hors du panneau, toucher au point le plus proche ; `<bdi>` sans
   ponctuation de phrase ni parenthèse orpheline, mesuré à l'écran ; thème sombre ; image bloquée ; sélecteur ; vignettes ;
-  alignement arabe).
-- **Captures** : `scripts/hotspot-pilot-captures.mjs` écrit dans `HOTSPOT_CAPTURE_DIR`, **obligatoirement hors du dépôt**
-  (dépôt public, photos de constructeur) — en pratique `../notes/design-references/hotspots-pilot/`.
+  focus ; alignement arabe).
+- **Captures** : `scripts/hotspot-pilot-captures.mjs [--accents] [vélos…]` écrit dans `HOTSPOT_CAPTURE_DIR`,
+  **obligatoirement hors du dépôt** (dépôt public, photos de constructeur) — en pratique
+  `../notes/design-references/hotspots-pilot/` ; `--accents` ajoute à 1440 px une capture par préréglage de couleur.
+- **Piège mesuré le 11 octobre** : la fiche publique déborde déjà en largeur, défaut de `main` hors du pilote. La liste des
+  composants ne coupe pas un mot sans espace : à 320 px, `80mm(27.5")/100mm(29")` (Talon) suffit ; le Vado déborde dès
+  390 px, à cause d'un lien Markdown brut de 64 caractères servi dans « Compliance Certification ». En émulation mobile et en
+  arabe, ce débordement fait dériver les coordonnées des clics de Playwright.
 
 Recette (PowerShell, depuis le worktree) :
 
