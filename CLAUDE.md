@@ -423,7 +423,8 @@ visuelle du 9 octobre, `../CLAUDE.md`). Spec : issue #49, réécrite le 10 octob
 - **Piège mesuré le 11 octobre** : la fiche publique déborde déjà en largeur, défaut de `main` hors du pilote. La liste des
   composants ne coupe pas un mot sans espace : à 320 px, `80mm(27.5")/100mm(29")` (Talon) suffit ; le Vado déborde dès
   390 px, à cause d'un lien Markdown brut de 64 caractères servi dans « Compliance Certification ». En émulation mobile et en
-  arabe, ce débordement fait dériver les coordonnées des clics de Playwright.
+  arabe, ce débordement fait dériver les coordonnées des clics de Playwright. Corrigé par la PR #51 (non fusionnée au
+  11 octobre) ; la donnée elle-même est signalée dans le scraper (#29).
 
 Recette (PowerShell, depuis le worktree) :
 
