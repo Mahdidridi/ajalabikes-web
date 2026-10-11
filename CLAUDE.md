@@ -407,8 +407,9 @@ visuelle du 9 octobre, `../CLAUDE.md`). Spec : issue #49, réécrite le 10 octob
   nom, et une parenthèse n'entre dans le `<bdi>` qu'avec sa jumelle — sinon « Madone. » rend son point entre le nom et
   l'arabe, et « (aero) » ses deux parenthèses du même côté. Image en erreur : aucun point, une alerte. Photo jamais retournée.
 - **`AccentPicker`** (aperçu seulement) : jaune, noir (en trait sous le texte), teinte de la catégorie, couleur libre,
-  surlignage ou trait ; écrit `--hotspot-accent` et `data-hotspot-accent-mode` sur `<html>`. La couleur retenue par le
-  fondateur deviendra la valeur de la variable.
+  surlignage ou trait ; écrit `--hotspot-accent` et `data-hotspot-accent-mode` sur `<html>`. **Couleur retenue par le
+  fondateur le 11 octobre 2026 : le jaune** (`--tone-butter`, déjà le repli du module CSS), sur la planche des trois
+  couleurs ; le sélecteur reste un outil de comparaison.
 - **Tests** : `playwright.hotspot-preview.config.ts` (`tests/preview`, un worker, desktop + mobile, serveur local lancé à la
   main, aucune purge) — `pilot-data` (sources contre l'API réelle, identité, photo différente), `flag` (404 sans drapeau,
   fiche publique sans annotation, sans clé RSC, sans code ni style du pilote dans ses fichiers), `bidi-runs` (découpe du
@@ -439,7 +440,7 @@ npx playwright test -c playwright.hotspot-preview.config.ts
 Lancer ce serveur depuis l'outil PowerShell : depuis Bash, `Start-Process` laisse le serveur tenir la sortie de Bash ouverte
 et la commande ne rend jamais la main.
 
-**Restent** : relecture des textes arabes par le fondateur ; choix de la couleur et de la largeur ; puis la généralisation
+**Restent** : relecture des textes arabes par le fondateur ; choix de la largeur ; puis la généralisation
 (positions et textes servis par Laravel, analyse des photos par le scraper), à cadrer après le bilan du pilote.
 
 ## Budgets performance

@@ -7,8 +7,11 @@ import type { PilotBike } from '@/lib/hotspot-pilot';
 /**
  * Sélecteur de la couleur d'accent des notes — pages d'APERÇU seulement, jamais en ligne (demande du
  * fondateur du 10 octobre 2026 : « avoir la main » sur la couleur). Il écrit `--hotspot-accent` et le
- * mode (surlignage ou trait) sur <html> ; la couleur retenue deviendra la valeur de la variable dans
- * `globals.css`. Aucune persistance.
+ * mode (surlignage ou trait) sur <html>. Aucune persistance.
+ *
+ * Décision du fondateur du 11 octobre 2026 : le JAUNE (`--tone-butter`), déjà le repli du module CSS
+ * d'`AnnotatedPhoto` — sur la planche des trois couleurs (jaune, trait noir, teinte de la catégorie). Le
+ * sélecteur reste un outil de comparaison de l'aperçu, rien de plus.
  */
 type Mode = 'highlight' | 'line';
 
