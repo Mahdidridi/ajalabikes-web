@@ -1,0 +1,322 @@
+/*
+ * Photo annotée du pilote de hotspots (web #49). Fond clair et encre FIXES dans les deux thèmes : la
+ * galerie passe en dark:bg-neutral-900, où une encre sombre deviendrait illisible.
+ */
+.scene {
+  container-type: inline-size;
+  background: #fff;
+  color: var(--tone-ink);
+  padding-block: 4px 12px;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: flex-end;
+  padding-inline: 12px;
+  font: 12px/1.4 var(--font-sans), var(--font-arabic), system-ui, sans-serif;
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: var(--scene-ratio);
+}
+
+.photo {
+  position: absolute;
+  left: var(--photo-left);
+  top: var(--photo-top);
+  width: var(--photo-width);
+}
+
+.img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Traits de rappel : encre fine et continue, épaisseur constante quelle que soit l'échelle. */
+.leaders {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.leader,
+.leaderActive {
+  fill: none;
+  stroke: var(--tone-ink);
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.leader {
+  stroke-width: 1.1;
+  opacity: 0.85;
+}
+
+.leaderActive {
+  stroke-width: 2;
+}
+
+/* Notes : sans cadre, sans bulle, sans effet. Alignement PHYSIQUE contre le trait, même en arabe. */
+.note {
+  position: absolute;
+  z-index: 1;
+  max-width: 22%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  isolation: isolate;
+}
+
+.left {
+  transform: translate(-100%, -50%);
+  align-items: flex-end;
+  text-align: right;
+}
+
+.right {
+  transform: translate(0, -50%);
+  align-items: flex-start;
+  text-align: left;
+}
+
+.top {
+  transform: translate(-50%, -100%);
+  align-items: center;
+  text-align: center;
+}
+
+.bottom {
+  transform: translate(-50%, 0);
+  align-items: center;
+  text-align: center;
+}
+
+.main {
+  position: relative;
+  z-index: 0;
+  font-family: var(--font-hand-latin), var(--font-hand-arabic), var(--font-sans), var(--font-arabic), system-ui, sans-serif;
+  font-size: clamp(15px, 1.5cqw, 21px);
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+/* Un morceau de la ligne principale (de part et d'autre du « · ») ne se coupe jamais. */
+.segment {
+  position: relative;
+  z-index: 0;
+  white-space: nowrap;
+}
+
+/*
+ * Le soulignement : un coup de pinceau de la couleur d'accent sous CHAQUE morceau, pour qu'une ligne
+ * principale repliée sur deux lignes reste soulignée morceau par morceau, jamais d'un bord à l'autre.
+ * `--hotspot-accent` n'est définie que par AccentPicker : sans lui, le jaune beurre. Rien dans `globals.css`,
+ * pour qu'une fiche publique ne porte rien du pilote.
+ */
+.segment::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset-inline: -3%;
+  bottom: 0.02em;
+  height: 0.36em;
+  background: var(--hotspot-accent, var(--tone-butter));
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 24' preserveAspectRatio='none'%3E%3Cpath d='M3 14C35 8 70 16 105 10S170 7 197 12L196 19C165 22 128 15 92 20S30 21 4 20Z'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 24' preserveAspectRatio='none'%3E%3Cpath d='M3 14C35 8 70 16 105 10S170 7 197 12L196 19C165 22 128 15 92 20S30 21 4 20Z'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+}
+
+.note[data-active] .segment::after {
+  height: 0.5em;
+}
+
+/* Couleur foncée : un trait sous le texte, jamais un surlignage qui le couvrirait (mode posé sur <html> par AccentPicker). */
+:global(:root[data-hotspot-accent-mode='line']) .segment::after {
+  bottom: -2px;
+  height: 2px;
+  -webkit-mask: none;
+  mask: none;
+}
+
+.part {
+  font: 400 clamp(12px, 1.1cqw, 15px) / 1.3 var(--font-sans), var(--font-arabic), system-ui, sans-serif;
+  color: color-mix(in srgb, var(--tone-ink) 72%, transparent);
+}
+
+/*
+ * Points : disque numéroté de 24 px posé sur la pièce. La cible tactile est un DISQUE de diamètre min(44 px, portée) — la
+ * portée (`--reach`, calculée par le composant) est la distance au point voisin le plus proche, en % de la photo ; 1cqw vaut
+ * 1 % de la scène, dont la photo occupe `--photo-share`. Deux cibles ne se recouvrent jamais : un toucher va toujours au
+ * point le plus proche (relecture du 10 octobre 2026). Le rayon limite aussi le toucher : hors du disque, rien.
+ */
+.dot {
+  --target: min(44px, calc(var(--reach) * var(--photo-share) * 1cqw));
+  position: absolute;
+  z-index: 2;
+  left: calc(var(--x) * 1%);
+  top: calc(var(--y) * 1%);
+  width: var(--target);
+  height: var(--target);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+}
+
+.dot > span {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 1.5px solid var(--tone-ink);
+  border-radius: 9999px;
+  background: #fff;
+  color: var(--tone-ink);
+  font: 600 12px/1 var(--font-sans), system-ui, sans-serif;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.15);
+}
+
+.dot[aria-pressed='true'] > span {
+  background: var(--tone-ink);
+  color: #fff;
+}
+
+.dot:focus-visible {
+  outline: none;
+}
+
+.dot:focus-visible > span {
+  outline: 3px solid #177dba;
+  outline-offset: 2px;
+}
+
+.alert {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 8px;
+  text-align: center;
+  font: 13px/1.4 var(--font-sans), var(--font-arabic), system-ui, sans-serif;
+}
+
+/* L'explication sous la photo n'existe qu'en mode étroit. */
+.detailArea {
+  display: none;
+}
+
+/* Une explication non choisie garde sa place dans la cellule commune, sans se montrer. */
+.reserve {
+  visibility: hidden;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@container (max-width: 899px) {
+  .note,
+  .leaders {
+    display: none;
+  }
+
+  .stage {
+    aspect-ratio: auto;
+  }
+
+  .photo {
+    position: relative;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+
+  /* La photo occupe toute la scène : 1 % de la photo = 1cqw. */
+  .dot {
+    --target: min(44px, calc(var(--reach) * 1cqw));
+  }
+
+  /* L'indication et toutes les explications dans la même cellule : la plus longue fixe la hauteur, à toute largeur. */
+  .detailArea {
+    display: grid;
+    /* Une colonne qui ne s'élargit jamais pour un contenu : c'est le contenu qui se replie. */
+    grid-template-columns: minmax(0, 1fr);
+    padding: 12px 16px 4px;
+    border-top: 1px solid rgb(0 0 0 / 0.1);
+    font-family: var(--font-sans), var(--font-arabic), system-ui, sans-serif;
+  }
+
+  .detailArea > * {
+    grid-area: 1 / 1;
+  }
+
+  .detail {
+    position: relative;
+    padding-inline-end: 44px;
+  }
+
+  .detailMain {
+    position: relative;
+    z-index: 0;
+    display: block;
+    font-family: var(--font-hand-latin), var(--font-hand-arabic), var(--font-sans), var(--font-arabic), system-ui, sans-serif;
+    font-size: 22px;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  /*
+   * Un morceau qui tient sur la ligne reste d'un seul tenant ; plus long que la ligne (« Giant Contact Switch SL » à
+   * 320 px), il se replie dans sa propre boîte au lieu d'élargir le panneau, soulignement compris (mesuré le 11 octobre).
+   */
+  .detailMain .segment {
+    display: inline-block;
+    max-width: 100%;
+    white-space: normal;
+  }
+
+  .detailNote {
+    margin-top: 8px;
+    font-size: 14px;
+    line-height: 1.55;
+  }
+
+  .close {
+    position: absolute;
+    inset-inline-end: 0;
+    top: -6px;
+    width: 44px;
+    height: 44px;
+    border: 0;
+    background: transparent;
+    color: var(--tone-ink);
+    font-size: 26px;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .hint {
+    font-size: 13px;
+    opacity: 0.7;
+  }
+}

@@ -374,6 +374,87 @@ par lui sur un aperçu de la vraie page.
   une clé inconnue) ; `finder.spec.ts` (image chargée, entière dans sa tuile, proportions réservées = fichier, hauteurs égales
   par rangée, dix fichiers servis en WebP immuable).
 
+## Pilote des hotspots éditoriaux (web #49, étape 1) — décisions du fondateur du 10 octobre 2026
+
+La vraie photo de la fiche, intacte, avec autour des notes « de connaisseur » à l'esprit dessiné à la main (direction
+visuelle du 9 octobre, `../CLAUDE.md`). Spec : issue #49, réécrite le 10 octobre avec les décisions du fondateur.
+
+- **Aperçu derrière un drapeau** : `/{locale}/preview/hotspots/{talon|anthem|madone|checkpoint|vado}` rend 404 sans
+  `BIKE_HOTSPOT_PREVIEW=1`, avant toute lecture de paramètre ou de l'API ; `noindex` ; jamais lié. **Décision du fondateur
+  du 11 octobre 2026 : l'aperçu est en ligne** (drapeau dans le `.env` de production, liens non publiés) pour qu'il le voie
+  sur son téléphone — elle lève, pour ces cinq pages seulement, la règle du 10 octobre « les valeurs saisies pour le pilote ne
+  se déploient pas » ; retirer le drapeau referme l'aperçu (404) sans redéployer. Les fiches publiques ne passent
+  pas par là : HTML de six fiches identique avant et après, `<script>` exclus (seule la place de
+  `<meta name="next-size-adjust">` change sur le premier rendu après un build neuf). Depuis la relecture du 10 octobre, une
+  fiche publique ne charge ni le code ni les styles du pilote, et sa charge RSC ne porte aucune clé `annotated` :
+  `flag.spec.ts` le vérifie sur les fichiers réellement servis.
+- **`BuildDetails`** porte le corps de la fiche, partagé par la page publique et l'aperçu. `annotated` (`{ imageId, photo }`)
+  élargit la fiche à 1264 px pour laisser aux notes leurs marges (à valider par le fondateur). La composition est rendue par la
+  route d'aperçu et passée en *slot* à `BikeGallery`, qui n'importe rien de `hotspots/` ; la clé n'est posée que si elle existe.
+- **Données : `src/lib/hotspot-pilot.ts`** — cinq vélos ; chaque point a `dot` (en % de la photo `detail`), `label` (en % de
+  la scène, côté `left|right|top|bottom`), une ligne principale (marque + modèle + chiffre clé), le nom de la pièce et une note
+  de connaisseur en EN et AR (explique, ne juge jamais), et ses **sources citées mot pour mot** (`equipment_specs`,
+  `components[].description`, `sizes[].wheel_size`). Saisi ou servi se lit **à la source, jamais au point** (`isEntered`) :
+  une valeur tirée d'un texte libre (`components`) a été saisie pour le pilote, c'est ce que Laravel devra servir ;
+  `equipment_specs` et `sizes` sont servis normalisés (relecture du 10 octobre : un drapeau par point, posé sur les 34, ne
+  distinguait plus rien). `pilotFor()` refuse toute autre photo ou identité : la fiche retombe alors sur la galerie ordinaire.
+  Terminologie arabe de l'API (`الهيكل` = cadre, `الإطار` = pneu). Pièges : « Max brake rotor sizes » et « Max fork travel »
+  (Trek) sont des compatibilités, jamais l'équipement monté.
+- **Composant : `src/components/hotspots/AnnotatedPhoto.tsx`** — scène à proportions fixes (photo à 52 % de la largeur,
+  marges de 24 %), points positionnés en % de la photo, traits SVG (Bézier déterministe, `leader.ts`, `vector-effect:
+  non-scaling-stroke`), notes dans les marges. La ligne principale ne se coupe qu'au « · » et chaque morceau porte son
+  soulignement `--hotspot-accent`, posée seulement par `AccentPicker` (repli `--tone-butter` dans le module CSS ; rien dans
+  `globals.css`, que chaque fiche publique charge). Polices : Caveat (latin) + Aref Ruqaa (arabe),
+  chargées par la seule route d'aperçu (`fonts.ts`). Sous 900 px de conteneur : points seuls, une explication sous la photo
+  (fermeture, Échap, retour du focus). **Cible tactile** (relecture du 10 octobre) : un disque de diamètre min(44 px, distance
+  au point voisin le plus proche), calculée par le composant (`--reach`) — deux cibles ne se recouvrent jamais, un toucher va
+  toujours au point le plus proche, jamais moins de 24 px (WCAG 2.5.8) à 320 px, ancres inchangées. **Panneau stable** :
+  l'indication et toutes les explications partagent une cellule de grille, seule la choisie est visible (les autres `inert`) —
+  la hauteur est celle de la plus longue à cette largeur, la sélection ne déplace rien ; un morceau plus long que la ligne
+  s'y replie dans sa propre boîte. Masquer les notes rend le focus à la case. Fond clair et encre fixes dans les deux
+  thèmes. **Conteneur des notes en `ltr`** :
+  l'alignement contre le trait est physique ; seuls les textes portent `dir="rtl"`, et tout latin passe par `<bdi>`, découpé
+  par `bidi.ts` : la ponctuation de phrase (`. , : ;`) reste à l'arabe, le signe d'un nom (`E500+`, `Go!`, `20"`) reste au
+  nom, et une parenthèse n'entre dans le `<bdi>` qu'avec sa jumelle — sinon « Madone. » rend son point entre le nom et
+  l'arabe, et « (aero) » ses deux parenthèses du même côté. Image en erreur : aucun point, une alerte. Photo jamais retournée.
+- **`AccentPicker`** (aperçu seulement) : jaune, noir (en trait sous le texte), teinte de la catégorie, couleur libre,
+  surlignage ou trait ; écrit `--hotspot-accent` et `data-hotspot-accent-mode` sur `<html>`. **Couleur retenue par le
+  fondateur le 11 octobre 2026 : le jaune** (`--tone-butter`, déjà le repli du module CSS), sur la planche des trois
+  couleurs ; le sélecteur reste un outil de comparaison.
+- **Tests** : `playwright.hotspot-preview.config.ts` (`tests/preview`, un worker, desktop + mobile, serveur local lancé à la
+  main, aucune purge) — `pilot-data` (sources contre l'API réelle, identité, photo différente), `flag` (404 sans drapeau,
+  fiche publique sans annotation, sans clé RSC, sans code ni style du pilote dans ses fichiers), `bidi-runs` (découpe du
+  latin), `annotated` (cinq vélos AR/EN à 960, 1024 et 1440 px : notes hors photo, dans la scène, sans chevauchement ; à 320
+  et 390 px : panneau, Échap, hauteur constante, rien hors du panneau, toucher au point le plus proche ; `<bdi>` sans
+  ponctuation de phrase ni parenthèse orpheline, mesuré à l'écran ; thème sombre ; image bloquée ; sélecteur ; vignettes ;
+  focus ; alignement arabe).
+- **Captures** : `scripts/hotspot-pilot-captures.mjs [--accents] [vélos…]` écrit dans `HOTSPOT_CAPTURE_DIR`,
+  **obligatoirement hors du dépôt** (dépôt public, photos de constructeur) — en pratique
+  `../notes/design-references/hotspots-pilot/` ; `--accents` ajoute à 1440 px une capture par préréglage de couleur.
+- **Piège mesuré le 11 octobre** : la fiche publique déborde déjà en largeur, défaut de `main` hors du pilote. La liste des
+  composants ne coupe pas un mot sans espace : à 320 px, `80mm(27.5")/100mm(29")` (Talon) suffit ; le Vado déborde dès
+  390 px, à cause d'un lien Markdown brut de 64 caractères servi dans « Compliance Certification ». En émulation mobile et en
+  arabe, ce débordement fait dériver les coordonnées des clics de Playwright. Corrigé par la PR #51, fusionnée et
+  déployée le 11 octobre ; la donnée elle-même est signalée dans le scraper (#29) et l'API (#62).
+
+Recette (PowerShell, depuis le worktree) :
+
+```powershell
+$env:API_BASE_URL = 'https://api.darrajabikes.com/api'
+npm run build
+$env:BIKE_HOTSPOT_PREVIEW = '1'
+node node_modules/next/dist/bin/next start --hostname 127.0.0.1 --port 3149
+# autre terminal, même API_BASE_URL :
+$env:PLAYWRIGHT_BASE_URL = 'http://127.0.0.1:3149'
+npx playwright test -c playwright.hotspot-preview.config.ts
+```
+
+Lancer ce serveur depuis l'outil PowerShell : depuis Bash, `Start-Process` laisse le serveur tenir la sortie de Bash ouverte
+et la commande ne rend jamais la main.
+
+**Restent** : relecture des textes arabes par le fondateur ; choix de la largeur ; puis la généralisation
+(positions et textes servis par Laravel, analyse des photos par le scraper), à cadrer après le bilan du pilote.
+
 ## Budgets performance
 
 LCP ≤ 2,5 s p75 mobile · INP ≤ 200 ms · CLS ≤ 0,1 · TTFB page cachée ≤ 800 ms depuis le Golfe
