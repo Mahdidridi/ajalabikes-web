@@ -8,6 +8,11 @@ import { ThemeToggle } from './ThemeToggle';
  * La barre de navigation, présente sur toutes les pages : marque, Vélos,
  * Comparer, Bikefinder, langue, thème. Trois liens — pas de menu hamburger.
  * RTL natif : `ms-auto` et l'ordre du flux suffisent, rien n'est « retourné ».
+ *
+ * Sous 380 px, les espacements se resserrent ; si la place manque encore, la
+ * barre passe à la ligne : langue et thème descendent sous les liens, toujours en
+ * bout de ligne. Mesuré le 11 octobre 2026 : en anglais, elle débordait de 33 px à
+ * 320 px et la page défilait en largeur. Une ligne dès 360 px, deux en dessous.
  */
 const COPY = {
   'ar-sa': {
@@ -33,7 +38,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
 
   return (
     <header className="border-b border-border">
-      <nav className="mx-auto flex w-full max-w-7xl items-center gap-5 px-4 py-3 sm:px-6">
+      <nav className="mx-auto flex w-full max-w-7xl flex-wrap items-center gap-x-5 gap-y-2 px-4 py-3 max-[379px]:gap-x-3 sm:px-6">
         {/*
          * La marque : le nom arabe EST la marque, l'alphabet latin l'accompagne.
          * Sur téléphone la nav n'a pas la place des deux : « Darraja Bikes » passe
@@ -47,7 +52,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
           </span>
         </Link>
 
-        <div className="flex items-center gap-4 text-sm font-medium">
+        <div className="flex items-center gap-4 text-sm font-medium max-[379px]:gap-3">
           <Link href={`/${locale}/bikes`} className="text-muted transition hover:text-foreground">
             {t.bikes}
           </Link>
