@@ -29,6 +29,18 @@ const MARGIN_Y = 10;
 /** La ligne principale ne se coupe qu'au « · » : « 80 / 100 mm » ou « 11 سرعة » restent d'un seul tenant. */
 const SEPARATOR = ' · ';
 
+/**
+ * Portée tactile de chaque point : la distance à son voisin le plus proche, en % de la largeur de la photo (le CSS en fait
+ * des px). La cible est un disque de diamètre min(44 px, portée) : deux cibles ne se recouvrent jamais, un toucher va
+ * toujours au point le plus proche, et les ancres ne bougent pas (relecture du 10 octobre 2026 — à 390 px, des cibles
+ * carrées de 44 px se recouvraient et le point suivant dans le DOM prenait le toucher). Géométrie de MISE EN PAGE.
+ */
+function reaches(points: PilotPoint[], ratio: number): number[] {
+  return points.map((p) =>
+    points.reduce((nearest, q) => (q === p ? nearest : Math.min(nearest, Math.hypot(p.dot.x - q.dot.x, (p.dot.y - q.dot.y) * ratio))), 100),
+  );
+}
+
 /** En arabe, chaque nom latin passe par <bdi> : sans lui, un signe final (« E500+ ») s'affiche du mauvais côté. */
 function isolateLatin(text: string): ReactNode[] {
   return latinRuns(text).map((run, i) => (run.latin ? <bdi key={i}>{run.text}</bdi> : run.text));
@@ -53,6 +65,7 @@ export function AnnotatedPhoto({ image, config }: { image: Media; config: Annota
   const detailId = useId();
 
   const detail = image.sizes.detail;
+  const reach = reaches(bike.points, detail.h / detail.w);
   const photoHeight = (PHOTO_WIDTH * detail.h) / detail.w;
   const sceneHeight = 2 * MARGIN_Y + photoHeight;
   const arabic = locale.startsWith('ar');
@@ -94,6 +107,7 @@ export function AnnotatedPhoto({ image, config }: { image: Media; config: Annota
     '--photo-left': `${PHOTO_LEFT}%`,
     '--photo-top': `${(MARGIN_Y / sceneHeight) * 100}%`,
     '--photo-width': `${PHOTO_WIDTH}%`,
+    '--photo-share': PHOTO_WIDTH / 100,
   } as CSSProperties;
 
   return (
@@ -106,6 +120,9 @@ export function AnnotatedPhoto({ image, config }: { image: Media; config: Annota
             onChange={(event) => {
               setShown(event.target.checked);
               setSelected(null);
+              // Les points quittent le DOM : un point qui avait le focus le perdrait sur <body> (Safari ne donne pas le
+              // focus à une case cochée au clic). Il reste sur la case (relecture du 10 octobre 2026).
+              if (!event.target.checked) event.target.focus();
             }}
           />
           {copy.toggle}
@@ -135,7 +152,7 @@ export function AnnotatedPhoto({ image, config }: { image: Media; config: Annota
                 type="button"
                 data-dot
                 className={styles.dot}
-                style={{ '--x': p.dot.x, '--y': p.dot.y } as CSSProperties}
+                style={{ '--x': p.dot.x, '--y': p.dot.y, '--reach': reach[i] } as CSSProperties}
                 aria-pressed={p.id === selected}
                 aria-controls={detailId}
                 aria-label={`${copy.point} ${i + 1} : ${p.part[locale]} — ${p.main[locale]}`}
@@ -187,18 +204,33 @@ export function AnnotatedPhoto({ image, config }: { image: Media; config: Annota
         )}
       </div>
 
+      {/*
+        Toutes les explications occupent la même cellule et seule la choisie est visible : la zone prend la hauteur de la
+        plus longue à CETTE largeur, et choisir un point ne déplace jamais la page (relecture du 10 octobre 2026 — une
+        hauteur réservée en px ne tenait ni à 320 px ni en anglais). Les autres sont `inert` : ni lues, ni atteignables.
+      */}
       <div id={detailId} className={styles.detailArea} dir={dir} lang={lang}>
-        {current ? (
-          <div data-detail className={styles.detail}>
-            <p className={styles.detailMain}>{mainLine(current.main[locale])}</p>
-            <p className={styles.part}>{text(current.part[locale])}</p>
-            <p className={styles.detailNote}>{text(current.note[locale])}</p>
-            <button type="button" className={styles.close} aria-label={copy.close} onClick={close}>
-              <span aria-hidden="true">×</span>
-            </button>
-          </div>
-        ) : (
-          shown && !failed && <p className={styles.hint}>{copy.hint}</p>
+        {!failed && (
+          <>
+            <p className={`${styles.hint} ${shown && !current ? '' : styles.reserve}`} inert={!shown || current !== null}>
+              {copy.hint}
+            </p>
+            {bike.points.map((p) => (
+              <div
+                key={p.id}
+                data-detail={p === current ? '' : undefined}
+                className={`${styles.detail} ${p === current ? '' : styles.reserve}`}
+                inert={p !== current}
+              >
+                <p className={styles.detailMain}>{mainLine(p.main[locale])}</p>
+                <p className={styles.part}>{text(p.part[locale])}</p>
+                <p className={styles.detailNote}>{text(p.note[locale])}</p>
+                <button type="button" className={styles.close} aria-label={copy.close} onClick={close}>
+                  <span aria-hidden="true">×</span>
+                </button>
+              </div>
+            ))}
+          </>
         )}
       </div>
 

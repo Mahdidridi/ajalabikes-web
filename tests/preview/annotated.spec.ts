@@ -17,38 +17,129 @@ async function open(page: Page, locale: string, width: number, theme?: 'dark') {
   await page.evaluate(() => document.fonts.ready.then(() => undefined));
 }
 
-for (const locale of ['ar-sa', 'en-sa']) {
-  test(`talon ${locale} 1440 : une note et un trait par point, hors photo, sans chevauchement`, async ({ page }) => {
-    await open(page, locale, 1440);
-    const scene = page.locator('[data-annotated="talon"]');
-    await expect(scene.locator('[data-dot]')).toHaveCount(talon.points.length);
-    await expect(scene.locator('[data-note]:visible')).toHaveCount(talon.points.length);
-    await expect(scene.locator('svg [data-leader]')).toHaveCount(talon.points.length);
-    const photo = (await scene.locator('img').first().boundingBox())!;
-    const notes = await Promise.all((await scene.locator('[data-note]').all()).map(async (n) => (await n.boundingBox())!));
-    notes.forEach((note, i) => {
-      expect(overlap(note, photo), `note ${i + 1} sur la photo`).toBe(false);
-      notes.slice(i + 1).forEach((other, j) => expect(overlap(note, other), `notes ${i + 1} et ${i + j + 2}`).toBe(false));
-    });
-  });
+/** La composition d'un vélo pilote, polices chargées. */
+async function openBike(page: Page, key: string, locale: string, width: number): Promise<Locator> {
+  await page.setViewportSize({ width, height: 900 });
+  await page.goto(`/${locale}/preview/hotspots/${key}`);
+  await page.evaluate(() => document.fonts.ready.then(() => undefined));
+  return page.locator(`[data-annotated="${key}"]`);
+}
 
-  test(`talon ${locale} 390 : points seuls, un panneau, Échap rend le focus`, async ({ page }) => {
-    await open(page, locale, 390);
-    const scene = page.locator('[data-annotated="talon"]');
-    await expect(scene.locator('[data-note]:visible')).toHaveCount(0);
-    await expect(scene.locator('svg:visible')).toHaveCount(0);
-    const dot = scene.locator('[data-dot]').first();
-    const box = (await dot.boundingBox())!;
-    expect(Math.min(box.width, box.height)).toBeGreaterThanOrEqual(44);
-    await dot.click();
-    const detail = page.locator('[data-detail]');
-    await expect(detail).toBeVisible();
-    await expect(detail).toContainText(talon.points[0].part[locale as 'ar-sa' | 'en-sa']);
-    await page.keyboard.press('Escape');
-    await expect(detail).toBeHidden();
-    await expect(dot).toBeFocused();
+// La mise en page large commence à 900 px de conteneur : une fenêtre de 960 px en donne 910 (relecture du 10 octobre,
+// Important 5 — elle n'était gardée qu'à 1440 px).
+for (const bike of PILOT_BIKES) {
+  for (const locale of ['ar-sa', 'en-sa']) {
+    test(`${bike.key} ${locale} 960, 1024 et 1440 : une note et un trait par point, hors photo, dans la scène, sans chevauchement`, async ({ page }) => {
+      for (const width of [960, 1024, 1440]) {
+        const scene = await openBike(page, bike.key, locale, width);
+        const sceneBox = (await scene.boundingBox())!;
+        expect(sceneBox.width, `${width} : conteneur large`).toBeGreaterThanOrEqual(900);
+        await expect(scene.locator('[data-dot]')).toHaveCount(bike.points.length);
+        await expect(scene.locator('[data-note]:visible')).toHaveCount(bike.points.length);
+        await expect(scene.locator('svg [data-leader]')).toHaveCount(bike.points.length);
+        const photo = (await scene.locator('img').first().boundingBox())!;
+        const notes = await Promise.all((await scene.locator('[data-note]').all()).map(async (n) => (await n.boundingBox())!));
+        notes.forEach((note, i) => {
+          const id = `${width} : ${bike.points[i].id}`;
+          expect(overlap(note, photo), `${id} sur la photo`).toBe(false);
+          expect(note.x >= sceneBox.x && note.x + note.width <= sceneBox.x + sceneBox.width, `${id} hors scène`).toBe(true);
+          notes.slice(i + 1).forEach((other, j) => expect(overlap(note, other), `${id} / ${bike.points[i + j + 1].id}`).toBe(false));
+        });
+      }
+    });
+
+    // Les cinq vélos, pas le seul Talon (relecture du 10 octobre, Important 5).
+    test(`${bike.key} ${locale} 390 : points seuls, un panneau, Échap rend le focus`, async ({ page }) => {
+      const scene = await openBike(page, bike.key, locale, 390);
+      await expect(scene.locator('[data-note]:visible')).toHaveCount(0);
+      await expect(scene.locator('svg:visible')).toHaveCount(0);
+      const dot = scene.locator('[data-dot]').first();
+      await dot.click();
+      const detail = page.locator('[data-detail]');
+      await expect(detail).toBeVisible();
+      await expect(detail).toContainText(bike.points[0].part[locale as 'ar-sa' | 'en-sa']);
+      await page.keyboard.press('Escape');
+      await expect(detail).toBeHidden();
+      await expect(dot).toBeFocused();
+    });
+
+    // Relecture du 10 octobre (Important 3) : le panneau réservait 176 px quand les notes les plus longues de l'Anthem en
+    // demandent 202 ; à la sélection, toute la suite de la page descendait.
+    test(`${bike.key} ${locale} 320 et 390 : choisir un point ou masquer les notes ne change pas la hauteur`, async ({ page }) => {
+      for (const width of [320, 390]) {
+        const scene = await openBike(page, bike.key, locale, width);
+        const height = () => scene.evaluate((el) => el.getBoundingClientRect().height);
+        const before = await height();
+        // Au clavier : ce test mesure la hauteur, le toucher a le sien. Mesuré le 11 octobre : la fiche publique déborde déjà
+        // à 320 px (liste des composants, sur main) et, en émulation mobile et en arabe, les coordonnées d'un clic y dérivent.
+        for (const [i, point] of bike.points.entries()) {
+          await scene.locator('[data-dot]').nth(i).focus();
+          await page.keyboard.press('Enter');
+          await expect(page.locator('[data-detail]')).toContainText(point.part[locale as 'ar-sa' | 'en-sa']);
+          expect(await height(), `${width} : ${point.id}`).toBeCloseTo(before, 0);
+        }
+        await scene.getByRole('checkbox').focus();
+        await page.keyboard.press('Space');
+        await expect(scene.locator('[data-dot]')).toHaveCount(0);
+        expect(await height(), `${width} : notes masquées`).toBeCloseTo(before, 0);
+      }
+    });
+
+    // Mesuré le 11 octobre : à 320 px, « Giant Contact Switch SL », d'un seul tenant, était plus large que le panneau et le
+    // poussait de 17 px hors de la scène (croix de fermeture coupée). Explications non choisies comprises : elles comptent.
+    test(`${bike.key} ${locale} 320 et 390 : aucune explication ne sort du panneau`, async ({ page }) => {
+      for (const width of [320, 390]) {
+        const scene = await openBike(page, bike.key, locale, width);
+        const outside = await scene.locator('[data-dot]').first().evaluate((dot) => {
+          const area = document.getElementById(dot.getAttribute('aria-controls')!)!;
+          const box = area.getBoundingClientRect();
+          return [...area.querySelectorAll('*')]
+            .map((el) => ({ el, r: el.getBoundingClientRect() }))
+            .filter(({ r }) => r.width > 0 && (r.left < box.left - 0.5 || r.right > box.right + 0.5))
+            .map(({ el, r }) => `${el.tagName.toLowerCase()} [${Math.round(r.left)}..${Math.round(r.right)}] hors [${Math.round(box.left)}..${Math.round(box.right)}] « ${(el.textContent ?? '').slice(0, 30)} »`);
+        });
+        expect(outside, `${width} px`).toEqual([]);
+      }
+    });
+  }
+
+  // Relecture du 10 octobre (Important 3) : à 390 px, des cibles carrées de 44 px se recouvraient (Vado moteur × cadre :
+  // 17 × 19 px), et un toucher dans la bande commune allait au point suivant dans le DOM.
+  test(`${bike.key} 320 et 390 : un toucher va toujours au point le plus proche, cibles de 24 à 44 px`, async ({ page }) => {
+    for (const width of [320, 390]) {
+      const scene = await openBike(page, bike.key, 'en-sa', width);
+      await scene.locator('img').first().evaluate((img) => img.scrollIntoView({ block: 'center' }));
+      const faults = await scene.locator('[data-dot]').evaluateAll((dots) => {
+        const centres = dots.map((dot) => {
+          const r = dot.getBoundingClientRect();
+          return { x: r.left + r.width / 2, y: r.top + r.height / 2, size: Math.min(r.width, r.height) };
+        });
+        const owner = (x: number, y: number) => dots.indexOf(document.elementFromPoint(x, y)?.closest('[data-dot]') as HTMLElement);
+        const found: string[] = [];
+        centres.forEach((a, i) => {
+          if (a.size < 24 || a.size > 44) found.push(`point ${i + 1} : cible de ${a.size.toFixed(1)} px`);
+          if (owner(a.x, a.y) !== i) found.push(`point ${i + 1} : son centre ne le touche pas`);
+          centres.forEach((b, j) => {
+            // Un toucher à 45 % du chemin vers un voisin est plus près de ce point-ci : il ne doit jamais aller au voisin.
+            if (i !== j && owner(a.x + 0.45 * (b.x - a.x), a.y + 0.45 * (b.y - a.y)) === j) found.push(`près du point ${i + 1}, le toucher va au ${j + 1}`);
+          });
+        });
+        return found;
+      });
+      expect(faults, `${width} px`).toEqual([]);
+    }
   });
 }
+
+// Relecture du 10 octobre (mineur 4) : masquer les notes retire les points du DOM ; si l'un d'eux avait le focus, il tombait
+// sur <body>. Safari ne donne pas le focus à une case cochée au clic : le cas est réel.
+test('talon 390 : masquer les notes pendant qu’un point a le focus rend le focus à la case', async ({ page }) => {
+  const scene = await openBike(page, 'talon', 'en-sa', 390);
+  await scene.locator('[data-dot]').first().focus();
+  await scene.getByRole('checkbox').dispatchEvent('click');
+  await expect(scene.locator('[data-dot]')).toHaveCount(0);
+  await expect(scene.getByRole('checkbox')).toBeFocused();
+});
 
 test('talon ar-sa : tout le latin d’une ligne principale est isolé dans <bdi>', async ({ page }) => {
   await open(page, 'ar-sa', 1440);
@@ -171,27 +262,6 @@ test('sélecteur de couleur : le noir passe le soulignement en trait, la teinte 
   await page.locator('[data-accent-picker] [data-preset="category"]').click();
   expect((await underline()).color).toBe('rgb(131, 164, 135)');
 });
-
-for (const bike of PILOT_BIKES.filter((b) => b.key !== 'talon')) {
-  for (const locale of ['ar-sa', 'en-sa']) {
-    test(`${bike.key} ${locale} 1440 : une note par point, hors photo, sans chevauchement`, async ({ page }) => {
-      await page.setViewportSize({ width: 1440, height: 900 });
-      await page.goto(`/${locale}/preview/hotspots/${bike.key}`);
-      await page.evaluate(() => document.fonts.ready.then(() => undefined));
-      const scene = page.locator(`[data-annotated="${bike.key}"]`);
-      await expect(scene.locator('[data-dot]')).toHaveCount(bike.points.length);
-      await expect(scene.locator('[data-note]:visible')).toHaveCount(bike.points.length);
-      const photo = (await scene.locator('img').first().boundingBox())!;
-      const notes = await Promise.all((await scene.locator('[data-note]').all()).map(async (n) => (await n.boundingBox())!));
-      const sceneBox = (await scene.boundingBox())!;
-      notes.forEach((note, i) => {
-        expect(overlap(note, photo), `${bike.points[i].id} sur la photo`).toBe(false);
-        expect(note.x >= sceneBox.x && note.x + note.width <= sceneBox.x + sceneBox.width, `${bike.points[i].id} hors scène`).toBe(true);
-        notes.slice(i + 1).forEach((other, j) => expect(overlap(note, other), `${bike.points[i].id} / ${bike.points[i + j + 1].id}`).toBe(false));
-      });
-    });
-  }
-}
 
 test('anthem : une autre photo de la galerie s’affiche sans aucun point, la photo de tête les retrouve', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
