@@ -67,6 +67,78 @@ test('talon ar-sa : tout le latin d’une ligne principale est isolé dans <bdi>
   await expect(page.locator('[data-annotated] [data-main] bdi').first()).toBeVisible();
 });
 
+/** x (bord gauche) du caractère `offset` de la première occurrence de `needle` dans le texte RENDU de `el`. */
+async function glyphX(el: Locator, needle: string, offset: number): Promise<number> {
+  return el.evaluate(
+    (root, [needle, offset]) => {
+      const nodes: Text[] = [];
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+      for (let n = walker.nextNode(); n; n = walker.nextNode()) nodes.push(n as Text);
+      let at = nodes.map((n) => n.data).join('').indexOf(needle);
+      if (at < 0) throw new Error(`« ${needle} » absent`);
+      at += offset;
+      for (const node of nodes) {
+        if (at < node.data.length) {
+          const range = document.createRange();
+          range.setStart(node, at);
+          range.setEnd(node, at + 1);
+          return range.getBoundingClientRect().left;
+        }
+        at -= node.data.length;
+      }
+      throw new Error('hors du texte');
+    },
+    [needle, offset] as const,
+  );
+}
+
+// Relecture du 10 octobre : un <bdi> qui avalait le point final ou une seule parenthèse rendait « Madone. » avec le point
+// entre le nom et l'arabe, et « (aero) » avec ses deux parenthèses du même côté. Le DOM restait juste : on mesure le rendu.
+for (const bike of PILOT_BIKES) {
+  test(`${bike.key} ar-sa 390 : chaque <bdi> isole un nom entier, sans ponctuation de phrase ni parenthèse orpheline`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.goto(`/ar-sa/preview/hotspots/${bike.key}`);
+    const dots = page.locator(`[data-annotated="${bike.key}"] [data-dot]`);
+    await expect(dots).toHaveCount(bike.points.length);
+    let checked = 0;
+    for (const [i, point] of bike.points.entries()) {
+      await dots.nth(i).click();
+      await expect(page.locator('[data-detail]')).toContainText(point.note['ar-sa']);
+      for (const run of await page.locator('[data-detail] bdi').allTextContents()) {
+        expect(run, `${point.id} : « ${run} »`).not.toMatch(/[\s.,:;]$/);
+        expect(run.split('(').length, `${point.id} : « ${run} »`).toBe(run.split(')').length);
+        checked++;
+      }
+    }
+    expect(checked).toBeGreaterThan(0);
+  });
+}
+
+test('ar-sa 390 : parenthèses autour du latin et point final en bout de phrase, à l’écran', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 900 });
+  const cases = [
+    { key: 'madone', paren: '(aero)', end: 'Madone.' },
+    { key: 'vado', paren: '(EQ)', end: 'E500+.' },
+    { key: 'checkpoint', paren: '(Gravel)' },
+  ] as const;
+  for (const { key, paren, ...rest } of cases) {
+    const bike = pilotBike(key)!;
+    const index = bike.points.findIndex((p) => p.note['ar-sa'].includes(paren));
+    expect(index, `${key} : note contenant ${paren}`).toBeGreaterThanOrEqual(0);
+    await page.goto(`/ar-sa/preview/hotspots/${key}`);
+    await page.locator(`[data-annotated="${key}"] [data-dot]`).nth(index).click();
+    const note = page.locator('[data-detail] p', { hasText: paren });
+    await expect(note).toBeVisible();
+    const x = (needle: string, offset: number) => glyphX(note, needle, offset);
+    expect(await x(paren, 0), `${key} : « ( » à gauche de ${paren}`).toBeLessThan(await x(paren, 1));
+    expect(await x(paren, paren.length - 1), `${key} : « ) » à droite de ${paren}`).toBeGreaterThan(await x(paren, paren.length - 2));
+    if ('end' in rest) {
+      const end = rest.end;
+      expect(await x(end, end.length - 1), `${key} : le point de « ${end} » en bout de phrase arabe, à gauche du nom`).toBeLessThan(await x(end, 0));
+    }
+  }
+});
+
 test('talon thème sombre : la scène reste claire, le texte sombre', async ({ page }) => {
   await open(page, 'en-sa', 1440, 'dark');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');

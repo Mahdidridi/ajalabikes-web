@@ -6,9 +6,10 @@ import type { Locale } from '@/lib/api';
 import type { PilotBike, PilotCopy, PilotPoint } from '@/lib/hotspot-pilot';
 import { sizeCatalogue, type Media } from '@/lib/images';
 import styles from './AnnotatedPhoto.module.css';
+import { latinRuns } from './bidi';
 import { leaderPath, type Pt } from './leader';
 
-/** Ce que la route d'aperçu transmet à la galerie : le vélo pilote, sa langue, ses textes, ses polices. */
+/** Ce que la route d'aperçu transmet à la composition : le vélo pilote, sa langue, ses textes, ses polices. */
 export interface AnnotatedConfig {
   bike: PilotBike;
   locale: Locale;
@@ -28,22 +29,9 @@ const MARGIN_Y = 10;
 /** La ligne principale ne se coupe qu'au « · » : « 80 / 100 mm » ou « 11 سرعة » restent d'un seul tenant. */
 const SEPARATOR = ' · ';
 
-/** Une suite latine (marque, modèle, référence) commence par une lettre latine et s'arrête avant l'arabe ou « · ». */
-const LATIN_RUN = /[A-Za-z][A-Za-z0-9.,'’"+\-/×()&\s]*/g;
-
 /** En arabe, chaque nom latin passe par <bdi> : sans lui, un signe final (« E500+ ») s'affiche du mauvais côté. */
 function isolateLatin(text: string): ReactNode[] {
-  const nodes: ReactNode[] = [];
-  let last = 0;
-  for (const match of text.matchAll(LATIN_RUN)) {
-    const start = match.index ?? 0;
-    const run = match[0].trimEnd();
-    if (start > last) nodes.push(text.slice(last, start));
-    nodes.push(<bdi key={start}>{run}</bdi>);
-    last = start + run.length;
-  }
-  if (last < text.length) nodes.push(text.slice(last));
-  return nodes;
+  return latinRuns(text).map((run, i) => (run.latin ? <bdi key={i}>{run.text}</bdi> : run.text));
 }
 
 /**
