@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import type { Build } from '../../src/lib/api';
-import { PILOT_BIKES, pilotFor, type PilotSource } from '../../src/lib/hotspot-pilot';
+import { PILOT_BIKES, isEntered, pilotBike, pilotFor, type PilotBike, type PilotSource } from '../../src/lib/hotspot-pilot';
 
 /**
  * Garde-fous des données du pilote (web #49) : chaque valeur affichée doit citer un texte
@@ -78,6 +78,26 @@ test('textes complets, ancres dans les bornes, identifiants uniques', () => {
         expect(v, `${bike.key}/${p.id}`).toBeLessThanOrEqual(100);
       }
     }
+  }
+});
+
+// Relecture du 10 octobre (Important 4) : un drapeau `entered` par point, posé sur les 34, ne distinguait plus rien. Une
+// valeur est SAISIE quand elle vient d'un texte libre (`components[].description`) — c'est ce que Laravel devra servir ;
+// `equipment_specs` et `sizes` sont servis normalisés.
+test('saisi ou servi : la nature de chaque valeur se lit à sa source, jamais au point', () => {
+  const refs = (key: PilotBike['key'], id: string, entered: boolean) =>
+    pilotBike(key)!
+      .points.find((p) => p.id === id)!
+      .sources.filter((source) => isEntered(source) === entered)
+      .map((source) => source.ref);
+  expect(refs('talon', 'brake', false)).toContain('Front brake rotor diameter');
+  expect(refs('anthem', 'fork', false)).toContain('Fork travel');
+  expect(refs('anthem', 'crankset', false)).toContain('Chainring teeth');
+  expect(refs('vado', 'tyres', false)).toContain('Front tyre width');
+  expect(refs('vado', 'derailleur', false)).toContain('Cassette speeds');
+  expect(refs('talon', 'seatpost', true)).toEqual(['Seatpost']);
+  for (const bike of PILOT_BIKES) {
+    for (const point of bike.points) expect(point, `${bike.key}/${point.id}`).not.toHaveProperty('entered');
   }
 });
 
