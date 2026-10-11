@@ -27,13 +27,26 @@ test('un signe qui fait partie du nom reste au nom', () => {
   expect(latin('Precaliber 20"')).toEqual(['Precaliber 20"']);
 });
 
+// Vu sur la planche du 11 octobre : « 300 Series Alpha » s'affichait « Series Alpha 300 » — le nombre restait hors du <bdi>.
+test('un nom latin qui commence par un nombre le garde ; un nombre suivi d’arabe reste à l’arabe', () => {
+  expect(latin('ألومنيوم 300 Series Alpha')).toEqual(['300 Series Alpha']);
+  expect(latin('هذا من ألومنيوم Alpha من فئة 300 Series.')).toEqual(['Alpha', '300 Series']);
+  expect(latin('من فئة 500 Series، بأنابيب')).toEqual(['500 Series']);
+  expect(latin('microSHIFT Advent · 11 سرعة')).toEqual(['microSHIFT Advent']);
+  expect(latin('Tektro HD M3121 · قرص 180 مم')).toEqual(['Tektro HD M3121']);
+});
+
 test('le séparateur « · », les chiffres et l’arabe ne sont jamais avalés', () => {
   expect(latin('Giant SXC32-2 · 80 / 100 مم')).toEqual(['Giant SXC32-2']);
   expect(latin('Maxxis Rekon بمقاس 27.5×2.4 بوصة في المقاس XS، وRekon Race بمقاس 29×2.4')).toEqual(['Maxxis Rekon', 'XS', 'Rekon Race']);
 });
 
 test('la découpe restitue le texte entier, sans perte ni doublon', () => {
-  for (const text of ['هنا عمود كربوني بشكل انسيابي (aero) خاص بدراجة Madone.', 'جزء من تجهيز هذه النسخة (EQ). الطراز: Lezyne E500+.']) {
+  for (const text of [
+    'هنا عمود كربوني بشكل انسيابي (aero) خاص بدراجة Madone.',
+    'جزء من تجهيز هذه النسخة (EQ). الطراز: Lezyne E500+.',
+    'هذا من ألومنيوم Alpha من فئة 300 Series.',
+  ]) {
     expect(latinRuns(text).map((r) => r.text).join('')).toBe(text);
   }
 });

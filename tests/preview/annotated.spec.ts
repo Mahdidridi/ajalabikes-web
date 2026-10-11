@@ -230,6 +230,22 @@ test('ar-sa 390 : parenthèses autour du latin et point final en bout de phrase,
   }
 });
 
+// Vu sur la planche du 11 octobre : « 300 Series Alpha » s'affichait « Series Alpha 300 » (ligne principale et note).
+test('ar-sa 390 : un nom latin qui commence par un nombre s’affiche dans son ordre, à l’écran', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 900 });
+  for (const { key, name } of [{ key: 'checkpoint', name: '300 Series' }, { key: 'madone', name: '500 Series' }] as const) {
+    const index = pilotBike(key)!.points.findIndex((p) => p.id === 'frame');
+    await page.goto(`/ar-sa/preview/hotspots/${key}`);
+    await page.locator(`[data-annotated="${key}"] [data-dot]`).nth(index).focus();
+    await page.keyboard.press('Enter');
+    const texts = await page.locator('[data-detail] p', { hasText: name }).all();
+    expect(texts.length, `${key} : textes contenant « ${name} »`).toBeGreaterThan(0);
+    for (const text of texts) {
+      expect(await glyphX(text, name, 0), `${key} : « ${name} » se lit de gauche à droite`).toBeLessThan(await glyphX(text, name, name.indexOf('S')));
+    }
+  }
+});
+
 test('talon thème sombre : la scène reste claire, le texte sombre', async ({ page }) => {
   await open(page, 'en-sa', 1440, 'dark');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');

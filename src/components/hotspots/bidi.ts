@@ -1,9 +1,10 @@
 /**
  * Une suite latine (marque, modèle, référence) commence par une lettre latine, ou par « ( » collée à une lettre
  * latine, et s'arrête avant l'arabe ou « · ». Les signes qui finissent un nom (« E500+ », « Ponto Go! »,
- * « Precaliber 20" ») en font partie.
+ * « Precaliber 20" ») en font partie, et le nombre qui l'ouvre aussi (« 300 Series Alpha ») : sans lui, l'arabe
+ * l'affichait « Series Alpha 300 » (planche du 11 octobre 2026). Un nombre suivi d'arabe (« 11 سرعة ») reste à l'arabe.
  */
-const LATIN_RUN = /\(?[A-Za-z][A-Za-z0-9.,'’"+!\-/×()&\s]*/g;
+const LATIN_RUN = /(?:\d+(?:[.,]\d+)?\s)?\(?[A-Za-z][A-Za-z0-9.,'’"+!\-/×()&\s]*/g;
 
 /** Ponctuation de PHRASE en fin de suite : elle appartient au texte arabe, jamais au nom (« … Madone. »). */
 const SENTENCE_END = /[\s.,:;]+$/;
