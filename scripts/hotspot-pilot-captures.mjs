@@ -4,7 +4,10 @@
 // dans une PR. HOTSPOT_CAPTURE_DIR est donc obligatoire et doit pointer hors du dépôt.
 //
 // usage : PLAYWRIGHT_BASE_URL=http://127.0.0.1:3149 HOTSPOT_CAPTURE_DIR=<dossier> \
-//         node scripts/hotspot-pilot-captures.mjs [talon anthem …]
+//         node scripts/hotspot-pilot-captures.mjs [--accents] [talon anthem …]
+//
+// --accents : à 1440 px, une capture de plus par préréglage du sélecteur (jaune, noir, teinte de la
+// catégorie), pour comparer les couleurs d'accent côte à côte.
 import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { chromium } from '@playwright/test';
@@ -18,7 +21,10 @@ if (!out) throw new Error('HOTSPOT_CAPTURE_DIR est obligatoire (dossier hors du 
 if (resolve(out).startsWith(resolve('.'))) throw new Error('HOTSPOT_CAPTURE_DIR ne doit pas être dans le dépôt.');
 mkdirSync(out, { recursive: true });
 
-const keys = process.argv.slice(2).length ? process.argv.slice(2) : ['talon'];
+const args = process.argv.slice(2);
+const accents = args.includes('--accents');
+const named = args.filter((arg) => !arg.startsWith('--'));
+const keys = named.length ? named : ['talon'];
 const browser = await chromium.launch();
 
 async function ready(page) {
@@ -35,6 +41,13 @@ for (const key of keys) {
       await ready(page);
       const figure = page.locator('figure').first();
       await figure.screenshot({ path: `${out}/${key}-${locale}-${width}.png` });
+      if (accents && width >= 900) {
+        for (const preset of ['butter', 'ink', 'category']) {
+          await page.locator(`[data-accent-picker] [data-preset="${preset}"]`).click();
+          await page.waitForTimeout(150);
+          await figure.screenshot({ path: `${out}/${key}-${locale}-${width}-accent-${preset}.png` });
+        }
+      }
       if (width < 600) {
         await page.locator('[data-annotated] [data-dot]').first().click();
         await page.waitForTimeout(200);
