@@ -373,10 +373,13 @@ visuelle du 9 octobre, `../CLAUDE.md`). Spec : issue #49, réécrite le 10 octob
 - **Aperçu LOCAL seulement** : `/{locale}/preview/hotspots/{talon|anthem|madone|checkpoint|vado}` rend 404 sans
   `BIKE_HOTSPOT_PREVIEW=1`, avant toute lecture de paramètre ou de l'API ; `noindex` ; jamais lié ; **jamais déployé sans
   décision distincte du fondateur** — les valeurs saisies pour le pilote ne se déploient pas. Les fiches publiques ne passent
-  pas par là : HTML de six fiches identique avant et après (seule la place de `<meta name="next-size-adjust">` change sur le
-  premier rendu après un build neuf).
-- **`BuildDetails`** porte le corps de la fiche, partagé par la page publique et l'aperçu. `annotated` élargit la fiche à
-  1264 px pour laisser aux notes leurs marges (à valider par le fondateur).
+  pas par là : HTML de six fiches identique avant et après, `<script>` exclus (seule la place de
+  `<meta name="next-size-adjust">` change sur le premier rendu après un build neuf). Depuis la relecture du 10 octobre, une
+  fiche publique ne charge ni le code ni les styles du pilote, et sa charge RSC ne porte aucune clé `annotated` :
+  `flag.spec.ts` le vérifie sur les fichiers réellement servis.
+- **`BuildDetails`** porte le corps de la fiche, partagé par la page publique et l'aperçu. `annotated` (`{ imageId, photo }`)
+  élargit la fiche à 1264 px pour laisser aux notes leurs marges (à valider par le fondateur). La composition est rendue par la
+  route d'aperçu et passée en *slot* à `BikeGallery`, qui n'importe rien de `hotspots/` ; la clé n'est posée que si elle existe.
 - **Données : `src/lib/hotspot-pilot.ts`** — cinq vélos ; chaque point a `dot` (en % de la photo `detail`), `label` (en % de
   la scène, côté `left|right|top|bottom`), une ligne principale (marque + modèle + chiffre clé), le nom de la pièce et une note
   de connaisseur en EN et AR (explique, ne juge jamais), et ses **sources citées mot pour mot** (`equipment_specs`,
@@ -387,18 +390,23 @@ visuelle du 9 octobre, `../CLAUDE.md`). Spec : issue #49, réécrite le 10 octob
 - **Composant : `src/components/hotspots/AnnotatedPhoto.tsx`** — scène à proportions fixes (photo à 52 % de la largeur,
   marges de 24 %), points positionnés en % de la photo, traits SVG (Bézier déterministe, `leader.ts`, `vector-effect:
   non-scaling-stroke`), notes dans les marges. La ligne principale ne se coupe qu'au « · » et chaque morceau porte son
-  soulignement `--hotspot-accent` (défaut `--tone-butter`, `globals.css`). Polices : Caveat (latin) + Aref Ruqaa (arabe),
+  soulignement `--hotspot-accent`, posée seulement par `AccentPicker` (repli `--tone-butter` dans le module CSS ; rien dans
+  `globals.css`, que chaque fiche publique charge). Polices : Caveat (latin) + Aref Ruqaa (arabe),
   chargées par la seule route d'aperçu (`fonts.ts`). Sous 900 px de conteneur : points seuls, une explication sous la photo
   (fermeture, Échap, retour du focus). Fond clair et encre fixes dans les deux thèmes. **Conteneur des notes en `ltr`** :
-  l'alignement contre le trait est physique ; seuls les textes portent `dir="rtl"`, et tout latin passe par `<bdi>`. Image
-  en erreur : aucun point, une alerte. Photo jamais retournée.
+  l'alignement contre le trait est physique ; seuls les textes portent `dir="rtl"`, et tout latin passe par `<bdi>`, découpé
+  par `bidi.ts` : la ponctuation de phrase (`. , : ;`) reste à l'arabe, le signe d'un nom (`E500+`, `Go!`, `20"`) reste au
+  nom, et une parenthèse n'entre dans le `<bdi>` qu'avec sa jumelle — sinon « Madone. » rend son point entre le nom et
+  l'arabe, et « (aero) » ses deux parenthèses du même côté. Image en erreur : aucun point, une alerte. Photo jamais retournée.
 - **`AccentPicker`** (aperçu seulement) : jaune, noir (en trait sous le texte), teinte de la catégorie, couleur libre,
   surlignage ou trait ; écrit `--hotspot-accent` et `data-hotspot-accent-mode` sur `<html>`. La couleur retenue par le
   fondateur deviendra la valeur de la variable.
 - **Tests** : `playwright.hotspot-preview.config.ts` (`tests/preview`, un worker, desktop + mobile, serveur local lancé à la
   main, aucune purge) — `pilot-data` (sources contre l'API réelle, identité, photo différente), `flag` (404 sans drapeau,
-  fiche publique sans annotation), `annotated` (cinq vélos AR/EN : notes hors photo, dans la scène, sans chevauchement ;
-  mobile ; `<bdi>` ; thème sombre ; image bloquée ; sélecteur ; vignettes ; alignement arabe).
+  fiche publique sans annotation, sans clé RSC, sans code ni style du pilote dans ses fichiers), `bidi-runs` (découpe du
+  latin), `annotated` (cinq vélos AR/EN : notes hors photo, dans la scène, sans chevauchement ; mobile ; `<bdi>` sans
+  ponctuation de phrase ni parenthèse orpheline, mesuré à l'écran ; thème sombre ; image bloquée ; sélecteur ; vignettes ;
+  alignement arabe).
 - **Captures** : `scripts/hotspot-pilot-captures.mjs` écrit dans `HOTSPOT_CAPTURE_DIR`, **obligatoirement hors du dépôt**
   (dépôt public, photos de constructeur) — en pratique `../notes/design-references/hotspots-pilot/`.
 
