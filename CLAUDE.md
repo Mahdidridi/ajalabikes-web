@@ -103,6 +103,15 @@ Comparaisons : liste blanche uniquement, jamais les permutations d'un même ense
 
 **7. Jamais de `aggregateRating` fabriqué** dans les données structurées.
 
+**8. Aucune page ne défile en largeur, dès 320 px (décision du 11 octobre 2026).**
+Critère WCAG 1.4.10. Mesuré ce jour-là sur `main` : en anglais, l'en-tête débordait de 33 px à 320 px sur toutes les pages,
+et la liste des composants élargissait la fiche jusqu'au mot le plus long (Vado : un lien Markdown brut de 64 caractères
+servi par l'API, page portée à 423 px dès 390 px). Règles : une colonne de grille qui reçoit des données prend
+`minmax(0, 1fr)` et ses textes se coupent (`wrap-break-word`) — une donnée ne fixe jamais la largeur de la page ; l'en-tête
+resserre ses espacements sous 380 px et ne passe à la ligne qu'en dernier recours (une ligne dès 360 px, deux en dessous en
+anglais). Garde : `tests/e2e/reflow.spec.ts` (accueil, catalogue, bikefinder, comparateur, deux fiches ; AR et EN ; 320 et
+390 px ; un mot de 120 caractères injecté dans la liste ; en-tête sur une ligne à 360 et 390 px).
+
 ## Routes — pages marque et catégorie (2 septembre 2026)
 
 Décision du 2 septembre 2026 (rapport SEO `../notes/seo-strategie-2026-09-02.md`, § 1) : une marque et une catégorie
