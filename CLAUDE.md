@@ -476,7 +476,16 @@ marque par marque **côté API** (`ajala:hotspots:place --apply --brand=…`) : 
   noms latins aussi. **Le texte arabe d'une ligne manuscrite passe par `.handArabic`** (Aref Ruqaa d'abord) : relevé le
   12 octobre (et présent dans le pilote), le secours que Next ajoute à Caveat est Arial sans plage de caractères ; sur Windows,
   où Arial a des glyphes arabes, il prenait toute ligne arabe (« الفرامل » en Arial gras). `adjustFontFallback: false` ne le
-  retire pas au build (Turbopack, constaté), d'où la `<span>` posée par le composant autour de l'arabe.
+  retire pas au build (Turbopack, constaté), d'où la `<span>` posée par le composant autour de l'arabe. En tête de sa
+  pile, Caveat SEUL (`--font-hand-latin-face`, lu sur l'objet de police par `handLatinFace`, jamais écrit à la main) :
+  chiffres, espaces et ponctuation d'un chiffre clé arabe (« 150 مم ») restent manuscrits comme les noms, les lettres
+  arabes vont à Aref Ruqaa.
+- **Cible tactile = disque découpé** (`.dot::before`, `clip-path: circle(50%)`, le bouton lui-même sans toucher) :
+  relevé le 12 octobre sur le Vado à 320 px (cadre et moteur à 26,6 px), Chrome testait le toucher sur la boîte
+  CARRÉE du bouton malgré `border-radius` — un toucher dans le disque du cadre, tombé dans le coin du carré du moteur,
+  allait au moteur. Le point dessiné et son anneau de focus ne sont pas découpés.
+- **Moteur et batterie** (9 points au plus sur un vélo électrique, api #51 `HotspotLayout` 2.2.0) : rien à faire ici,
+  le composant affiche ce que l'API sert ; les tests portent sur le Vado (9 points).
 - **Coût accepté** (mesuré le 12 octobre, build de production) : la route de la fiche charge le code et le style des notes même
   sans notes — environ 11 Ko compressés sur 209 Ko (CSS 2,8 Ko, JS 8,5 Ko). La relecture du 10 octobre l'interdisait quand
   aucune fiche publique n'en avait ; la plupart en auront (480 vélos sur 632 calculés sur la copie de la prod du 3 octobre).

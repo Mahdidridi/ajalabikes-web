@@ -120,10 +120,12 @@
  * que Next ajoute à Caveat (Arial, sans plage de caractères) prenait l'arabe sur Windows, où Arial a des glyphes arabes —
  * « الفرامل » en Arial gras, Aref Ruqaa jamais téléchargée ; `adjustFontFallback: false` ne retire pas ce secours au
  * build (Turbopack, constaté). Posée sur la seule <span> et non sur toute la ligne : la ligne garde Caveat pour sa
- * hauteur, et une page arabe dont les lignes ne sont que des noms latins ne télécharge rien de la police arabe.
+ * hauteur, et une page arabe dont les lignes ne sont que des noms latins ne télécharge rien de la police arabe. En
+ * tête, Caveat SEUL (`--font-hand-latin-face`, posée par le composant) : chiffres, espaces et ponctuation d'un chiffre
+ * clé (« 80 / 100 مم ») restent manuscrits comme les noms ; les lettres arabes, hors de sa plage, vont à Aref Ruqaa.
  */
 .handArabic {
-  font-family: var(--font-hand-arabic), var(--font-hand-latin), var(--font-arabic), var(--font-sans), system-ui, sans-serif;
+  font-family: var(--font-hand-latin-face), var(--font-hand-arabic), var(--font-arabic), var(--font-sans), system-ui, sans-serif;
 }
 
 /* Un morceau de la ligne principale (de part et d'autre du « · ») ne se coupe jamais. */
@@ -190,6 +192,24 @@
   background: transparent;
   transform: translate(-50%, -50%);
   cursor: pointer;
+  /* Le bouton ne prend aucun toucher : seul son disque `::before` le prend (voir plus bas). */
+  pointer-events: none;
+}
+
+/*
+ * La cible tactile est un DISQUE découpé (`clip-path`), pas le carré du bouton : Chrome teste le toucher sur la boîte
+ * carrée malgré `border-radius`. Relevé du 12 octobre 2026 (web #52) sur le Vado à 320 px, cadre et moteur à 26,6 px :
+ * un toucher à 45 % du chemin vers le moteur, dans le disque du cadre, tombait dans le coin du carré du moteur et allait
+ * au moteur. Le pseudo-élément porte le toucher pour le bouton ; le point dessiné et son anneau de focus ne sont pas
+ * découpés.
+ */
+.dot::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  clip-path: circle(50%);
+  pointer-events: auto;
 }
 
 .dot > span {

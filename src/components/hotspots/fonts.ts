@@ -23,3 +23,10 @@ const handArabic = Aref_Ruqaa({
 });
 
 export const handFontsClassName = `${handLatin.variable} ${handArabic.variable}`;
+
+/**
+ * La seule police latine, SANS son secours Arial : en tête de la pile du texte arabe d'une ligne manuscrite
+ * (`.handArabic`), elle prend chiffres, espaces et ponctuation (« 80 / 100 مم »), et laisse les lettres arabes, hors de
+ * sa plage, à Aref Ruqaa. Lue sur l'objet de police, jamais écrite à la main : le nom servi par Next peut changer.
+ */
+export const handLatinFace = handLatin.style.fontFamily.split(',')[0].trim();

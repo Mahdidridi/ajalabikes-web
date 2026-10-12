@@ -409,13 +409,13 @@ test('polices manuscrites : rien sans notes, Caveat pour les noms, Aref Ruqaa se
       continue;
     }
     expect(fonts.caveat.length, `${name(f)} : Caveat pour les noms`).toBeGreaterThan(0);
-    // Une ligne manuscrite arabe n'existe qu'en arabe, quand l'API ne sert pas de nom : la partie la remplace.
-    if (f.locale === 'ar-sa' && f.hotspots.points.some((p) => p.main === null)) {
-      expect(fonts.ruqaa.length, `${name(f)} : Aref Ruqaa pour la partie sans nom`).toBeGreaterThan(0);
+    // De l'arabe dans une ligne manuscrite : un chiffre clé (« 120 مم ») ou la partie d'un point sans nom.
+    if (f.hotspots.points.some((p) => /\p{Script=Arabic}/u.test(p.main ?? p.part))) {
+      expect(fonts.ruqaa.length, `${name(f)} : Aref Ruqaa pour l’arabe manuscrit`).toBeGreaterThan(0);
       arabicLines++;
     } else {
-      expect(fonts.ruqaa, `${name(f)} : aucune ligne manuscrite arabe, rien de la police arabe`).toEqual([]);
+      expect(fonts.ruqaa, `${name(f)} : aucune lettre arabe manuscrite, rien de la police arabe`).toEqual([]);
     }
   }
-  expect(arabicLines, 'une ligne manuscrite arabe : un point sans nom de pièce (freins des Trek du pilote)').toBeGreaterThan(0);
+  expect(arabicLines, 'au moins une fiche arabe avec de l’arabe manuscrit').toBeGreaterThan(0);
 });

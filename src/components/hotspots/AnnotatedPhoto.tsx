@@ -32,7 +32,8 @@ export interface AnnotatedProps {
   locale: Locale;
   copy: AnnotatedCopy;
   labels: AnnotatedLabel[];
-  fontClassName: string;
+  /** Les variables des polices manuscrites, et la police latine seule (`handLatinFace`, voir `.handArabic`). */
+  fonts: { className: string; latinFace: string };
 }
 
 /** La ligne principale ne se coupe qu'au « · » : « 80 / 100 mm » ou « 11 سرعة » restent d'un seul tenant. */
@@ -78,7 +79,7 @@ function isolateLatin(text: string, arabicClass?: string): ReactNode[] {
  * Sous 900 px de conteneur : points seuls sur la photo, une seule explication sous elle (fermeture, Échap, retour du focus
  * au point). Fond clair et encre fixes dans les deux thèmes. Image en erreur : aucun point, une alerte.
  */
-export function AnnotatedPhoto({ name, image, hotspots, locale, copy, labels, fontClassName }: AnnotatedProps) {
+export function AnnotatedPhoto({ name, image, hotspots, locale, copy, labels, fonts }: AnnotatedProps) {
   const [selected, setSelected] = useState<string | null>(null);
   const [shown, setShown] = useState(true);
   const [failed, setFailed] = useState(false);
@@ -140,7 +141,13 @@ export function AnnotatedPhoto({ name, image, hotspots, locale, copy, labels, fo
   } as CSSProperties;
 
   return (
-    <div data-annotated={name} className={`${styles.scene} ${fontClassName}`} dir="ltr" onKeyDown={onKeyDown}>
+    <div
+      data-annotated={name}
+      className={`${styles.scene} ${fonts.className}`}
+      style={{ '--font-hand-latin-face': fonts.latinFace } as CSSProperties}
+      dir="ltr"
+      onKeyDown={onKeyDown}
+    >
       <div className={styles.toolbar} dir={dir} lang={lang}>
         <label className={styles.toggle}>
           <input

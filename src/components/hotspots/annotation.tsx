@@ -2,7 +2,7 @@ import type { GalleryAnnotation } from '@/components/BikeGallery';
 import type { HotspotImage, Locale } from '@/lib/api';
 import type { Media } from '@/lib/images';
 import { AnnotatedPhoto, type AnnotatedLabel } from './AnnotatedPhoto';
-import { handFontsClassName } from './fonts';
+import { handFontsClassName, handLatinFace } from './fonts';
 import { SCENE } from './scene';
 
 /**
@@ -67,7 +67,7 @@ export function headAnnotation({
         locale={locale}
         copy={copy}
         labels={labels}
-        fontClassName={handFontsClassName}
+        fonts={{ className: handFontsClassName, latinFace: handLatinFace }}
       />
     ),
   };
