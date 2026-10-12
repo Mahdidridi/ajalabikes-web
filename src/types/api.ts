@@ -639,8 +639,8 @@ export interface components {
             };
             /**
              * @description Les points affiches, dans l'ordre du registre, numerotes de 1 a N sans trou. `dot` en pourcent de la photo, `label` en
-             *     pourcent de la scene, `side` la marge de la note ; `main` = le nom de la piece lu dans la source (null
-             *     sans nom net) ; `part` et `note` traduits.
+             *     pourcent de la scene, `side` la marge de la note ; `main` = le nom de la piece lu dans la source, puis
+             *     son chiffre cle apres « · » (null sans l'un ni l'autre) ; `part` et `note` traduits.
              */
             points: {
                 id: string;
