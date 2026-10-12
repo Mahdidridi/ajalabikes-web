@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { BuildDetails } from '@/components/BuildDetails';
+import { headAnnotation } from '@/components/hotspots/annotation';
 import { getBuild, isLocale } from '@/lib/api';
 import { bikeDescription, bikeTitle, seoFor } from '@/lib/seo';
 
@@ -60,9 +61,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   });
 }
 
-/** Le corps de la fiche vit dans `BuildDetails`, partagé avec l'aperçu du pilote web #49. */
+/**
+ * Le corps de la fiche vit dans `BuildDetails`, partagé avec l'aperçu du pilote web #49. La photo
+ * de tête porte ses notes dessinées quand l'API les sert (web #52) ; sinon, la galerie ordinaire.
+ */
 export default async function BuildPage({ params }: Props) {
   const { locale, build } = await resolve(params);
+  const annotated = headAnnotation({
+    name: `${build.brand.slug}/${build.slug}`,
+    head: build.images[0],
+    hotspots: build.hotspot_image,
+    locale,
+  });
 
-  return <BuildDetails build={build} locale={locale} />;
+  return <BuildDetails build={build} locale={locale} annotated={annotated} />;
 }

@@ -2,29 +2,38 @@
 
 import Image from 'next/image';
 import { useId, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
-import type { Locale } from '@/lib/api';
-import type { PilotBike, PilotCopy, PilotPoint } from '@/lib/hotspot-pilot';
+import type { HotspotImage, HotspotPoint, Locale } from '@/lib/api';
 import { sizeCatalogue, type Media } from '@/lib/images';
 import styles from './AnnotatedPhoto.module.css';
 import { latinRuns } from './bidi';
 import { leaderPath, type Pt } from './leader';
+import { MARGIN_Y, PHOTO_LEFT, PHOTO_WIDTH } from './scene';
 
-/** Ce que la route d'aperçu transmet à la composition : le vélo pilote, sa langue, ses textes, ses polices. */
-export interface AnnotatedConfig {
-  bike: PilotBike;
-  locale: Locale;
-  copy: PilotCopy;
-  fontClassName: string;
+/** Textes d'interface de la composition, déjà traduits (règle des composants client : ils ne composent rien). */
+export interface AnnotatedCopy {
+  toggle: string;
+  close: string;
+  unavailable: string;
+  hint: string;
 }
 
-/*
- * Scène : 100 unités de large ; la photo occupe x ∈ [PHOTO_LEFT, PHOTO_LEFT + PHOTO_WIDTH] avec une
- * marge MARGIN_Y en haut et en bas. Les photos du catalogue touchent presque les bords : les notes
- * vivent dans ces marges, jamais sur le vélo. Géométrie de MISE EN PAGE, pas une règle métier.
- */
-const PHOTO_LEFT = 24;
-const PHOTO_WIDTH = 52;
-const MARGIN_Y = 10;
+/** Libellés d'un point, composés côté serveur dans l'ordre des points : nom accessible du bouton, annonce de la sélection. */
+export interface AnnotatedLabel {
+  dot: string;
+  announce: string;
+}
+
+/** Ce que le serveur transmet à la composition (`annotation.tsx`) : tout est prêt à afficher. */
+export interface AnnotatedProps {
+  /** Nom de la composition, posé sur `data-annotated` : l'adresse du vélo, ou la clé du pilote sur l'aperçu. */
+  name: string;
+  image: Media;
+  hotspots: HotspotImage;
+  locale: Locale;
+  copy: AnnotatedCopy;
+  labels: AnnotatedLabel[];
+  fontClassName: string;
+}
 
 /** La ligne principale ne se coupe qu'au « · » : « 80 / 100 mm » ou « 11 سرعة » restent d'un seul tenant. */
 const SEPARATOR = ' · ';
@@ -35,60 +44,80 @@ const SEPARATOR = ' · ';
  * toujours au point le plus proche, et les ancres ne bougent pas (relecture du 10 octobre 2026 — à 390 px, des cibles
  * carrées de 44 px se recouvraient et le point suivant dans le DOM prenait le toucher). Géométrie de MISE EN PAGE.
  */
-function reaches(points: PilotPoint[], ratio: number): number[] {
+function reaches(points: HotspotPoint[], ratio: number): number[] {
   return points.map((p) =>
     points.reduce((nearest, q) => (q === p ? nearest : Math.min(nearest, Math.hypot(p.dot.x - q.dot.x, (p.dot.y - q.dot.y) * ratio))), 100),
   );
 }
 
-/** En arabe, chaque nom latin passe par <bdi> : sans lui, un signe final (« E500+ ») s'affiche du mauvais côté. */
-function isolateLatin(text: string): ReactNode[] {
-  return latinRuns(text).map((run, i) => (run.latin ? <bdi key={i}>{run.text}</bdi> : run.text));
+/**
+ * En arabe, chaque nom latin passe par <bdi> : sans lui, un signe final (« E500+ ») s'affiche du mauvais côté. Dans une
+ * ligne manuscrite, le texte arabe passe aussi par une <span> (`arabicClass`) à la police manuscrite arabe : voir
+ * `.handArabic` dans le module CSS.
+ */
+function isolateLatin(text: string, arabicClass?: string): ReactNode[] {
+  return latinRuns(text).map((run, i) => {
+    if (run.latin) return <bdi key={i}>{run.text}</bdi>;
+    return arabicClass ? (
+      <span key={i} className={arabicClass}>
+        {run.text}
+      </span>
+    ) : (
+      run.text
+    );
+  });
 }
 
 /**
- * Photo annotée du pilote de hotspots éditoriaux (web #49, étape 1 — décisions du fondateur du
- * 10 octobre 2026). La VRAIE photo n'est ni recadrée, ni redessinée, ni retournée en arabe (scène
- * `dir="ltr"`) ; autour d'elle, des notes à l'esprit dessiné à la main : ligne principale manuscrite
- * soulignée de `--hotspot-accent`, nom de la pièce dessous, trait de rappel vers le point.
+ * Photo de tête annotée — notes dessinées à la main (pilote web #49, généralisé par web #52 : décisions du fondateur du
+ * 10 au 12 octobre 2026). La VRAIE photo n'est ni recadrée, ni redessinée, ni retournée en arabe (scène `dir="ltr"`) ;
+ * autour d'elle, des notes à l'esprit dessiné à la main : ligne principale manuscrite soulignée de `--hotspot-accent`, nom
+ * de la pièce dessous, trait de rappel vers le point. Positions, numéros et textes viennent de l'API (`hotspot_image`) :
+ * ce composant n'en calcule aucun. Sans nom de pièce servi (`main` nul), la ligne manuscrite porte le nom de la partie.
  *
- * Sous 900 px de conteneur : points seuls sur la photo, une seule explication sous elle (fermeture,
- * Échap, retour du focus au point). Fond clair et encre fixes dans les deux thèmes. Image en erreur :
- * aucun point, une alerte.
+ * Sous 900 px de conteneur : points seuls sur la photo, une seule explication sous elle (fermeture, Échap, retour du focus
+ * au point). Fond clair et encre fixes dans les deux thèmes. Image en erreur : aucun point, une alerte.
  */
-export function AnnotatedPhoto({ image, config }: { image: Media; config: AnnotatedConfig }) {
-  const { bike, locale, copy, fontClassName } = config;
+export function AnnotatedPhoto({ name, image, hotspots, locale, copy, labels, fontClassName }: AnnotatedProps) {
   const [selected, setSelected] = useState<string | null>(null);
   const [shown, setShown] = useState(true);
   const [failed, setFailed] = useState(false);
   const dots = useRef(new Map<string, HTMLButtonElement>());
   const detailId = useId();
 
+  const { points } = hotspots;
   const detail = image.sizes.detail;
-  const reach = reaches(bike.points, detail.h / detail.w);
-  const photoHeight = (PHOTO_WIDTH * detail.h) / detail.w;
+  // Le rapport de la photo SERVIE avec la scène : c'est sur lui que l'API a placé les notes.
+  const ratio = hotspots.image.h / hotspots.image.w;
+  const reach = reaches(points, ratio);
+  const photoHeight = PHOTO_WIDTH * ratio;
   const sceneHeight = 2 * MARGIN_Y + photoHeight;
   const arabic = locale.startsWith('ar');
   const dir = arabic ? 'rtl' : 'ltr';
   const lang = arabic ? 'ar' : 'en';
   const text = (value: string) => (arabic ? isolateLatin(value) : value);
+  const hand = (value: string) => (arabic ? isolateLatin(value, styles.handArabic) : value);
   const mainLine = (value: string) =>
     value.split(SEPARATOR).map((segment, i) => (
       <span key={i}>
         {i > 0 && SEPARATOR}
         <span className={styles.segment} data-segment>
-          {text(segment)}
+          {hand(segment)}
         </span>
       </span>
     ));
+  // Sans nom de pièce, la ligne manuscrite porte le nom de la partie, et rien dessous.
+  const handwritten = (p: HotspotPoint) => p.main ?? p.part;
+  const subtitle = (p: HotspotPoint) => (p.main === null ? null : p.part);
 
-  const onScene = (p: PilotPoint): Pt => ({
+  const onScene = (p: HotspotPoint): Pt => ({
     x: PHOTO_LEFT + (PHOTO_WIDTH * p.dot.x) / 100,
     y: MARGIN_Y + (photoHeight * p.dot.y) / 100,
   });
-  const anchor = (p: PilotPoint): Pt => ({ x: p.label.x, y: (sceneHeight * p.label.y) / 100 });
+  const anchor = (p: HotspotPoint): Pt => ({ x: p.label.x, y: (sceneHeight * p.label.y) / 100 });
 
-  const current = bike.points.find((p) => p.id === selected) ?? null;
+  const currentIndex = points.findIndex((p) => p.id === selected);
+  const current = currentIndex < 0 ? null : points[currentIndex];
   const close = () => {
     if (!selected) return;
     const id = selected;
@@ -111,7 +140,7 @@ export function AnnotatedPhoto({ image, config }: { image: Media; config: Annota
   } as CSSProperties;
 
   return (
-    <div data-annotated={bike.key} className={`${styles.scene} ${fontClassName}`} dir="ltr" onKeyDown={onKeyDown}>
+    <div data-annotated={name} className={`${styles.scene} ${fontClassName}`} dir="ltr" onKeyDown={onKeyDown}>
       <div className={styles.toolbar} dir={dir} lang={lang}>
         <label className={styles.toggle}>
           <input
@@ -142,7 +171,7 @@ export function AnnotatedPhoto({ image, config }: { image: Media; config: Annota
           />
           {!failed &&
             shown &&
-            bike.points.map((p, i) => (
+            points.map((p, i) => (
               <button
                 key={p.id}
                 ref={(el) => {
@@ -155,10 +184,10 @@ export function AnnotatedPhoto({ image, config }: { image: Media; config: Annota
                 style={{ '--x': p.dot.x, '--y': p.dot.y, '--reach': reach[i] } as CSSProperties}
                 aria-pressed={p.id === selected}
                 aria-controls={detailId}
-                aria-label={`${copy.point} ${i + 1} : ${p.part[locale]} — ${p.main[locale]}`}
+                aria-label={labels[i].dot}
                 onClick={() => setSelected(p.id === selected ? null : p.id)}
               >
-                <span aria-hidden="true">{i + 1}</span>
+                <span aria-hidden="true">{p.n}</span>
               </button>
             ))}
         </div>
@@ -171,7 +200,7 @@ export function AnnotatedPhoto({ image, config }: { image: Media; config: Annota
           shown && (
             <>
               <svg className={styles.leaders} viewBox={`0 0 100 ${sceneHeight}`} aria-hidden="true">
-                {bike.points.map((p) => (
+                {points.map((p) => (
                   <path
                     key={p.id}
                     data-leader
@@ -180,25 +209,30 @@ export function AnnotatedPhoto({ image, config }: { image: Media; config: Annota
                   />
                 ))}
               </svg>
-              {bike.points.map((p) => (
-                <div
-                  key={p.id}
-                  data-note
-                  data-active={p.id === selected ? '' : undefined}
-                  className={`${styles.note} ${styles[p.label.align]}`}
-                  style={{ left: `${p.label.x}%`, top: `${p.label.y}%` }}
-                  // Conteneur en ltr : l'alignement contre le trait est PHYSIQUE (une note à gauche du vélo
-                  // s'aligne à droite), quel que soit le sens de lecture ; seuls les textes portent la langue.
-                  dir="ltr"
-                >
-                  <span data-main className={styles.main} dir={dir} lang={lang}>
-                    {mainLine(p.main[locale])}
-                  </span>
-                  <span className={styles.part} dir={dir} lang={lang}>
-                    {text(p.part[locale])}
-                  </span>
-                </div>
-              ))}
+              {points.map((p) => {
+                const part = subtitle(p);
+                return (
+                  <div
+                    key={p.id}
+                    data-note
+                    data-active={p.id === selected ? '' : undefined}
+                    className={`${styles.note} ${styles[p.label.side]}`}
+                    style={{ left: `${p.label.x}%`, top: `${p.label.y}%` }}
+                    // Conteneur en ltr : l'alignement contre le trait est PHYSIQUE (une note à gauche du vélo
+                    // s'aligne à droite), quel que soit le sens de lecture ; seuls les textes portent la langue.
+                    dir="ltr"
+                  >
+                    <span data-main className={styles.main} dir={dir} lang={lang}>
+                      {mainLine(handwritten(p))}
+                    </span>
+                    {part !== null && (
+                      <span className={styles.part} dir={dir} lang={lang}>
+                        {text(part)}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
             </>
           )
         )}
@@ -215,27 +249,30 @@ export function AnnotatedPhoto({ image, config }: { image: Media; config: Annota
             <p className={`${styles.hint} ${shown && !current ? '' : styles.reserve}`} inert={!shown || current !== null}>
               {copy.hint}
             </p>
-            {bike.points.map((p) => (
-              <div
-                key={p.id}
-                data-detail={p === current ? '' : undefined}
-                className={`${styles.detail} ${p === current ? '' : styles.reserve}`}
-                inert={p !== current}
-              >
-                <p className={styles.detailMain}>{mainLine(p.main[locale])}</p>
-                <p className={styles.part}>{text(p.part[locale])}</p>
-                <p className={styles.detailNote}>{text(p.note[locale])}</p>
-                <button type="button" className={styles.close} aria-label={copy.close} onClick={close}>
-                  <span aria-hidden="true">×</span>
-                </button>
-              </div>
-            ))}
+            {points.map((p) => {
+              const part = subtitle(p);
+              return (
+                <div
+                  key={p.id}
+                  data-detail={p === current ? '' : undefined}
+                  className={`${styles.detail} ${p === current ? '' : styles.reserve}`}
+                  inert={p !== current}
+                >
+                  <p className={styles.detailMain}>{mainLine(handwritten(p))}</p>
+                  {part !== null && <p className={styles.part}>{text(part)}</p>}
+                  <p className={styles.detailNote}>{text(p.note)}</p>
+                  <button type="button" className={styles.close} aria-label={copy.close} onClick={close}>
+                    <span aria-hidden="true">×</span>
+                  </button>
+                </div>
+              );
+            })}
           </>
         )}
       </div>
 
       <p role="status" aria-live="polite" className={styles.srOnly} lang={lang}>
-        {current ? `${current.part[locale]} — ${current.main[locale]}` : ''}
+        {current ? labels[currentIndex].announce : ''}
       </p>
     </div>
   );

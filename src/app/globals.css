@@ -32,6 +32,13 @@
   --tone-peach: #ffb495;
   --tone-butter: #f6d77c;
   --tone-ink: #171717;
+  /*
+   * Couleur d'accent des notes dessinées sur la photo de tête (le soulignement de la ligne manuscrite) — décision du
+   * fondateur du 11 octobre 2026 : le jaune, choisi sur la planche des trois couleurs du pilote (web #49). Réglée ICI
+   * seulement (web #52) ; le sélecteur de l'aperçu la surcharge sur <html> pour comparer. La scène reste claire dans les
+   * deux thèmes : jamais redéfinie plus bas.
+   */
+  --hotspot-accent: var(--tone-butter);
   color-scheme: light;
 }
 

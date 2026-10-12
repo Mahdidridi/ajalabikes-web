@@ -319,6 +319,7 @@ export interface components {
              */
             images: components["schemas"]["MediaResource"][];
             geometry_chart: components["schemas"]["MediaResource"] | null;
+            hotspot_image: components["schemas"]["HotspotImageResource"] | null;
             sizes: {
                 label: string;
                 label_alt: string | null;
@@ -580,6 +581,12 @@ export interface components {
             } | null;
             rules_version: string | null;
             /**
+             * @description Conditions communes à toutes les valeurs servies, au moins deux, si leurs conditions brutes
+             *     sont identiques et non vides ; les `conditions_formatted` des items sont alors nuls.
+             *     Null sinon, notamment hors `current`.
+             */
+            shared_conditions_formatted: string | null;
+            /**
              * @description Les valeurs affichables, dans l'ordre du registre regroupé par rôle ; vide hors `current`.
              *     `evidence[].excerpt` est du texte brut, jamais du HTML : entités décodées, il peut contenir « < »,
              *     « > » ou « & » — à échapper à l'affichage, jamais à interpréter.
@@ -618,6 +625,39 @@ export interface components {
                 effect: string;
                 caveat: string | null;
                 related: string[];
+            }[];
+        };
+        /** HotspotImageResource */
+        HotspotImageResource: {
+            media_id: number;
+            /** @description `scene-v1` : largeur 100, marges laterales 24, photo 52, marges haute et basse 10. */
+            scene: string;
+            /** @description Pixels de l'original : seul le rapport h / w sert, a reserver la place de la scene. */
+            image: {
+                w: number;
+                h: number;
+            };
+            /**
+             * @description Les points affiches, dans l'ordre du registre, numerotes de 1 a N sans trou. `dot` en pourcent de la photo, `label` en
+             *     pourcent de la scene, `side` la marge de la note ; `main` = le nom de la piece lu dans la source (null
+             *     sans nom net) ; `part` et `note` traduits.
+             */
+            points: {
+                id: string;
+                n: number;
+                dot: {
+                    x: number;
+                    y: number;
+                };
+                label: {
+                    x: number;
+                    y: number;
+                    /** @enum {string} */
+                    side: "left" | "right" | "top" | "bottom";
+                };
+                main: string | null;
+                part: string;
+                note: string;
             }[];
         };
         /** ImageSizeResource */
