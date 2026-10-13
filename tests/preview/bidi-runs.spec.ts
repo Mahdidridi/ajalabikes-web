@@ -56,6 +56,18 @@ test('un deux-points collé à un mot latin reste dans le nom ; celui de la phra
   expect(latin('Madone: 2026 هو')).toEqual(['Madone']);
 });
 
+// Specialized (lot du 13 octobre 2026) : « 840Wh battery » (15 vélos), « 900Wh Battery », « 3D-forged alloy » — un nombre COLLÉ à ses
+// lettres restait hors du <bdi> et l'arabe affichait « Wh battery840 ».
+test('un nom latin qui commence par un nombre collé à ses lettres le garde ; un nombre sans lettre reste à l’arabe', () => {
+  expect(latin('840Wh battery')).toEqual(['840Wh battery']);
+  expect(latin('900Wh Battery')).toEqual(['900Wh Battery']);
+  expect(latin('3D-forged alloy')).toEqual(['3D-forged alloy']);
+  expect(latin('بطارية 600Wh Battery · 12 سرعة')).toEqual(['600Wh Battery']);
+  // Un nombre suivi d'arabe ou d'un signe ne forme pas de suite latine.
+  expect(latin('بمقاس 27.5×2.4 بوصة')).toEqual([]);
+  expect(latin('من فئة 500مم')).toEqual([]);
+});
+
 test('la découpe restitue le texte entier, sans perte ni doublon', () => {
   for (const text of [
     'هنا عمود كربوني بشكل انسيابي (aero) خاص بدراجة Madone.',

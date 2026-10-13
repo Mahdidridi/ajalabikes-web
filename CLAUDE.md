@@ -423,6 +423,10 @@ visuelle du 9 octobre, `../CLAUDE.md`). Spec : issue #49, réécrite le 10 octob
   (`overflow: hidden`) en coupait sinon la fin (« Advanced-Grade Composite front and rear » : +12 px à 960 px, 9 fiches en ligne
   touchées entre 960 et 1 024 px). Un nom qui tient reste sur une ligne ; le chiffre clé après « · » ne se replie jamais. Le test
   « 960, 1024 et 1440 » mesure désormais le TEXTE de chaque note (pas seulement sa boîte) et couvre trois fiches aux noms longs.
+  **Décision du 13 octobre 2026 (lot Specialized) : le nombre qui OUVRE un nom latin peut être collé à ses lettres** (« 840Wh
+  battery », « 900Wh Battery », « 3D-forged alloy »). Sans cela, « 840 » restait hors du `<bdi>` et l'arabe affichait « Wh
+  battery840 » (19 lignes en ligne, toutes Specialized). Un nombre suivi d'arabe ou d'un signe (« 27.5×2.4 », « 500مم ») ne mène à
+  aucune lettre latine et reste à l'arabe.
   Image en erreur : aucun point, une alerte. Photo jamais retournée.
 - **`AccentPicker`** (aperçu seulement) : jaune, noir (en trait sous le texte), teinte de la catégorie, couleur libre,
   surlignage ou trait ; écrit `--hotspot-accent` et `data-hotspot-accent-mode` sur `<html>`. **Couleur retenue par le
