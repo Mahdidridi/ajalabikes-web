@@ -136,6 +136,16 @@
 }
 
 /*
+ * Exception : le NOM, quand il est plus long que la marge de la note (22 % de la scène), se replie aux espaces. Le cadre de
+ * la galerie (`overflow: hidden`) coupait sinon sa fin : « Advanced-Grade Composite front and rear » dépassait de 12 px à
+ * 960 px (relevé du 13 octobre 2026, lots Giant et Canyon). Un nom qui tient reste sur une ligne ; le chiffre clé
+ * (« 80 mm / 100 mm »), jamais replié, garde sa ligne.
+ */
+.main > span:first-child > .segment {
+  white-space: normal;
+}
+
+/*
  * Le soulignement : un coup de pinceau de la couleur d'accent sous CHAQUE morceau, pour qu'une ligne
  * principale repliée sur deux lignes reste soulignée morceau par morceau, jamais d'un bord à l'autre.
  * `--hotspot-accent` est réglée à un seul endroit, `globals.css` (le jaune, décision du 11 octobre 2026) ;
