@@ -9,7 +9,11 @@
 // 13 octobre 2026). Celui d'une phrase est suivi d'une espace ou d'arabe : il reste à la phrase, et le nombre qui le suit
 // aussi (« (Gravel): 700 »). Une assertion AVANT (« (?=… ») suffit : pas de lookbehind, que Safari avant 16.4 refuse à
 // l'analyse du module.
-const LATIN_RUN = /(?:\d+(?:[.,]\d+)?\s)?\(?[A-Za-z](?:[A-Za-z0-9.,'’"+!\-/×()&\s]|:(?=[A-Za-z0-9]))*/g;
+//
+// Le nombre qui OUVRE le nom peut être collé à ses lettres (Specialized : « 840Wh battery », « 3D-forged alloy » ; lot du
+// 13 octobre 2026) : `\s?` et non `\s`. Sans cela, « 840 » restait hors du <bdi> et l'arabe affichait « Wh battery840 ». Un
+// nombre suivi d'arabe ou d'un signe (« 27.5×2.4 », « 500مم ») ne mène à aucune lettre latine : il reste à l'arabe.
+const LATIN_RUN = /(?:\d+(?:[.,]\d+)?\s?)?\(?[A-Za-z](?:[A-Za-z0-9.,'’"+!\-/×()&\s]|:(?=[A-Za-z0-9]))*/g;
 
 /** Ponctuation de PHRASE en fin de suite : elle appartient au texte arabe, jamais au nom (« … Madone. »). */
 const SENTENCE_END = /[\s.,:;]+$/;
