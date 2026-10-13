@@ -418,6 +418,11 @@ visuelle du 9 octobre, `../CLAUDE.md`). Spec : issue #49, réécrite le 10 octob
   lettre ou au chiffre qui le suit fait partie du nom** (« Canyon Strive:ON », « Spectral:ONfly », « Canyon:ON HB0057 ») ; sans lui,
   l'arabe coupait le nom en trois `<bdi>` et l'affichait « ON:Canyon Strive ». Celui d'une phrase (suivi d'une espace ou d'arabe) reste
   à la phrase, avec le nombre qui le suit (« (Gravel): 700 ») ; assertion avant seulement, jamais de lookbehind (Safari avant 16.4).
+  **Décision du 13 octobre 2026 (lots Giant, Canyon, Specialized) : le NOM d'une ligne principale, plus long que la marge de sa note
+  (22 % de la scène), se replie aux espaces** (`.main > span:first-child > .segment`, `white-space: normal`) ; le cadre de la galerie
+  (`overflow: hidden`) en coupait sinon la fin (« Advanced-Grade Composite front and rear » : +12 px à 960 px, 9 fiches en ligne
+  touchées entre 960 et 1 024 px). Un nom qui tient reste sur une ligne ; le chiffre clé après « · » ne se replie jamais. Le test
+  « 960, 1024 et 1440 » mesure désormais le TEXTE de chaque note (pas seulement sa boîte) et couvre trois fiches aux noms longs.
   Image en erreur : aucun point, une alerte. Photo jamais retournée.
 - **`AccentPicker`** (aperçu seulement) : jaune, noir (en trait sous le texte), teinte de la catégorie, couleur libre,
   surlignage ou trait ; écrit `--hotspot-accent` et `data-hotspot-accent-mode` sur `<html>`. **Couleur retenue par le

@@ -19,6 +19,12 @@ const CANDIDATES = [
   'trek/checkpoint-alr-5-gen-3',
   'specialized/turbo-vado-sl-2-5-0-step-through-eq',
   'giant/propel-advanced-pro-ff',
+  // Les noms les plus longs des lots en ligne (relevé du 13 octobre 2026) : à 960 px, « Advanced-Grade Composite front and
+  // rear » (Giant), « AeroDrive base bar with Sync armrest set » (Giant) et « Rock Shox SID Select+ 3-Position Remote »
+  // (Canyon) dépassaient du cadre de la fiche de 11 à 13 px.
+  'giant/trance-x-advanced-0',
+  'giant/trinity-advanced-sl-2',
+  'canyon/lux-world-cup-cf-9',
 ] as const;
 const LOCALES: readonly Locale[] = ['ar-sa', 'en-sa'];
 
@@ -128,6 +134,23 @@ test('960, 1024 et 1440 : une note et un trait par point, hors photo, dans la sc
         expect(note.x >= sceneBox.x - 0.5 && note.x + note.width <= sceneBox.x + sceneBox.width + 0.5, `${at} hors scène`).toBe(true);
         notes.slice(i + 1).forEach((other, j) => expect(overlap(note, other), `${at} / ${points[i + j + 1].id}`).toBe(false));
       });
+      // Le TEXTE de chaque note reste dans la scène, pas seulement sa boîte : une ligne trop longue se replie au lieu d'être
+      // coupée par le cadre de la galerie (`overflow: hidden`). Relevé du 13 octobre 2026 : +12 px à 960 px.
+      const outside = await scene.evaluate((root) => {
+        const frame = root.getBoundingClientRect();
+        const bad: string[] = [];
+        root.querySelectorAll('[data-note] *').forEach((el) => {
+          if (el.children.length > 0 || !el.textContent?.trim()) return;
+          const range = document.createRange();
+          range.selectNodeContents(el);
+          for (const r of range.getClientRects()) {
+            const over = Math.max(r.right - frame.right, frame.left - r.left);
+            if (r.width > 0 && over > 0.5) bad.push(`${el.textContent.trim().slice(0, 60)} (+${Math.round(over)} px)`);
+          }
+        });
+        return bad;
+      });
+      expect(outside, `${id} : texte hors de la scène`).toEqual([]);
     }
   }
 });
