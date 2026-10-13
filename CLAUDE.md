@@ -458,6 +458,15 @@ Le rendu du pilote devient celui de la photo de tête de **chaque fiche dont l'A
 Laravel place les points et les notes et rédige les textes (api #51, `hotspot_image`), Next affiche. La mise en ligne se fait
 marque par marque **côté API** (`ajala:hotspots:place --apply --brand=…`) : le site n'a rien à redéployer pour un nouveau lot.
 
+**En production depuis le 13 octobre 2026 (lot 1, `main` `fd0ec2b`, release `20261013164325`).** Les cinq fiches du
+pilote affichent leurs notes à 1264 px ; toutes les autres fiches n'ont pas changé (896 px, aucune clé `annotated` dans la
+charge RSC). Preuves avant la fusion : suite e2e complète 494/494 (Next local contre l'API de production en lecture
+seule). Preuves après : 91 contrôles HTTP (HTML brut et charge RSC) et 28 pages en navigateur (ordinateur et mobile, arabe
+et anglais) sans écart de fond. Piège de contrôle : un script navigateur lancé contre le site compte des `requestfailed` sur
+`…?_rsc=…` à la fermeture de la page ; ce sont des préchargements de liens annulés, pas des erreurs du site. **Reste** :
+retirer la route d'aperçu `/{locale}/preview/hotspots/{bike}`, son drapeau `BIKE_HOTSPOT_PREVIEW`, `hotspot-pilot.ts`,
+`AccentPicker` et `tests/preview` (phase 4.1), après comparaison des cinq fiches avec leurs aperçus et accord du fondateur.
+
 - **Branchement** : la page de la fiche appelle `headAnnotation` (`src/components/hotspots/annotation.tsx`), qui rend
   `AnnotatedPhoto` — le composant de l'aperçu, qui ne lit plus que la forme de l'API. Pas de notes si l'API n'en sert pas
   (`hotspot_image` nul, ou absent d'une API antérieure à #52), si elles ne portent pas sur la photo de tête, si leur scène n'est
