@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { useState, type ReactNode } from 'react';
 import { sizeCatalogue, type Media } from '@/lib/images';
 
-/** La composition annotée qui remplace la photo `imageId` (aperçu du pilote web #49 seulement). */
+/** La composition annotée qui remplace la photo `imageId` : les notes dessinées de la photo de tête (web #52). */
 export type GalleryAnnotation = { imageId: number; photo: ReactNode };
 
 type Labels = {
@@ -29,10 +29,10 @@ type Labels = {
  * L'ordre vient de l'API — l'image de tete est la premiere. Le front ne trie
  * pas : ce serait une seconde regle a maintenir en face de celle de Laravel.
  *
- * `annotated` (apercu du pilote web #49 seulement, jamais sur une fiche publique) : la photo de
- * tete est annotee si, et seulement si, c'est la photo exacte du pilote ; toute autre vue reste
- * une photo ordinaire, sans aucun point. La composition arrive DEJA rendue par la route d'apercu :
- * la galerie n'importe pas son composant, qui reste hors des fichiers d'une fiche publique
+ * `annotated` (notes dessinees de la photo de tete, web #52) : la photo de tete est annotee si, et
+ * seulement si, c'est la photo exacte que les notes decrivent ; toute autre vue reste une photo
+ * ordinaire, sans aucun point. La composition arrive DEJA rendue par la page (`headAnnotation`) :
+ * la galerie n'importe pas son composant, dont le code ne part qu'avec une fiche annotee
  * (relecture du 10 octobre 2026).
  */
 export function BikeGallery({

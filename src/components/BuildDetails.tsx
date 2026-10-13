@@ -52,9 +52,10 @@ const COPY = {
  * Le rendu public est inchangé : vérifié en comparant le HTML de six fiches
  * avant et après l'extraction (décision du 10 octobre 2026).
  *
- * `annotated` : aperçu du pilote seulement, composition rendue par la route d'aperçu. La fiche
- * s'élargit (1264 px) pour laisser aux notes leurs marges autour de la photo — choix à valider
- * par le fondateur sur la planche du Talon.
+ * `annotated` : la photo de tête annotée (`headAnnotation`), composée par la page — notes servies
+ * par l'API sur la fiche publique (web #52), notes saisies sur l'aperçu du pilote. La fiche
+ * s'élargit alors à 1264 px pour laisser aux notes leurs marges autour de la photo (décision du
+ * fondateur du 12 octobre 2026) ; sans notes, elle garde ses 896 px.
  */
 export function BuildDetails({
   build,
@@ -134,8 +135,8 @@ export function BuildDetails({
 
       <BikeGallery
         images={build.images}
-        // Clé posée seulement sur l'aperçu : `annotated={undefined}` écrirait `"annotated":"$undefined"`
-        // dans la charge RSC de chaque fiche publique (relecture du 10 octobre 2026).
+        // Clé posée seulement sur une fiche annotée : `annotated={undefined}` écrirait
+        // `"annotated":"$undefined"` dans la charge RSC de chaque fiche sans notes (relecture du 10 octobre 2026).
         {...(annotated && { annotated })}
         labels={{
           thumbnails: t.thumbnails,

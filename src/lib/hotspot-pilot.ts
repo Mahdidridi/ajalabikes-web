@@ -1,4 +1,5 @@
-import type { Build, Locale } from '@/lib/api';
+import { SCENE } from '@/components/hotspots/scene';
+import type { Build, HotspotImage, Locale } from '@/lib/api';
 
 /**
  * Pilote des hotspots éditoriaux (web #49, étape 1) — données des cinq fiches annotées.
@@ -540,26 +541,6 @@ export const PILOT_BIKES: readonly PilotBike[] = [
   },
 ];
 
-/** Textes d'interface du composant, déjà composés (règle des composants client). */
-export const PILOT_COPY = {
-  'en-sa': {
-    toggle: 'Annotations',
-    close: 'Close',
-    point: 'Point',
-    unavailable: 'Photo unavailable',
-    hint: 'Tap a number to see the part.',
-  },
-  'ar-sa': {
-    toggle: 'الشروح',
-    close: 'إغلاق',
-    point: 'النقطة',
-    unavailable: 'الصورة غير متاحة',
-    hint: 'المس رقمًا لترى القطعة.',
-  },
-} as const satisfies Record<Locale, { toggle: string; close: string; point: string; unavailable: string; hint: string }>;
-
-export type PilotCopy = (typeof PILOT_COPY)[Locale];
-
 export function pilotBike(key: string): PilotBike | null {
   return PILOT_BIKES.find((bike) => bike.key === key) ?? null;
 }
@@ -577,4 +558,25 @@ export function pilotFor(build: Build, key: string): PilotBike | null {
     build.category?.key === bike.category;
   const samePhoto = head?.id === bike.media.id && head.sizes.detail.w === bike.media.w && head.sizes.detail.h === bike.media.h;
   return sameBike && samePhoto ? bike : null;
+}
+
+/**
+ * Les notes saisies du pilote, dans la forme que l'API sert pour toutes les fiches (`hotspot_image`, web #52) : l'aperçu
+ * et la fiche publique passent par le même composant. Numéros dans l'ordre des points, textes de la langue demandée.
+ */
+export function pilotHotspots(bike: PilotBike, locale: Locale): HotspotImage {
+  return {
+    media_id: bike.media.id,
+    scene: SCENE,
+    image: { w: bike.media.w, h: bike.media.h },
+    points: bike.points.map((p, i) => ({
+      id: p.id,
+      n: i + 1,
+      dot: p.dot,
+      label: { x: p.label.x, y: p.label.y, side: p.label.align },
+      main: p.main[locale],
+      part: p.part[locale],
+      note: p.note[locale],
+    })),
+  };
 }

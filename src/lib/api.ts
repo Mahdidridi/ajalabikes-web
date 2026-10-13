@@ -12,6 +12,10 @@ export type Build = components['schemas']['BuildResource'];
 export type BuildSize = Build['sizes'][number];
 export type GeometryRow = BuildSize['geometry'][number];
 
+/** Les notes dessinées de la photo de tête (web #52), placées et rédigées par Laravel. Types générés. */
+export type HotspotImage = NonNullable<Build['hotspot_image']>;
+export type HotspotPoint = HotspotImage['points'][number];
+
 /** Une carte de catalogue. Le type vient du contrat, jamais reecrit a la main. */
 export type BuildCard = components['schemas']['BuildCardResource'];
 
