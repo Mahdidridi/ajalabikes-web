@@ -4,7 +4,12 @@
  * « Precaliber 20" ») en font partie, et le nombre qui l'ouvre aussi (« 300 Series Alpha ») : sans lui, l'arabe
  * l'affichait « Series Alpha 300 » (planche du 11 octobre 2026). Un nombre suivi d'arabe (« 11 سرعة ») reste à l'arabe.
  */
-const LATIN_RUN = /(?:\d+(?:[.,]\d+)?\s)?\(?[A-Za-z][A-Za-z0-9.,'’"+!\-/×()&\s]*/g;
+// Un deux-points COLLÉ à la lettre ou au chiffre qui le suit fait partie du nom (Canyon : « Strive:ON », « Spectral:ONfly »,
+// « Canyon:ON HB0057 » — sans lui, l'arabe coupait le nom en trois <bdi> et l'affichait « ON:Canyon Strive » ; lot du
+// 13 octobre 2026). Celui d'une phrase est suivi d'une espace ou d'arabe : il reste à la phrase, et le nombre qui le suit
+// aussi (« (Gravel): 700 »). Une assertion AVANT (« (?=… ») suffit : pas de lookbehind, que Safari avant 16.4 refuse à
+// l'analyse du module.
+const LATIN_RUN = /(?:\d+(?:[.,]\d+)?\s)?\(?[A-Za-z](?:[A-Za-z0-9.,'’"+!\-/×()&\s]|:(?=[A-Za-z0-9]))*/g;
 
 /** Ponctuation de PHRASE en fin de suite : elle appartient au texte arabe, jamais au nom (« … Madone. »). */
 const SENTENCE_END = /[\s.,:;]+$/;
