@@ -41,11 +41,27 @@ test('le séparateur « · », les chiffres et l’arabe ne sont jamais avalés'
   expect(latin('Maxxis Rekon بمقاس 27.5×2.4 بوصة في المقاس XS، وRekon Race بمقاس 29×2.4')).toEqual(['Maxxis Rekon', 'XS', 'Rekon Race']);
 });
 
+// Canyon (lot du 13 octobre 2026) : « Strive:ON », « Spectral:ONfly » portent un deux-points dans leur NOM. Sans lui dans la suite,
+// l'arabe coupait le nom en trois <bdi> et l'affichait « ON:Canyon Strive ».
+test('un deux-points collé à un mot latin reste dans le nom ; celui de la phrase reste à la phrase', () => {
+  expect(latin('Canyon Strive:ON')).toEqual(['Canyon Strive:ON']);
+  expect(latin('Canyon Spectral:ONfly CF')).toEqual(['Canyon Spectral:ONfly CF']);
+  expect(latin('Canyon:ON HB0057 Riser bar')).toEqual(['Canyon:ON HB0057 Riser bar']);
+  expect(latin('Canyon Pathlite:ON Step-Through')).toEqual(['Canyon Pathlite:ON Step-Through']);
+  expect(latin('الطراز: Canyon Torque:ON CF · 170 مم')).toEqual(['Canyon Torque:ON CF']);
+  // Le deux-points d'une phrase arabe n'entre pas dans le nom, ni le nombre qui le suit.
+  expect(latin('إطارات الحصى (Gravel): 700 هو مقاس العجلة')).toEqual(['(Gravel)']);
+  expect(latin('اسم الطراز: Giant Sport.')).toEqual(['Giant Sport']);
+  expect(latin('Madone:هذا')).toEqual(['Madone']);
+  expect(latin('Madone: 2026 هو')).toEqual(['Madone']);
+});
+
 test('la découpe restitue le texte entier, sans perte ni doublon', () => {
   for (const text of [
     'هنا عمود كربوني بشكل انسيابي (aero) خاص بدراجة Madone.',
     'جزء من تجهيز هذه النسخة (EQ). الطراز: Lezyne E500+.',
     'هذا من ألومنيوم Alpha من فئة 300 Series.',
+    'الطراز: Canyon Strive:ON · 170 مم',
   ]) {
     expect(latinRuns(text).map((r) => r.text).join('')).toBe(text);
   }

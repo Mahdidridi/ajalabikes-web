@@ -414,7 +414,11 @@ visuelle du 9 octobre, `../CLAUDE.md`). Spec : issue #49, réécrite le 10 octob
   l'alignement contre le trait est physique ; seuls les textes portent `dir="rtl"`, et tout latin passe par `<bdi>`, découpé
   par `bidi.ts` : la ponctuation de phrase (`. , : ;`) reste à l'arabe, le signe d'un nom (`E500+`, `Go!`, `20"`) reste au
   nom, et une parenthèse n'entre dans le `<bdi>` qu'avec sa jumelle — sinon « Madone. » rend son point entre le nom et
-  l'arabe, et « (aero) » ses deux parenthèses du même côté. Image en erreur : aucun point, une alerte. Photo jamais retournée.
+  l'arabe, et « (aero) » ses deux parenthèses du même côté. **Décision du 13 octobre 2026 (lot Canyon) : un deux-points COLLÉ à la
+  lettre ou au chiffre qui le suit fait partie du nom** (« Canyon Strive:ON », « Spectral:ONfly », « Canyon:ON HB0057 ») ; sans lui,
+  l'arabe coupait le nom en trois `<bdi>` et l'affichait « ON:Canyon Strive ». Celui d'une phrase (suivi d'une espace ou d'arabe) reste
+  à la phrase, avec le nombre qui le suit (« (Gravel): 700 ») ; assertion avant seulement, jamais de lookbehind (Safari avant 16.4).
+  Image en erreur : aucun point, une alerte. Photo jamais retournée.
 - **`AccentPicker`** (aperçu seulement) : jaune, noir (en trait sous le texte), teinte de la catégorie, couleur libre,
   surlignage ou trait ; écrit `--hotspot-accent` et `data-hotspot-accent-mode` sur `<html>`. **Couleur retenue par le
   fondateur le 11 octobre 2026 : le jaune** (`--tone-butter`), sur la planche des trois couleurs, réglée dans `globals.css`
