@@ -1,13 +1,12 @@
-import Image from 'next/image';
 import Link from 'next/link';
 import { BikeGallery, type GalleryAnnotation } from '@/components/BikeGallery';
 import { ComponentList } from '@/components/ComponentList';
 import { EquipmentSpecs, equipmentTitle, hasEquipment } from '@/components/EquipmentSpecs';
 import { JsonLd } from '@/components/JsonLd';
+import { SectionNav, type SectionNavItem } from '@/components/SectionNav';
 import { SimilarBikes, hasSimilar, similarTitle } from '@/components/SimilarBikes';
 import { SizePicker } from '@/components/SizePicker';
 import type { Build, Locale, SimilarBuilds } from '@/lib/api';
-import { sizeCatalogue } from '@/lib/images';
 import { buildBreadcrumbJsonLd, productJsonLd } from '@/lib/jsonld';
 import { brandPath } from '@/lib/routes';
 
@@ -24,8 +23,6 @@ const COPY = {
     inseam: 'طول الساق',
     wheels: 'العجلات',
     geometry: 'الهندسة',
-    highlights: 'المواصفات الرئيسية',
-    geometryChart: 'مخطط الهندسة',
     components: 'المكونات',
     freshness: 'آخر تحديث',
     thumbnails: 'صور الدراجة',
@@ -39,8 +36,6 @@ const COPY = {
     inseam: 'Inseam',
     wheels: 'Wheels',
     geometry: 'Geometry',
-    highlights: 'Key specs',
-    geometryChart: 'Geometry chart',
     components: 'Components',
     freshness: 'Last updated',
     thumbnails: 'Bike photos',
@@ -48,11 +43,24 @@ const COPY = {
   },
 } as const satisfies Record<Locale, Record<string, string>>;
 
+/** Le titre de chaque bloc de la fiche : un seul style pour les quatre, repris par `EquipmentSpecs` et `SimilarBikes`. */
+export const SECTION_TITLE = 'text-2xl font-bold tracking-tight';
+
 /**
  * Corps de la fiche vélo, extrait de la page (`[locale]/bikes/[brand]/[slug]`) le 10 octobre 2026
  * pour l'aperçu du pilote web #49, retiré le 14 octobre 2026 (phase 4.1 de web #52) : la page
  * publique est désormais sa seule route. Le rendu public n'avait pas changé à l'extraction (HTML de
  * six fiches comparé avant et après).
+ *
+ * STRUCTURE DU BAS DE PAGE — décision du fondateur du 14 octobre 2026 (web #65), validée sur une
+ * maquette arabe de la fiche du Giant Talon 1. Dans la colonne centrale, de haut en bas : la photo
+ * annotée, inchangée ; la barre d'ancres, SOUS la photo, collante, le bloc courant souligné
+ * (`SectionNav`) ; puis Équipements, Composants, Géométrie, Vélos proches. La page se lit du résumé
+ * vérifié au détail. Deux blocs ont disparu le même jour : « Specs clés » (il répétait les notes de la
+ * photo et les équipements) et la silhouette Specialized servie dans `geometry_chart` (décision du
+ * 13 septembre 2026 : une silhouette sans cote n'est pas un schéma ; le document officiel viendra avec
+ * web #30 — le champ reste dans le contrat, il n'est plus rendu). La colonne ne s'élargit pas : la fiche
+ * garde ses 896 px, 1264 px avec la photo annotée.
  *
  * `annotated` : la photo de tête annotée (`headAnnotation`), composée par la page avec les notes
  * servies par l'API (web #52). La fiche s'élargit alors à 1264 px pour laisser aux notes leurs
@@ -74,9 +82,15 @@ export function BuildDetails({
   similar?: SimilarBuilds | null;
 }) {
   const t = COPY[locale];
-  // Le contrat marque les lignes nullable (filtrage cote API) : on ne garde
-  // que les lignes reelles, sans jamais en fabriquer.
-  const highlights = build.highlights.flatMap((h) => (h ? [h] : []));
+
+  // Une ancre par bloc présent, dans l'ordre de la page : la même règle (`hasEquipment`, `hasSimilar`)
+  // décide du bloc ET de son ancre.
+  const sections: SectionNavItem[] = [
+    ...(hasEquipment(build.equipment_specs) ? [{ href: '#equipment' as const, label: equipmentTitle(locale) }] : []),
+    { href: '#components', label: t.components },
+    { href: '#geometry', label: t.geometry },
+    ...(hasSimilar(similar) ? [{ href: '#similar' as const, label: similarTitle(locale) }] : []),
+  ];
 
   return (
     <main className={`mx-auto flex w-full ${annotated ? 'max-w-[1264px]' : 'max-w-4xl'} flex-col gap-8 p-6`}>
@@ -126,36 +140,6 @@ export function BuildDetails({
         </div>
       </header>
 
-      {/* Ancres de fiche (structure 99 Spokes) : la page est longue, le
-          lecteur saute a la section qui l'interesse. Liens purs, zero JS.
-          `flex-wrap` : avec l'ancre des velos proches (web #35), quatre liens ne
-          tiennent plus sur une ligne a 320 px en anglais (336 px mesures) ; la
-          barre passe a la ligne plutot que d'elargir la page (regle du 11 octobre).
-          `gap-y-2` : 24 px entre deux rangees de liens, la cible tactile minimale.
-          Sur deux rangees, la barre mesure 57 px (Pixel 7, anglais) : les sections
-          gardent `scroll-mt-16` (64 px), sinon le saut cachait leur titre dessous. */}
-      <nav className="sticky top-0 z-10 -mx-6 flex flex-wrap gap-x-5 gap-y-2 border-b border-border bg-background px-6 py-2 font-mono text-xs uppercase tracking-widest">
-        <a href="#highlights" className="opacity-60 transition hover:opacity-100">
-          {t.highlights}
-        </a>
-        <a href="#geometry" className="opacity-60 transition hover:opacity-100">
-          {t.geometry}
-        </a>
-        {hasEquipment(build.equipment_specs) && (
-          <a href="#equipment" className="opacity-60 transition hover:opacity-100">
-            {equipmentTitle(locale)}
-          </a>
-        )}
-        <a href="#components" className="opacity-60 transition hover:opacity-100">
-          {t.components}
-        </a>
-        {hasSimilar(similar) && (
-          <a href="#similar" className="opacity-60 transition hover:opacity-100">
-            {similarTitle(locale)}
-          </a>
-        )}
-      </nav>
-
       <BikeGallery
         images={build.images}
         // Clé posée seulement sur une fiche annotée : `annotated={undefined}` écrirait
@@ -171,26 +155,20 @@ export function BuildDetails({
         }}
       />
 
-      {highlights.length > 0 && (
-        <section id="highlights" className="flex flex-col gap-3 scroll-mt-16">
-          <h2 className="font-mono text-xs font-semibold uppercase tracking-widest opacity-60">
-            {t.highlights}
-          </h2>
-          <dl className="grid gap-x-8 gap-y-2 sm:grid-cols-[auto_1fr]">
-            {highlights.map((h) => (
-              <div key={h.key} className="contents">
-                <dt className="text-sm font-semibold">{h.label}</dt>
-                <dd className="text-sm text-muted">{h.description}</dd>
-              </div>
-            ))}
-          </dl>
-        </section>
-      )}
+      {/* La barre d'ancres, sous la photo : la page est longue, le lecteur saute au bloc qui l'intéresse. */}
+      <SectionNav items={sections} />
+
+      {/* Le résumé vérifié d'abord (web #36) : les valeurs normalisées par Laravel, avec leur preuve. La liste brute du
+          constructeur suit, dans « Components » : les deux blocs coexistent. Sans valeur courante, ni bloc ni ancre. */}
+      <EquipmentSpecs data={build.equipment_specs} locale={locale} />
+
+      <section id="components" className="flex flex-col gap-4 scroll-mt-16">
+        <h2 className={SECTION_TITLE}>{t.components}</h2>
+        <ComponentList components={build.components} />
+      </section>
 
       <section id="geometry" className="flex flex-col gap-4 scroll-mt-16">
-        <h2 className="font-mono text-xs font-semibold uppercase tracking-widest opacity-60">
-          {t.geometry}
-        </h2>
+        <h2 className={SECTION_TITLE}>{t.geometry}</h2>
         <SizePicker
           sizes={build.sizes}
           labels={{
@@ -202,35 +180,6 @@ export function BuildDetails({
             source: t.source,
           }}
         />
-
-        {/* Le schema de geometrie illustre le tableau de cotes : il vit ici, et
-            jamais dans le carrousel produit. Toutes les marques n'en publient
-            pas — Specialized oui, Trek non. */}
-        {build.geometry_chart && (
-          <figure className="flex flex-col gap-2">
-            <figcaption className="font-mono text-[11px] uppercase tracking-widest opacity-75">
-              {t.geometryChart}
-            </figcaption>
-            <Image
-              src={sizeCatalogue(build.geometry_chart)}
-              alt={build.geometry_chart.alt}
-              width={build.geometry_chart.sizes.detail.w}
-              height={build.geometry_chart.sizes.detail.h}
-              className="h-auto w-full max-w-2xl border border-neutral-200 bg-white object-contain dark:border-neutral-800"
-            />
-          </figure>
-        )}
-      </section>
-
-      {/* Les valeurs normalisées par Laravel, avec leur preuve (web #36). La liste brute du constructeur reste
-          dessous, dans « Components » : les deux blocs coexistent. Sans valeur courante, ni bloc ni ancre. */}
-      <EquipmentSpecs data={build.equipment_specs} locale={locale} />
-
-      <section id="components" className="flex flex-col gap-4 scroll-mt-16">
-        <h2 className="font-mono text-xs font-semibold uppercase tracking-widest opacity-60">
-          {t.components}
-        </h2>
-        <ComponentList components={build.components} />
       </section>
 
       {similar && <SimilarBikes data={similar} locale={locale} />}

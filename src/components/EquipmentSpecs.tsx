@@ -44,7 +44,12 @@ export function equipmentTitle(locale: Locale): string {
  *
  * SERVER COMPONENT, ZÉRO JAVASCRIPT : les preuves se replient dans des `<details>` natifs. RIEN N'EST CALCULÉ ICI : ni
  * conversion, ni arrondi, ni choix entre deux candidats (une valeur ambiguë ou en conflit garde les candidats servis, avec
- * son badge). Seul le filet entre deux rôles est décidé ici — pure mise en page, la donnée arrive groupée par rôle.
+ * son badge). Seul le passage d'un rôle à l'autre est marqué ici (`data-new-role`) — pure mise en page, la donnée arrive
+ * groupée par rôle.
+ *
+ * PREMIER BLOC SOUS LA BARRE, EN DEUX COLONNES — décision du fondateur du 14 octobre 2026 (web #65) : le résumé vérifié
+ * ouvre la lecture, chaque ligne porte son libellé au début et sa valeur à la fin (propriétés logiques : la même ligne se
+ * lit de droite à gauche en arabe), la preuve repliée sous la valeur ; une seule colonne sous `md`.
  *
  * L'UNITÉ D'ORIGINE SUIT L'EXTRAIT (décision du 14 octobre 2026) : le poids Canyon a pour preuve « 15.74 » en livres ;
  * sans l'unité, « 7.14 kg » à côté de « 15.74 » passerait pour une erreur. La valeur brute reste visible à côté de la
@@ -59,9 +64,9 @@ export function EquipmentSpecs({ data, locale }: { data: Spec; locale: Locale })
 
   return (
     <section id="equipment" className="flex flex-col gap-4 scroll-mt-16">
-      <h2 className="font-mono text-xs font-semibold uppercase tracking-widest opacity-60">{t.title}</h2>
+      <h2 className="text-2xl font-bold tracking-tight">{t.title}</h2>
 
-      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-xs text-muted">
+      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm text-muted">
         {data.coverage && <span>{data.coverage.label}</span>}
         {data.checked_at_formatted && <span>{t.checked.replace('{date}', data.checked_at_formatted)}</span>}
         {data.source_url && (
@@ -83,7 +88,7 @@ export function EquipmentSpecs({ data, locale }: { data: Spec; locale: Locale })
         </p>
       )}
 
-      <dl className="grid gap-x-8 sm:grid-cols-[minmax(0,auto)_minmax(0,1fr)]">
+      <dl className="grid gap-x-12 md:grid-cols-2">
         {data.items.map((item, i) => {
           const newRole = i > 0 && item.role !== data.items[i - 1].role;
           const flagged = item.status === 'ambiguous' || item.status === 'conflict';
@@ -93,12 +98,12 @@ export function EquipmentSpecs({ data, locale }: { data: Spec; locale: Locale })
               key={`${item.property}-${i}`}
               data-equipment-row
               {...(newRole && { 'data-new-role': '' })}
-              className={`col-span-full grid gap-y-1 py-2 sm:grid-cols-subgrid ${newRole ? 'border-t border-border' : ''}`}
+              className="grid min-w-0 grid-cols-[minmax(0,auto)_minmax(0,1fr)] gap-x-4 border-b border-border py-2.5"
             >
-              <dt className="text-sm font-semibold">{item.label}</dt>
-              <dd className="flex min-w-0 flex-col gap-1 text-sm">
-                <span className="flex flex-wrap items-baseline gap-x-2">
-                  <bdi className="wrap-break-word">{item.value_formatted}</bdi>
+              <dt className="text-sm text-muted">{item.label}</dt>
+              <dd className="flex min-w-0 flex-col items-end gap-1 text-end text-sm">
+                <span className="flex flex-wrap items-baseline justify-end gap-x-2">
+                  <bdi className="font-semibold wrap-break-word">{item.value_formatted}</bdi>
                   {item.precision_label && <span className="text-muted">· {item.precision_label}</span>}
                   {flagged && (
                     <span

@@ -59,7 +59,8 @@ export function SimilarBikes({ data, locale }: { data: SimilarBuilds; locale: Lo
 
   return (
     <section id="similar" className="flex flex-col gap-4 scroll-mt-16">
-      <h2 className="font-mono text-xs font-semibold uppercase tracking-widest opacity-60">{t.title}</h2>
+      {/* Le style de titre commun aux blocs de la fiche (web #65, `SECTION_TITLE` de `BuildDetails`). */}
+      <h2 className="text-2xl font-bold tracking-tight">{t.title}</h2>
 
       <p className="text-sm">{data.method.title}</p>
       <details className="text-sm">
