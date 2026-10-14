@@ -109,8 +109,15 @@ et la liste des composants élargissait la fiche jusqu'au mot le plus long (Vado
 servi par l'API, page portée à 423 px dès 390 px). Règles : une colonne de grille qui reçoit des données prend
 `minmax(0, 1fr)` et ses textes se coupent (`wrap-break-word`) — une donnée ne fixe jamais la largeur de la page ; l'en-tête
 resserre ses espacements sous 380 px et ne passe à la ligne qu'en dernier recours (une ligne dès 360 px, deux en dessous en
-anglais). Garde : `tests/e2e/reflow.spec.ts` (accueil, catalogue, bikefinder, comparateur, deux fiches ; AR et EN ; 320 et
+anglais). Garde : `tests/e2e/reflow.spec.ts` (accueil, catalogue, bikefinder, comparateur, trois fiches ; AR et EN ; 320 et
 390 px ; un mot de 120 caractères injecté dans la liste ; en-tête sur une ligne à 360 et 390 px).
+**Précisé le 14 octobre 2026 — les noms de taille.** Scott nomme les tailles des Gambler 10, 20 et RC
+« L_HIGH_BB_SETTING_POSITION_DE_BOITIER_HAUTE » (44 à 48 caractères sans espace) : relevé sur les planches du lot Scott, la fiche du
+Gambler 10 mesurait 428 px à 390 px (boutons de taille), et la colonne des libellés des composants, élargie par ces noms, laissait 0 px aux
+descriptions à 320 px et 24 px à 390 px — sans défilement, donc sans test rouge. Un bouton de taille ne dépasse jamais sa rangée
+(`max-w-full`) et son nom s'y coupe (`SizePicker`) ; l'étiquette de taille sous un libellé ne compte pas dans la largeur de sa colonne
+(`contain-inline-size`) et s'y coupe (`ComponentList`). Garde : la fiche du Gambler 10 parmi les pages, et un nom de 108 caractères injecté
+dans un bouton et dans une étiquette réelle du Talon 1 (la colonne des descriptions garde sa largeur).
 
 ## Routes — pages marque et catégorie (2 septembre 2026)
 

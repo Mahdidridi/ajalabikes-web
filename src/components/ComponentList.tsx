@@ -7,6 +7,10 @@ import type { Build } from '@/lib/api';
  * La colonne des descriptions peut rétrécir (`minmax(0, 1fr)`) et un mot sans espace s'y coupe : sinon la fiche
  * s'élargissait jusqu'au mot le plus long — mesuré le 11 octobre 2026, un lien brut de 64 caractères portait la fiche
  * du Vado à 423 px, et `80mm(27.5")/100mm(29")` celle du Talon au-delà de 320 px.
+ *
+ * L'étiquette de taille sous un libellé ne compte pas dans la largeur de sa colonne (`contain-inline-size`) et s'y
+ * coupe : relevé le 14 octobre 2026, Scott nomme les tailles des Gambler « L_HIGH_BB_SETTING_POSITION_DE_BOITIER_HAUTE »
+ * et la colonne des libellés prenait toute la largeur — descriptions du Gambler 10 à 0 px à 320 px, 24 px à 390 px.
  */
 export function ComponentList({ components }: { components: Build['components'] }) {
   return (
@@ -16,7 +20,7 @@ export function ComponentList({ components }: { components: Build['components'] 
           <dt className="border-b border-neutral-200 py-2 pe-3 opacity-70 dark:border-neutral-800">
             {component.label}
             {(component.size_label || component.size_note) && (
-              <span className="mt-1 block text-xs">
+              <span className="mt-1 block text-xs contain-inline-size wrap-break-word">
                 <bdi>{component.size_label ?? component.size_note}</bdi>
               </span>
             )}
