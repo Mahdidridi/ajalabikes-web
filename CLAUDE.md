@@ -639,9 +639,14 @@ avec la photo annotée, **jamais la pleine largeur** (une proposition pleine lar
   `#geometry` → `#similar` → fraîcheur. Les `id` et `scroll-mt-16` des sections ne changent pas.
 - **Barre d'ancres** (`src/components/SectionNav.tsx`, Client Component — le seul JavaScript de la décision) : **sous la photo**,
   collante (`sticky top-0`), **seulement des ancres** — `equipment.spec.ts` et `similar.spec.ts` parcourent `main nav a` et attendent un
-  `h2` sous chaque cible ; un lien « Comparer » y casserait les tests, à décider plus tard. Un `IntersectionObserver` souligne le bloc
-  courant (`aria-current="true"` : le bloc dont la hauteur visible est la plus grande dans la bande qui va de 64 px sous le bord haut à
-  66 % de l'écran) ; sans JavaScript, de simples liens. **Une seule ligne**, qui défile en largeur dans sa propre boîte à 320 px : la
+  `h2` sous chaque cible ; un lien « Comparer » y casserait les tests, à décider plus tard. **Le bloc courant** (`aria-current="true"`)
+  est le dernier dont la section commence au-dessus de la ligne de lecture (66 px, juste sous la barre : là où `scroll-mt-16` pose un
+  titre après un saut d'ancre), et le dernier bloc quand la page est au bout — sauf si un bloc vient d'être posé sous la barre. Un
+  clic sur la barre **épingle** le bloc choisi jusqu'au prochain geste de lecture (molette, toucher, clavier) : le dernier bloc d'une
+  page courte ne monte pas toujours jusqu'à la barre. Relevé par le contrôle de production du 14 octobre 2026, sur le Scale 600 (une
+  taille, géométrie courte, vélos proches plus hauts qu'elle) : la première règle, « le bloc le plus visible », soulignait le bloc
+  SUIVANT dès que l'écran faisait 900 px de haut — le projet desktop des tests n'en fait que 720, d'où des tests à hauteur fixée.
+  Sans JavaScript, de simples liens. **Une seule ligne**, qui défile en largeur dans sa propre boîte à 320 px : la
   page ne s'élargit pas (règle du 11 octobre), et la barre reste sous les 64 px de `scroll-mt-16` — deux rangées de `text-sm` les
   dépasseraient. Défilement doux : `html { scroll-behavior: smooth }` sous `prefers-reduced-motion: no-preference` (`globals.css`).
 - **Retirés** : le bloc « Specs clés » (`#highlights` ; `build.highlights` n'est plus rendu, il répétait les notes de la photo et les
