@@ -634,6 +634,10 @@ de prod 548/548 ; le fondateur garde affichées, comme l'API les sert, les 4 fic
 Décision du fondateur du 14 octobre 2026, validée sur une maquette arabe de la fiche du Giant Talon 1, d'après son propre croquis
 (« la fiche éditoriale ») : le bas de la fiche se lit **du résumé vérifié au détail**, **dans la colonne centrale** — 896 px, 1264 px
 avec la photo annotée, **jamais la pleine largeur** (une proposition pleine largeur a été refusée le même soir).
+**En production le 14 octobre 2026 au soir** : PR #67 (`main` `f02182a`, release `20261014175535`, e2e complète 676/676 avant fusion), puis
+PR #68 (`main` `20be075`, release `20261014184508`, correctif du bloc courant, e2e 684/684). Contrôles de production en lecture seule :
+HTTP 200 contrôles sur 20 pages des cinq marques (ordre des sections, ancres, ni specs clés ni silhouette, `noindex`), navigateur 12 pages
+à 390 et 1280 px (largeur, barre sous la galerie, barre collée, bloc courant) sans écart après #68.
 
 - **Ordre** (`src/components/BuildDetails.tsx`) : photo annotée, inchangée → barre d'ancres → `#equipment` → `#components` →
   `#geometry` → `#similar` → fraîcheur. Les `id` et `scroll-mt-16` des sections ne changent pas.
