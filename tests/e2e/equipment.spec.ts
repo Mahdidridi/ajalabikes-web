@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import type { EquipmentItem, Locale } from '@/lib/api';
 import { readBuild } from './helpers/catalog-api';
+import { settled } from './helpers/scroll';
 
 /**
  * Le bloc « Équipements » sur les fiches RÉELLES (web #36). Les attentes se lisent dans l'API au moment du test, jamais
@@ -114,6 +115,8 @@ for (const locale of LOCALES) {
 
     for (const href of hrefs) {
       await bar.locator(`a[href="${href}"]`).click();
+      // Le défilement est doux depuis web #65 : on mesure une fois la page immobile.
+      await settled(page);
       const title = page.locator(`${href} h2`).first();
       await expect(title, href).toBeInViewport();
       const barBox = (await bar.boundingBox())!;
