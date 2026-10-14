@@ -19,6 +19,10 @@ export type HotspotPoint = HotspotImage['points'][number];
 /** Une carte de catalogue. Le type vient du contrat, jamais reecrit a la main. */
 export type BuildCard = components['schemas']['BuildCardResource'];
 
+/** Les equipements publies par le constructeur, avec leurs preuves (web #36), normalises par Laravel. Types generes. */
+export type EquipmentSpecs = components['schemas']['EquipmentProjectionResource'];
+export type EquipmentItem = EquipmentSpecs['items'][number];
+
 /** Les velos proches d'une fiche (web #35), calcules par Laravel. Types generes, jamais reecrits a la main. */
 export type SimilarBuilds = components['schemas']['SimilarBuildsResource'];
 export type SimilarBuild = SimilarBuilds['items'][number];

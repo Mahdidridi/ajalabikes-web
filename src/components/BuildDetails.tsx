@@ -2,6 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { BikeGallery, type GalleryAnnotation } from '@/components/BikeGallery';
 import { ComponentList } from '@/components/ComponentList';
+import { EquipmentSpecs, equipmentTitle, hasEquipment } from '@/components/EquipmentSpecs';
 import { JsonLd } from '@/components/JsonLd';
 import { SimilarBikes, hasSimilar, similarTitle } from '@/components/SimilarBikes';
 import { SizePicker } from '@/components/SizePicker';
@@ -140,6 +141,11 @@ export function BuildDetails({
         <a href="#geometry" className="opacity-60 transition hover:opacity-100">
           {t.geometry}
         </a>
+        {hasEquipment(build.equipment_specs) && (
+          <a href="#equipment" className="opacity-60 transition hover:opacity-100">
+            {equipmentTitle(locale)}
+          </a>
+        )}
         <a href="#components" className="opacity-60 transition hover:opacity-100">
           {t.components}
         </a>
@@ -215,6 +221,10 @@ export function BuildDetails({
           </figure>
         )}
       </section>
+
+      {/* Les valeurs normalisées par Laravel, avec leur preuve (web #36). La liste brute du constructeur reste
+          dessous, dans « Components » : les deux blocs coexistent. Sans valeur courante, ni bloc ni ancre. */}
+      <EquipmentSpecs data={build.equipment_specs} locale={locale} />
 
       <section id="components" className="flex flex-col gap-4 scroll-mt-16">
         <h2 className="font-mono text-xs font-semibold uppercase tracking-widest opacity-60">
