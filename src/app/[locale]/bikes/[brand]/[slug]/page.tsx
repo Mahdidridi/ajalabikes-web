@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { BuildDetails } from '@/components/BuildDetails';
 import { headAnnotation } from '@/components/hotspots/annotation';
-import { getBuild, isLocale } from '@/lib/api';
+import { getBuild, getSimilarBuilds, isLocale } from '@/lib/api';
 import { bikeDescription, bikeTitle, seoFor } from '@/lib/seo';
 
 /**
@@ -62,10 +62,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 /**
+ * Les vélos proches de la fiche (web #35). Hors de `resolve()` : ni `generateMetadata` ni le JSON-LD n'en dépendent.
+ * Ne rejette jamais — `getSimilarBuilds` rend `null` sur toute panne : la fiche ne tombe pas à cause d'un bloc secondaire.
+ */
+async function similarFor(params: Props['params']) {
+  const { locale, brand, slug } = await params;
+  return isLocale(locale) ? getSimilarBuilds(locale, brand, slug) : null;
+}
+
+/**
  * Le corps de la fiche vit dans `BuildDetails`, partagé avec l'aperçu du pilote web #49. La photo
  * de tête porte ses notes dessinées quand l'API les sert (web #52) ; sinon, la galerie ordinaire.
  */
 export default async function BuildPage({ params }: Props) {
+  // Les deux lectures partent avant le premier `await` sur une réponse : le bloc ne retarde pas la fiche.
+  const similar = similarFor(params);
   const { locale, build } = await resolve(params);
   const annotated = headAnnotation({
     name: `${build.brand.slug}/${build.slug}`,
@@ -74,5 +85,5 @@ export default async function BuildPage({ params }: Props) {
     locale,
   });
 
-  return <BuildDetails build={build} locale={locale} annotated={annotated} />;
+  return <BuildDetails build={build} locale={locale} annotated={annotated} similar={await similar} />;
 }

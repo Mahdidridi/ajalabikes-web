@@ -3,8 +3,9 @@ import Link from 'next/link';
 import { BikeGallery, type GalleryAnnotation } from '@/components/BikeGallery';
 import { ComponentList } from '@/components/ComponentList';
 import { JsonLd } from '@/components/JsonLd';
+import { SimilarBikes, hasSimilar, similarTitle } from '@/components/SimilarBikes';
 import { SizePicker } from '@/components/SizePicker';
-import type { Build, Locale } from '@/lib/api';
+import type { Build, Locale, SimilarBuilds } from '@/lib/api';
 import { sizeCatalogue } from '@/lib/images';
 import { buildBreadcrumbJsonLd, productJsonLd } from '@/lib/jsonld';
 import { brandPath } from '@/lib/routes';
@@ -56,15 +57,20 @@ const COPY = {
  * par l'API sur la fiche publique (web #52), notes saisies sur l'aperçu du pilote. La fiche
  * s'élargit alors à 1264 px pour laisser aux notes leurs marges autour de la photo (décision du
  * fondateur du 12 octobre 2026) ; sans notes, elle garde ses 896 px.
+ *
+ * `similar` : les vélos proches servis par l'API (web #35), lus par la page publique en même temps que la fiche.
+ * L'aperçu du pilote ne les passe pas : il reste identique. Sans vélo proche, ni bloc ni ancre.
  */
 export function BuildDetails({
   build,
   locale,
   annotated,
+  similar,
 }: {
   build: Build;
   locale: Locale;
   annotated?: GalleryAnnotation;
+  similar?: SimilarBuilds | null;
 }) {
   const t = COPY[locale];
   // Le contrat marque les lignes nullable (filtrage cote API) : on ne garde
@@ -120,8 +126,14 @@ export function BuildDetails({
       </header>
 
       {/* Ancres de fiche (structure 99 Spokes) : la page est longue, le
-          lecteur saute a la section qui l'interesse. Liens purs, zero JS. */}
-      <nav className="sticky top-0 z-10 -mx-6 flex gap-5 border-b border-border bg-background px-6 py-2 font-mono text-xs uppercase tracking-widest">
+          lecteur saute a la section qui l'interesse. Liens purs, zero JS.
+          `flex-wrap` : avec l'ancre des velos proches (web #35), quatre liens ne
+          tiennent plus sur une ligne a 320 px en anglais (336 px mesures) ; la
+          barre passe a la ligne plutot que d'elargir la page (regle du 11 octobre).
+          `gap-y-2` : 24 px entre deux rangees de liens, la cible tactile minimale.
+          Sur deux rangees, la barre mesure 57 px (Pixel 7, anglais) : les sections
+          gardent `scroll-mt-16` (64 px), sinon le saut cachait leur titre dessous. */}
+      <nav className="sticky top-0 z-10 -mx-6 flex flex-wrap gap-x-5 gap-y-2 border-b border-border bg-background px-6 py-2 font-mono text-xs uppercase tracking-widest">
         <a href="#highlights" className="opacity-60 transition hover:opacity-100">
           {t.highlights}
         </a>
@@ -131,6 +143,11 @@ export function BuildDetails({
         <a href="#components" className="opacity-60 transition hover:opacity-100">
           {t.components}
         </a>
+        {hasSimilar(similar) && (
+          <a href="#similar" className="opacity-60 transition hover:opacity-100">
+            {similarTitle(locale)}
+          </a>
+        )}
       </nav>
 
       <BikeGallery
@@ -149,7 +166,7 @@ export function BuildDetails({
       />
 
       {highlights.length > 0 && (
-        <section id="highlights" className="flex flex-col gap-3 scroll-mt-12">
+        <section id="highlights" className="flex flex-col gap-3 scroll-mt-16">
           <h2 className="font-mono text-xs font-semibold uppercase tracking-widest opacity-60">
             {t.highlights}
           </h2>
@@ -164,7 +181,7 @@ export function BuildDetails({
         </section>
       )}
 
-      <section id="geometry" className="flex flex-col gap-4 scroll-mt-12">
+      <section id="geometry" className="flex flex-col gap-4 scroll-mt-16">
         <h2 className="font-mono text-xs font-semibold uppercase tracking-widest opacity-60">
           {t.geometry}
         </h2>
@@ -199,12 +216,14 @@ export function BuildDetails({
         )}
       </section>
 
-      <section id="components" className="flex flex-col gap-4 scroll-mt-12">
+      <section id="components" className="flex flex-col gap-4 scroll-mt-16">
         <h2 className="font-mono text-xs font-semibold uppercase tracking-widest opacity-60">
           {t.components}
         </h2>
         <ComponentList components={build.components} />
       </section>
+
+      {similar && <SimilarBikes data={similar} locale={locale} />}
 
       {/*
        * Le libelle formate par Laravel, jamais `last_changed_at` : depuis
