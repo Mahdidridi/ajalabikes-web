@@ -83,19 +83,14 @@ test('la galerie suit le sens de lecture', async ({ page }) => {
   expect(a!.x).toBeGreaterThan(b!.x);
 });
 
-test('le schema de geometrie vit pres du tableau, pas dans la galerie', async ({ page }) => {
-  await page.goto(SPECIALIZED);
+test('aucune image de constructeur sous la geometrie (decision du 14 octobre 2026, web #65)', async ({ page }) => {
+  // Specialized servait dans `geometry_chart` une silhouette grise sans aucune cote : elle n'est plus affichee
+  // (decision du 13 septembre 2026, silhouettes et placeholders exclus) ; Trek n'en a jamais eu. Le champ reste
+  // dans le contrat, pour le document officiel de web #30.
+  for (const path of [SPECIALIZED, TREK_EN]) {
+    await page.goto(path);
 
-  const schema = page.getByRole('img', { name: 'Specialized Allez Elite' });
-  // Le schema porte le meme alt que les photos produit : on le distingue par
-  // sa place, sous le titre dedie.
-  await expect(page.getByText('Geometry chart')).toBeVisible();
-  await expect(schema.last()).toBeVisible();
-});
-
-test('la fiche sans schema de geometrie n affiche pas la section', async ({ page }) => {
-  // Trek n'en publie pas. Une section vide serait pire qu'absente.
-  await page.goto(TREK_EN);
-
-  await expect(page.getByText('Geometry chart')).toHaveCount(0);
+    await expect(page.getByText('Geometry chart')).toHaveCount(0);
+    await expect(page.locator('#geometry img')).toHaveCount(0);
+  }
 });

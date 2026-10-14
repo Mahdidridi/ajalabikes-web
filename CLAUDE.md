@@ -556,7 +556,8 @@ l'ordre des cartes, pas leur affichage). Chantier lancé le 14 octobre, sur son 
 **En production le 14 octobre 2026** (PR #58, `main` `ba9a8ec`, release `20261014083707`) : e2e complète 558/558 avant fusion,
 contrôles de prod 106/106.
 
-- **Où** : `<section id="similar">` après `#components`, avant le pied de fraîcheur (`src/components/SimilarBikes.tsx`, Server
+- **Où** : `<section id="similar">` en dernier bloc — après `#geometry` depuis le 14 octobre 2026 au soir (web #65 ; auparavant après
+  `#components`) —, avant le pied de fraîcheur (`src/components/SimilarBikes.tsx`, Server
   Component, **zéro JavaScript** : les deux replis sont des `<details>` natifs). Titre `h2`, `method.title`, critères repliés sous
   « How we choose », `msrp_disclaimer` une seule fois ; 4 cartes, les suivantes sous « Show all (N) » (N = `total`, chiffres
   latins). Chaque carte est le `BikeCard` du catalogue en `h3` (prop `headingLevel`, défaut `h2` : `bidi.spec.ts` en dépend) ;
@@ -598,16 +599,19 @@ appel : la donnée arrive avec `getBuild()`. Contrat vérifié ce jour : types r
 **En production le 14 octobre 2026** (PR #59, `main` `2cfd47c`, release `20261014093858`) : e2e complète 622/622 avant fusion, contrôles
 de prod 548/548 ; le fondateur garde affichées, comme l'API les sert, les 4 fiches Trek à une seule valeur (Marlin 4 à 7 Gen 3).
 
-- **Où** : `<section id="equipment">` entre `#geometry` et `#components` (`src/components/EquipmentSpecs.tsx`, Server Component, **zéro
-  JavaScript**). `ComponentList` reste dessous, inchangé : le premier bloc donne les valeurs normalisées, le second la liste brute.
+- **Où** : `<section id="equipment">`, **premier bloc sous la barre depuis le 14 octobre 2026** (web #65 ; auparavant entre `#geometry` et
+  `#components`) (`src/components/EquipmentSpecs.tsx`, Server Component, **zéro JavaScript**). `ComponentList` suit, inchangé : le premier
+  bloc donne les valeurs normalisées, le second la liste brute.
 - **Règle unique** `hasEquipment()` : le bloc ET son ancre `#equipment` n'existent que pour une publication `current` avec au moins une
   valeur (`stale`, `unavailable` ou 0 valeur : ni titre, ni ancre).
 - **En tête** : `coverage.label`, « Checked: {date} » (`checked_at_formatted`, qui dit lui-même « date non renseignée » quand il le faut),
   lien « Manufacturer page » vers `source_url` (`target="_blank"`, `rel="nofollow noopener noreferrer"`), et la condition commune
   (`shared_conditions_formatted`, Canyon « taille M ») une seule fois — alors jamais par ligne.
-- **Liste** : `<dl>` dans l'ordre servi, lignes en `grid-cols-subgrid` ; un filet sans libellé quand `role` change (pure mise en page, la
-  donnée arrive groupée par rôle). Valeur en `<bdi>`, `precision_label` après « · », `conditions_formatted` en petit, badge `status_label`
-  pour `ambiguous` / `conflict` — les candidats restent ceux de `value_formatted`, le site n'en choisit aucun.
+- **Liste** : `<dl>` dans l'ordre servi — depuis web #65 en **deux colonnes** (`md:grid-cols-2`, une seule sous `md`), chaque ligne avec
+  son libellé au début et sa valeur à la fin ; `data-new-role` est posé quand `role` change (pure mise en page, la donnée arrive groupée
+  par rôle ; le filet visuel a disparu avec les deux colonnes). Valeur en `<bdi>`, `precision_label` après « · », `conditions_formatted`
+  en petit, badge `status_label` pour `ambiguous` / `conflict` — les candidats restent ceux de `value_formatted`, le site n'en choisit
+  aucun.
 - **Preuves** repliées sous « Source text » (`<details>` natif) : extrait entre guillemets, en `<bdi>` (texte brut, échappé par React, jamais
   `dangerouslySetInnerHTML`), **puis l'unité d'origine** (décision du jour, hors issue : le poids Canyon a pour preuve « 15.74 » en `lbs` ;
   sans l'unité, « 7.14 kg » à côté de « 15.74 » passerait pour une erreur — la valeur brute reste visible à côté de la normalisée), la
@@ -618,12 +622,42 @@ de prod 548/548 ; le fondateur garde affichées, comme l'API les sert, les 4 fic
   montre aussi le bloc.
 - **Textes arabes validés tels quels par le fondateur (14 octobre 2026)** : « التجهيزات » (titre et ancre), « تاريخ التحقق: {date} », « صفحة الشركة المصنّعة »,
   « القيم المنشورة لـ: {…} », « نص المصدر ».
-- **Barre d'ancres à cinq liens** : deux rangées à 320 px (57 px mesurés, en anglais comme en arabe), sous les 64 px de
-  `scroll-mt-16` ; testé.
+- **Barre d'ancres** : depuis web #65, une seule ligne qui défile en largeur dans sa boîte à 320 px, sous les 64 px de `scroll-mt-16`
+  (voir « Structure de la fiche vélo ») ; testé.
 - **Tests** : `equipment-specs.spec.tsx` (composant seul, oracle des libellés : rien hors `current`, en-tête, condition commune, ordre,
   filets, badges, preuves et unité, « < » et « & » en texte, `<bdi>`) ; `equipment.spec.ts` (pages réelles, attentes lues dans l'API :
   `canyon/aeroad-cfr-axs`, `specialized/aethos-2-expert-shimano-ultegra-di2`, `specialized/chisel-hardtail` (ambigu), `giant/cypress-2`
   (conflit), `trek/madone-sl-6-gen-8` (aucune valeur), `scott/scale-920` (« & ») ; aucun défilement ; ancres à 320 px ; arabe).
+
+## Structure de la fiche vélo (web #65) — décision du 14 octobre 2026
+
+Décision du fondateur du 14 octobre 2026, validée sur une maquette arabe de la fiche du Giant Talon 1, d'après son propre croquis
+(« la fiche éditoriale ») : le bas de la fiche se lit **du résumé vérifié au détail**, **dans la colonne centrale** — 896 px, 1264 px
+avec la photo annotée, **jamais la pleine largeur** (une proposition pleine largeur a été refusée le même soir).
+
+- **Ordre** (`src/components/BuildDetails.tsx`) : photo annotée, inchangée → barre d'ancres → `#equipment` → `#components` →
+  `#geometry` → `#similar` → fraîcheur. Les `id` et `scroll-mt-16` des sections ne changent pas.
+- **Barre d'ancres** (`src/components/SectionNav.tsx`, Client Component — le seul JavaScript de la décision) : **sous la photo**,
+  collante (`sticky top-0`), **seulement des ancres** — `equipment.spec.ts` et `similar.spec.ts` parcourent `main nav a` et attendent un
+  `h2` sous chaque cible ; un lien « Comparer » y casserait les tests, à décider plus tard. Un `IntersectionObserver` souligne le bloc
+  courant (`aria-current="true"` : le bloc dont la hauteur visible est la plus grande dans la bande qui va de 64 px sous le bord haut à
+  66 % de l'écran) ; sans JavaScript, de simples liens. **Une seule ligne**, qui défile en largeur dans sa propre boîte à 320 px : la
+  page ne s'élargit pas (règle du 11 octobre), et la barre reste sous les 64 px de `scroll-mt-16` — deux rangées de `text-sm` les
+  dépasseraient. Défilement doux : `html { scroll-behavior: smooth }` sous `prefers-reduced-motion: no-preference` (`globals.css`).
+- **Retirés** : le bloc « Specs clés » (`#highlights` ; `build.highlights` n'est plus rendu, il répétait les notes de la photo et les
+  équipements) et la silhouette Specialized servie dans `geometry_chart` (205 fiches : une image grise sans aucune cote, dont 8
+  « image coming soon » ; décision du 13 septembre 2026, silhouettes et placeholders exclus ; le champ reste dans le contrat, pour le
+  document officiel de web #30).
+- **Titres** : `SECTION_TITLE` (`text-2xl font-bold tracking-tight`) pour les quatre blocs, `EquipmentSpecs` et `SimilarBikes` compris.
+- **Équipements en deux colonnes** : voir « Équipements sur la fiche » ; balisage interne et attributs `data-equipment-*` inchangés.
+- **Aucun changement d'API, aucun nouveau texte** : les libellés de la barre sont les titres des blocs (`equipmentTitle`, `similarTitle`,
+  `COPY.components`, `COPY.geometry`).
+- **Tests** : `build-structure.spec.ts` — `giant/talon-1` (annotée, équipements, vélo proche), `trek/fuel-mx-9-8-xt-gen-7` (aucune
+  valeur d'équipement : ni bloc ni ancre, premier bloc Composants), `scott/scale-600` (non annotée, 896 px), `specialized/allez-elite`
+  (plus d'image sous la géométrie), barre collée et bloc courant, deux colonnes à 1280 px et une à 390 px, 320 px sans défilement ;
+  `gallery.spec.ts` (absence d'image sous la géométrie sur Specialized et Trek).
+- **Étape 2 : web #66** — tableau de toutes les tailles, dessin de la taille choisie à gauche (même en arabe), cote surlignée au
+  survol, explications du glossaire, bascule valeur / « كما نشرتها الشركة » (remplace web #29).
 
 ## Budgets performance
 

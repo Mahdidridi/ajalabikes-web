@@ -7,6 +7,16 @@
  */
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
+/*
+ * Un clic sur la barre d'ancres de la fiche fait GLISSER la page jusqu'au bloc (décision du
+ * fondateur du 14 octobre 2026, web #65) — sauf pour qui a demandé moins d'animations.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
