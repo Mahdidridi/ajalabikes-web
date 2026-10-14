@@ -17,8 +17,19 @@ import { sizeCatalogue } from '@/lib/images';
  * le fichier). Sur un fond sombre, chaque Trek afficherait son rectangle
  * blanc ; la fenêtre blanche assumée est le seul rendu propre dans les deux
  * thèmes. `object-contain` : rogner couperait des roues.
+ *
+ * `headingLevel` : `h2` par défaut, quand la carte est un titre de la page (catalogue, collections) ; `h3` sous le
+ * `h2` d'une section (vélos proches de la fiche, web #35). Le défaut ne bouge pas : `bidi.spec.ts` en dépend.
  */
-export function BikeCard({ bike, locale }: { bike: BuildCard; locale: string }) {
+export function BikeCard({
+  bike,
+  locale,
+  headingLevel: Heading = 'h2',
+}: {
+  bike: BuildCard;
+  locale: string;
+  headingLevel?: 'h2' | 'h3';
+}) {
   const image = bike.image;
 
   return (
@@ -47,9 +58,9 @@ export function BikeCard({ bike, locale }: { bike: BuildCard; locale: string }) 
         <p className="text-xs text-muted">
           <bdi>{bike.brand.name}</bdi>
         </p>
-        <h2 className="text-[15px] font-semibold leading-snug text-balance">
+        <Heading className="text-[15px] font-semibold leading-snug text-balance">
           <bdi>{bike.model_name}</bdi>
-        </h2>
+        </Heading>
 
         <p className="text-xs text-muted">{bike.year_label}</p>
 

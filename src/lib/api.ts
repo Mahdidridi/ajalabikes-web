@@ -19,6 +19,13 @@ export type HotspotPoint = HotspotImage['points'][number];
 /** Une carte de catalogue. Le type vient du contrat, jamais reecrit a la main. */
 export type BuildCard = components['schemas']['BuildCardResource'];
 
+/** Les velos proches d'une fiche (web #35), calcules par Laravel. Types generes, jamais reecrits a la main. */
+export type SimilarBuilds = components['schemas']['SimilarBuildsResource'];
+export type SimilarBuild = SimilarBuilds['items'][number];
+
+type SimilarResponse =
+  operations['builds.similar']['responses'][200]['content']['application/json'];
+
 type ShowResponse =
   operations['builds.show']['responses'][200]['content']['application/json'];
 
@@ -110,6 +117,39 @@ export async function getBuild(
   const payload: ShowResponse = await res.json();
 
   return payload.data;
+}
+
+/**
+ * Les velos proches d'une fiche (web #35). Le bloc est SECONDAIRE : la fiche ne tombe jamais a cause de lui, c'est
+ * l'inverse de `getBuild`, qui leve. Un 404 (velo inconnu), toute autre reponse en erreur, une panne reseau ou un JSON
+ * illisible rendent `null` — hors 404, avec une ligne au journal du serveur qui dit laquelle.
+ *
+ * MEME TAG QUE LA FICHE (`build:{marque}:{slug}`), pas `all` : le webhook traite `all` par `revalidatePath`, aucune
+ * lecture ne porte ce tag. `ajala:similar:rebuild --apply` n'invalide que les fiches dont la liste change, et la fiche
+ * se re-rend avec son bloc. Limite connue : une fiche rendue pendant une panne de cet endpoint reste en cache sans le
+ * bloc jusqu'a la prochaine invalidation de son tag (au plus 24 h).
+ */
+export async function getSimilarBuilds(
+  locale: Locale,
+  brand: string,
+  slug: string,
+): Promise<SimilarBuilds | null> {
+  try {
+    const res = await fetch(`${BASE}/v1/${locale}/builds/${brand}/${slug}/similar`, cached([`build:${brand}:${slug}`]));
+
+    if (res.status === 404) return null;
+    if (!res.ok) {
+      console.error(`[similar] API ${res.status} sur ${brand}/${slug}`);
+      return null;
+    }
+
+    const payload: SimilarResponse = await res.json();
+
+    return payload.data;
+  } catch (error) {
+    console.error(`[similar] lecture impossible pour ${brand}/${slug}`, error);
+    return null;
+  }
 }
 
 /**

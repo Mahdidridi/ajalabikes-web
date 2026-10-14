@@ -1,5 +1,5 @@
 import { expect, type APIRequestContext } from '@playwright/test';
-import type { Build, CatalogPage, Locale } from '@/lib/api';
+import type { Build, CatalogPage, Locale, SimilarBuilds } from '@/lib/api';
 import type { operations } from '@/types/api';
 import { requiredApiBaseUrl } from './environment';
 
@@ -24,6 +24,20 @@ export async function readBuild(
   const response = await request.get(url, { headers: { Accept: 'application/json' } });
   expect(response.status(), `Fiche API requise : ${url}`).toBe(200);
   const payload: operations['builds.show']['responses'][200]['content']['application/json'] = await response.json();
+  return payload.data;
+}
+
+/** Les vélos proches d'une fiche, tels que l'API les sert (web #35) : l'oracle du bloc, jamais le code du site. */
+export async function readSimilar(
+  request: APIRequestContext,
+  locale: Locale,
+  brand: string,
+  slug: string,
+): Promise<SimilarBuilds> {
+  const url = `${requiredApiBaseUrl()}/v1/${locale}/builds/${encodeURIComponent(brand)}/${encodeURIComponent(slug)}/similar`;
+  const response = await request.get(url, { headers: { Accept: 'application/json' } });
+  expect(response.status(), `Vélos proches API requis : ${url}`).toBe(200);
+  const payload: operations['builds.similar']['responses'][200]['content']['application/json'] = await response.json();
   return payload.data;
 }
 
