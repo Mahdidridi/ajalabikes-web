@@ -33,6 +33,23 @@ const bar = (page: Page) => page.locator('main nav');
 /** La galerie est le premier `figure` de la fiche ; la photo annotée vit dedans. */
 const gallery = (page: Page) => page.locator('main > figure').first();
 
+/** Le défilement est doux (`scroll-behavior: smooth`) : on attend que la position se stabilise avant de lire. */
+async function settled(page: Page): Promise<void> {
+  await page.evaluate(() => new Promise<void>((done) => {
+    let last = -1;
+    let stable = 0;
+    const tick = () => {
+      const y = window.scrollY;
+      stable = y === last ? stable + 1 : 0;
+      last = y;
+      if (stable >= 8) done();
+      else setTimeout(tick, 50);
+    };
+    tick();
+  }));
+  await page.waitForTimeout(200);
+}
+
 async function hrefs(page: Page): Promise<string[]> {
   return bar(page).locator('a').evaluateAll((links) => links.map((a) => a.getAttribute('href') ?? ''));
 }
@@ -107,14 +124,38 @@ for (const locale of LOCALES) {
     await expect(page.locator('#geometry img')).toHaveCount(0);
   });
 
-  test(`${locale} : la barre reste collée en haut et souligne le bloc courant`, async ({ page }) => {
-    await page.goto(fiche(locale, ANNOTATED));
-    await page.locator('#geometry').evaluate((el) => el.scrollIntoView());
-    await page.waitForTimeout(400);
+  // Talon 1 : une géométrie longue (cinq tailles). Scale 600 : une géométrie COURTE (une taille), suivie d'un bloc de vélos
+  // proches plus haut qu'elle — relevé en production le 14 octobre 2026 : « le bloc le plus visible » soulignait alors le
+  // bloc suivant. Le bloc courant est le dernier dont le titre est passé sous la barre.
+  for (const bike of [ANNOTATED, PLAIN]) {
+    test(`${locale} : ${bike.slug} — la barre reste collée en haut et souligne le bloc où l’on est`, async ({ page }) => {
+      // 900 px de haut : l'écran où le défaut a été relevé (le projet desktop n'en fait que 720).
+      await page.setViewportSize({ width: 1280, height: 900 });
+      await page.goto(fiche(locale, bike));
+      await page.locator('#geometry').evaluate((el) => el.scrollIntoView());
+      await settled(page);
 
-    const barBox = (await bar(page).boundingBox())!;
-    expect(barBox.y, 'la barre est collée au bord haut').toBeLessThanOrEqual(1);
+      const barBox = (await bar(page).boundingBox())!;
+      expect(barBox.y, 'la barre est collée au bord haut').toBeLessThanOrEqual(1);
+      await expect(bar(page).locator('a[href="#geometry"]')).toHaveAttribute('aria-current', 'true');
+      await expect(bar(page).locator('a[aria-current="true"]')).toHaveCount(1);
+    });
+  }
+
+  test(`${locale} : un clic sur la barre souligne le bloc choisi, même quand le bloc suivant occupe plus d’écran`, async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto(fiche(locale, PLAIN));
+    // La géométrie du Scale 600 est courte : sous elle, les vélos proches remplissent le reste de l'écran.
+    await bar(page).locator('a[href="#geometry"]').click();
+    await settled(page);
+
     await expect(bar(page).locator('a[href="#geometry"]')).toHaveAttribute('aria-current', 'true');
+    await expect(bar(page).locator('a[aria-current="true"]')).toHaveCount(1);
+
+    // Le dernier bloc, en bas de page : il ne monte pas forcément jusqu'à la barre, il reste celui qu'on a demandé.
+    await bar(page).locator('a').last().click();
+    await settled(page);
+    await expect(bar(page).locator('a').last()).toHaveAttribute('aria-current', 'true');
     await expect(bar(page).locator('a[aria-current="true"]')).toHaveCount(1);
   });
 
