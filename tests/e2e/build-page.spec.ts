@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 // Trek a renomme la gamme en « Gen 7 » le 21 aout 2026 : meme velo (code
 // produit 81563), nouveau slug. L'ancien `fuel-mx-9-8-xt` n'existe plus.
@@ -6,11 +6,17 @@ const TREK = '/ar-sa/bikes/trek/fuel-mx-9-8-xt-gen-7-81563';
 const TREK_EN = '/en-sa/bikes/trek/fuel-mx-9-8-xt-gen-7-81563';
 const SPECIALIZED = '/en-sa/bikes/specialized/allez-elite';
 
+/**
+ * L'en-tete de la fiche : titre, millesime, MSRP. Depuis le bloc des velos proches (web #35), d'autres cartes de la
+ * page affichent aussi un millesime et un prix (« 2027 », « $5,999.99 ») : ce que la fiche dit d'ELLE-MEME se lit ici.
+ */
+const header = (page: Page) => page.locator('main > header');
+
 test('la fiche arabe est en RTL et affiche le reach en millimetres', async ({ page }) => {
   await page.goto(TREK);
 
   await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
-  await expect(page.getByRole('heading', { name: 'Fuel MX 9.8 XT' })).toBeVisible();
+  await expect(header(page).getByRole('heading', { name: 'Fuel MX 9.8 XT' })).toBeVisible();
 
   // Chiffres 0-9 et unite arabe, formates par Laravel et non par le front
   // (un seul systeme de chiffres sur la page, api #11).
@@ -37,9 +43,12 @@ test('un prix ne devient jamais zero', async ({ page }) => {
   // qu'aucun zero ne s'affiche a l'ecran, dans les deux systemes de chiffres.
   await page.goto(TREK);
 
-  await expect(page.getByText('5,999.99', { exact: false })).toBeVisible();
-  await expect(page.getByText('٠٫٠٠')).toHaveCount(0);
-  await expect(page.getByText('0.00')).toHaveCount(0);
+  await expect(header(page).getByText('5,999.99', { exact: false })).toBeVisible();
+  // Aucun montant nul nulle part, cartes des velos proches comprises : ces deux controles restent sur toute la page.
+  // Un zero ISOLE seulement (aucun chiffre ni separateur de milliers devant) : une carte affiche « 7,000.00 US$ »,
+  // un vrai prix rond, que la recherche d'une simple sous-chaine « 0.00 » prenait pour un zero (web #35).
+  await expect(page.getByText(/(?<![\d,٬٠-٩])٠٫٠٠/)).toHaveCount(0);
+  await expect(page.getByText(/(?<![\d,٬٠-٩])0\.00/)).toHaveCount(0);
 });
 
 test('une annee inconnue est declaree, pas masquee', async ({ page }) => {
@@ -53,7 +62,7 @@ test('une annee inconnue est declaree, pas masquee', async ({ page }) => {
 test('un millesime publie par la marque est affiche tel quel', async ({ page }) => {
   await page.goto(TREK_EN);
 
-  await expect(page.getByText('2027', { exact: true })).toBeVisible();
+  await expect(header(page).getByText('2027', { exact: true })).toBeVisible();
 });
 
 test('un prix present porte toujours son avertissement', async ({ page }) => {
