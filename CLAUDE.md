@@ -388,18 +388,31 @@ par lui sur un aperçu de la vraie page.
 La vraie photo de la fiche, intacte, avec autour des notes « de connaisseur » à l'esprit dessiné à la main (direction
 visuelle du 9 octobre, `../CLAUDE.md`). Spec : issue #49, réécrite le 10 octobre avec les décisions du fondateur.
 
-- **Aperçu derrière un drapeau** : `/{locale}/preview/hotspots/{talon|anthem|madone|checkpoint|vado}` rend 404 sans
+**Aperçu retiré le 14 octobre 2026 (phase 4.1 de web #52, décision du fondateur).** Les cinq fiches publiques ont été comparées à leurs
+aperçus ce jour-là. Le style est le même ; les points diffèrent : l'aperçu montrait l'amortisseur, la tige télescopique, les roues, le
+porte-bagages et le phare, que le registre de l'API ne couvre pas (notés côté API, « restes de l'API »). Décision : « Oui, retire
+l'aperçu ». Ont été supprimés :
+- la route `/{locale}/preview/hotspots/{bike}` et son drapeau `BIKE_HOTSPOT_PREVIEW` ;
+- `src/lib/hotspot-pilot.ts`, les notes saisies du pilote ;
+- `AccentPicker` ;
+- `playwright.hotspot-preview.config.ts` et `tests/preview` (le test pur de `bidi.ts` a rejoint `tests/e2e/bidi-runs.spec.ts`) ;
+- `scripts/hotspot-pilot-captures.mjs`.
+
+Restent, au service de la fiche publique : `BuildDetails`, `AnnotatedPhoto`, `bidi.ts`, `leader.ts` et `scene.ts`. Les puces
+ci-dessous gardent l'historique du pilote ; celles qui décrivent le composant valent toujours.
+
+- **Aperçu derrière un drapeau** *(retiré le 14 octobre 2026)* : `/{locale}/preview/hotspots/{talon|anthem|madone|checkpoint|vado}` rendait 404 sans
   `BIKE_HOTSPOT_PREVIEW=1`, avant toute lecture de paramètre ou de l'API ; `noindex` ; jamais lié. **Décision du fondateur
   du 11 octobre 2026 : l'aperçu est en ligne** (drapeau dans le `.env` de production, liens non publiés) pour qu'il le voie
   sur son téléphone — elle lève, pour ces cinq pages seulement, la règle du 10 octobre « les valeurs saisies pour le pilote ne
   se déploient pas » ; retirer le drapeau referme l'aperçu (404) sans redéployer. *Jusqu'au 12 octobre 2026*, les fiches
   publiques ne passaient pas par là et ne chargeaient ni le code ni les styles du pilote. **Depuis web #52, la fiche publique
   porte les notes que l'API sert, par le même composant** : voir « Notes dessinées sur la fiche publique » ci-dessous.
-- **`BuildDetails`** porte le corps de la fiche, partagé par la page publique et l'aperçu. `annotated` (`{ imageId, photo }`)
+- **`BuildDetails`** porte le corps de la fiche (partagé avec l'aperçu jusqu'au 14 octobre 2026). `annotated` (`{ imageId, photo }`)
   élargit la fiche à 1264 px pour laisser aux notes leurs marges (décision du fondateur du 12 octobre 2026). La composition
   est rendue par la page (`headAnnotation`) et passée en *slot* à `BikeGallery`, qui n'importe rien de `hotspots/` ; la clé
   n'est posée que si elle existe.
-- **Données : `src/lib/hotspot-pilot.ts`** — cinq vélos ; chaque point a `dot` (en % de la photo `detail`), `label` (en % de
+- **Données : `src/lib/hotspot-pilot.ts`** *(retiré le 14 octobre 2026)* — cinq vélos ; chaque point a `dot` (en % de la photo `detail`), `label` (en % de
   la scène, côté `left|right|top|bottom`), une ligne principale (marque + modèle + chiffre clé), le nom de la pièce et une note
   de connaisseur en EN et AR (explique, ne juge jamais), et ses **sources citées mot pour mot** (`equipment_specs`,
   `components[].description`, `sizes[].wheel_size`). Saisi ou servi se lit **à la source, jamais au point** (`isEntered`) :
@@ -437,40 +450,22 @@ visuelle du 9 octobre, `../CLAUDE.md`). Spec : issue #49, réécrite le 10 octob
   battery840 » (19 lignes en ligne, toutes Specialized). Un nombre suivi d'arabe ou d'un signe (« 27.5×2.4 », « 500مم ») ne mène à
   aucune lettre latine et reste à l'arabe.
   Image en erreur : aucun point, une alerte. Photo jamais retournée.
-- **`AccentPicker`** (aperçu seulement) : jaune, noir (en trait sous le texte), teinte de la catégorie, couleur libre,
-  surlignage ou trait ; écrit `--hotspot-accent` et `data-hotspot-accent-mode` sur `<html>`. **Couleur retenue par le
-  fondateur le 11 octobre 2026 : le jaune** (`--tone-butter`), sur la planche des trois couleurs, réglée dans `globals.css`
-  depuis le 12 octobre ; le sélecteur reste un outil de comparaison de l'aperçu.
-- **Tests** : `playwright.hotspot-preview.config.ts` (`tests/preview`, un worker, desktop + mobile, serveur local lancé à la
-  main, aucune purge) — `pilot-data` (sources contre l'API réelle, identité, photo différente), `flag` (404 sans drapeau,
-  200 et `noindex` avec), `bidi-runs` (découpe du
-  latin), `annotated` (cinq vélos AR/EN à 960, 1024 et 1440 px : notes hors photo, dans la scène, sans chevauchement ; à 320
-  et 390 px : panneau, Échap, hauteur constante, rien hors du panneau, toucher au point le plus proche ; `<bdi>` sans
-  ponctuation de phrase ni parenthèse orpheline, mesuré à l'écran ; thème sombre ; image bloquée ; sélecteur ; vignettes ;
-  focus ; alignement arabe).
-- **Captures** : `scripts/hotspot-pilot-captures.mjs [--accents] [vélos…]` écrit dans `HOTSPOT_CAPTURE_DIR`,
-  **obligatoirement hors du dépôt** (dépôt public, photos de constructeur) — en pratique
-  `../notes/design-references/hotspots-pilot/` ; `--accents` ajoute à 1440 px une capture par préréglage de couleur.
+- **`AccentPicker`** *(retiré le 14 octobre 2026)* : sélecteur de l'aperçu (jaune, noir en trait, teinte de la catégorie, couleur
+  libre). **Couleur retenue par le fondateur le 11 octobre 2026 : le jaune** (`--tone-butter`), sur la planche des trois couleurs,
+  réglée dans `globals.css` depuis le 12 octobre.
+- **Tests** *(ceux de l'aperçu sont retirés le 14 octobre 2026)* : `tests/preview` couvrait les données saisies, le drapeau et les
+  cinq aperçus ; la fiche publique a les siens (`tests/e2e/annotated-photo.spec.ts`, ci-dessous), et la découpe du latin de
+  `bidi.ts` est gardée par `tests/e2e/bidi-runs.spec.ts`.
+- **Captures** *(script retiré le 14 octobre 2026)* : les captures de photos de constructeur restent **obligatoirement hors du
+  dépôt** (dépôt public).
 - **Piège mesuré le 11 octobre** : la fiche publique déborde déjà en largeur, défaut de `main` hors du pilote. La liste des
   composants ne coupe pas un mot sans espace : à 320 px, `80mm(27.5")/100mm(29")` (Talon) suffit ; le Vado déborde dès
   390 px, à cause d'un lien Markdown brut de 64 caractères servi dans « Compliance Certification ». En émulation mobile et en
   arabe, ce débordement fait dériver les coordonnées des clics de Playwright. Corrigé par la PR #51, fusionnée et
   déployée le 11 octobre ; la donnée elle-même est signalée dans le scraper (#29) et l'API (#62).
 
-Recette (PowerShell, depuis le worktree) :
-
-```powershell
-$env:API_BASE_URL = 'https://api.darrajabikes.com/api'
-npm run build
-$env:BIKE_HOTSPOT_PREVIEW = '1'
-node node_modules/next/dist/bin/next start --hostname 127.0.0.1 --port 3149
-# autre terminal, même API_BASE_URL :
-$env:PLAYWRIGHT_BASE_URL = 'http://127.0.0.1:3149'
-npx playwright test -c playwright.hotspot-preview.config.ts
-```
-
-Lancer ce serveur depuis l'outil PowerShell : depuis Bash, `Start-Process` laisse le serveur tenir la sortie de Bash ouverte
-et la commande ne rend jamais la main.
+Un serveur Next local se lance depuis l'outil PowerShell : depuis Bash, `Start-Process` laisse le serveur tenir la sortie de
+Bash ouverte et la commande ne rend jamais la main.
 
 La généralisation est décidée le 11 octobre 2026 (issue #52) : voir la section suivante.
 
@@ -485,9 +480,9 @@ pilote affichent leurs notes à 1264 px ; toutes les autres fiches n'ont pas cha
 charge RSC). Preuves avant la fusion : suite e2e complète 494/494 (Next local contre l'API de production en lecture
 seule). Preuves après : 91 contrôles HTTP (HTML brut et charge RSC) et 28 pages en navigateur (ordinateur et mobile, arabe
 et anglais) sans écart de fond. Piège de contrôle : un script navigateur lancé contre le site compte des `requestfailed` sur
-`…?_rsc=…` à la fermeture de la page ; ce sont des préchargements de liens annulés, pas des erreurs du site. **Reste** :
-retirer la route d'aperçu `/{locale}/preview/hotspots/{bike}`, son drapeau `BIKE_HOTSPOT_PREVIEW`, `hotspot-pilot.ts`,
-`AccentPicker` et `tests/preview` (phase 4.1), après comparaison des cinq fiches avec leurs aperçus et accord du fondateur.
+`…?_rsc=…` à la fermeture de la page ; ce sont des préchargements de liens annulés, pas des erreurs du site. **Phase 4.1 faite le
+14 octobre 2026** : après la comparaison des cinq fiches avec leurs aperçus et sur l'accord du fondateur, la route d'aperçu, son
+drapeau, les notes saisies, le sélecteur et les tests de l'aperçu sont retirés (section précédente).
 
 - **Branchement** : la page de la fiche appelle `headAnnotation` (`src/components/hotspots/annotation.tsx`), qui rend
   `AnnotatedPhoto` — le composant de l'aperçu, qui ne lit plus que la forme de l'API. Pas de notes si l'API n'en sert pas
@@ -522,9 +517,8 @@ retirer la route d'aperçu `/{locale}/preview/hotspots/{bike}`, son drapeau `BIK
   aucune fiche publique n'en avait ; la plupart en auront (480 vélos sur 632 calculés sur la copie de la prod du 3 octobre).
   Next ne découpe pas le code d'un composant client importé par un composant serveur, et un import dynamique côté client
   risquait un flash sans style sur la photo de tête.
-- **Aperçu** : il garde ses notes saisies (`pilotHotspots` les met dans la forme de l'API) jusqu'à la comparaison des cinq
-  fiches publiques avec leurs aperçus (phase 4.1 de #52) ; ensuite la route, le drapeau, `hotspot-pilot.ts`, `AccentPicker`,
-  `tests/preview` et sa config sont retirés.
+- **Aperçu** : retiré le 14 octobre 2026 (phase 4.1 de #52), après la comparaison des cinq fiches publiques avec leurs aperçus
+  et sur l'accord du fondateur — route, drapeau, `hotspot-pilot.ts`, `AccentPicker`, `tests/preview` et sa config.
 - **Contrat** : `src/types/api.ts` est régénéré depuis l'`openapi.json` d'api #51 (`hotspot_image`, `HotspotImageResource`).
   **Ordre de mise en ligne : l'API d'abord** — une fiche servie sans la clé n'a simplement pas de notes.
 - **Tests** : `tests/e2e/annotated-photo.spec.ts` (16 tests, ordinateur et mobile), attentes lues dans l'API au moment du test.
@@ -545,7 +539,7 @@ $env:MEDIA_URL = 'https://api.darrajabikes.com/storage/media'; $env:DB_DATABASE 
 php artisan serve --host=127.0.0.1 --port=8051 --no-reload
 # Site (ce dépôt)
 $env:API_BASE_URL = 'http://127.0.0.1:8051/api'; npm run build
-$env:REVALIDATE_SECRET = 'secret-local-de-test'; $env:BIKE_HOTSPOT_PREVIEW = '1'
+$env:REVALIDATE_SECRET = 'secret-local-de-test'
 node node_modules/next/dist/bin/next start --hostname 127.0.0.1 --port 3152
 # Tests (mêmes API_BASE_URL et secret, PLAYWRIGHT_BASE_URL = 'http://127.0.0.1:3152')
 npx playwright test tests/e2e/annotated-photo.spec.ts

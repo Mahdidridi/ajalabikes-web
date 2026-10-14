@@ -49,18 +49,18 @@ const COPY = {
 } as const satisfies Record<Locale, Record<string, string>>;
 
 /**
- * Corps de la fiche vélo, extrait de la page (`[locale]/bikes/[brand]/[slug]`)
- * pour qu'une autre route puisse rendre la MEME fiche (aperçu du pilote web #49).
- * Le rendu public est inchangé : vérifié en comparant le HTML de six fiches
- * avant et après l'extraction (décision du 10 octobre 2026).
+ * Corps de la fiche vélo, extrait de la page (`[locale]/bikes/[brand]/[slug]`) le 10 octobre 2026
+ * pour l'aperçu du pilote web #49, retiré le 14 octobre 2026 (phase 4.1 de web #52) : la page
+ * publique est désormais sa seule route. Le rendu public n'avait pas changé à l'extraction (HTML de
+ * six fiches comparé avant et après).
  *
- * `annotated` : la photo de tête annotée (`headAnnotation`), composée par la page — notes servies
- * par l'API sur la fiche publique (web #52), notes saisies sur l'aperçu du pilote. La fiche
- * s'élargit alors à 1264 px pour laisser aux notes leurs marges autour de la photo (décision du
- * fondateur du 12 octobre 2026) ; sans notes, elle garde ses 896 px.
+ * `annotated` : la photo de tête annotée (`headAnnotation`), composée par la page avec les notes
+ * servies par l'API (web #52). La fiche s'élargit alors à 1264 px pour laisser aux notes leurs
+ * marges autour de la photo (décision du fondateur du 12 octobre 2026) ; sans notes, elle garde
+ * ses 896 px.
  *
  * `similar` : les vélos proches servis par l'API (web #35), lus par la page publique en même temps que la fiche.
- * L'aperçu du pilote ne les passe pas : il reste identique. Sans vélo proche, ni bloc ni ancre.
+ * Sans vélo proche, ni bloc ni ancre.
  */
 export function BuildDetails({
   build,
