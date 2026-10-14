@@ -672,6 +672,12 @@ HTTP 200 contrôles sur 20 pages des cinq marques (ordre des sections, ancres, n
 Étape 2 de la structure du 14 octobre 2026 ; elle réalise web #29 sous la forme décidée ce jour (le point 5 de #29, « image
 constructeur repliée », était caduc depuis le 13 septembre). **Aucun changement d'API, aucun nouveau texte** : le dessin et les
 repères par taille sont ceux d'api #40, le glossaire celui d'api #41, les libellés ceux du comparateur.
+**En production le 14 octobre 2026 au soir** (PR #70, `main` `ce60764`, release `20261014202407`) : suite e2e complète 734/734 puis
+733/734 sur le build final (le seul échec mesurait une ancre pendant le défilement doux ; tests d'ancres stabilisés par
+`tests/e2e/helpers/scroll.ts`), contrôles de production en lecture seule : HTTP sur 20 pages des cinq marques (tableau, lignes
+`data-row`, colonne choisie, bascule, dessin présent ou absent selon la fiche, valeur douteuse sur l'Enduro Comp, plus de lettre
+A, B, C, `noindex`), navigateur à 390 et 1280 px (largeur, dessin à gauche en arabe ou au-dessus, survol → repère, « ? » →
+explication, taille → colonne et dessin).
 
 - **Où** : `section#geometry`, `src/components/GeometryMatrix.tsx` (Client Component ; `SizePicker` et `GeometryTable` sont
   supprimés). Boutons de taille comme avant (`button[aria-pressed]` + `<span>` du libellé, césure : `reflow.spec.ts`) ; la
