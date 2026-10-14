@@ -399,7 +399,10 @@ l'aperçu ». Ont été supprimés :
 - `scripts/hotspot-pilot-captures.mjs`.
 
 Restent, au service de la fiche publique : `BuildDetails`, `AnnotatedPhoto`, `bidi.ts`, `leader.ts` et `scene.ts`. Les puces
-ci-dessous gardent l'historique du pilote ; celles qui décrivent le composant valent toujours.
+ci-dessous gardent l'historique du pilote ; celles qui décrivent le composant valent toujours. **En production le 14 octobre 2026**
+(PR #63, `main` `0f92f27`, release `20261014145210`, accord du fondateur ; e2e complète 650/650 avant fusion) : le drapeau est retiré
+du `.env` de production, et le contrôle en lecture seule trouve les cinq aperçus en 404 et les cinq fiches pilotes annotées, en arabe
+et en anglais.
 
 - **Aperçu derrière un drapeau** *(retiré le 14 octobre 2026)* : `/{locale}/preview/hotspots/{talon|anthem|madone|checkpoint|vado}` rendait 404 sans
   `BIKE_HOTSPOT_PREVIEW=1`, avant toute lecture de paramètre ou de l'API ; `noindex` ; jamais lié. **Décision du fondateur
