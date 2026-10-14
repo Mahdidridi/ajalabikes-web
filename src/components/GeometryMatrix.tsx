@@ -132,15 +132,16 @@ export function GeometryMatrix({
               <thead>
                 <tr className="border-b border-border">
                   {/* La colonne des cotes reste visible pendant que les tailles défilent : c'est elle qui donne le sens. */}
-                  <th scope="col" className="sticky start-0 z-10 bg-background p-2 text-start text-xs font-normal text-muted">
+                  <th scope="col" className="sticky start-0 z-10 min-w-32 bg-background p-2 text-start text-xs font-normal text-muted">
                     {labels.measure}
                   </th>
+                  {/* Une valeur tient sur une ligne : le tableau défile dans sa boîte, la page ne s'élargit pas. */}
                   {sizes.map((s, i) => (
                     <th
                       key={s.label}
                       scope="col"
                       {...(i === choisie && { 'data-selected': '' })}
-                      className={`p-2 text-center font-mono text-xs font-semibold ${i === choisie ? 'bg-surface' : 'text-muted'}`}
+                      className={`p-2 text-center font-mono text-xs font-semibold whitespace-nowrap ${i === choisie ? 'bg-surface' : 'text-muted'}`}
                     >
                       <bdi>{s.label}</bdi>
                     </th>
@@ -165,7 +166,7 @@ export function GeometryMatrix({
                     >
                       <th
                         scope="row"
-                        className={`sticky start-0 z-10 p-2 pe-3 text-start align-top text-xs font-medium ${
+                        className={`sticky start-0 z-10 min-w-32 p-2 pe-3 text-start align-top text-xs font-medium ${
                           estActive ? 'bg-surface' : 'bg-background'
                         }`}
                       >
@@ -208,7 +209,7 @@ export function GeometryMatrix({
                         <td
                           key={i}
                           {...(i === choisie && { 'data-selected': '' })}
-                          className={`p-2 text-center align-top font-mono tabular-nums ${i === choisie ? 'bg-surface font-semibold' : ''}`}
+                          className={`p-2 text-center align-top font-mono tabular-nums whitespace-nowrap ${i === choisie ? 'bg-surface font-semibold' : ''}`}
                         >
                           {cell === null ? (
                             <span className="text-muted">{labels.dash}</span>
