@@ -3,7 +3,7 @@ import type { EquipmentSpecs as Spec, Locale } from '@/lib/api';
 
 /**
  * Libellés d'interface seulement. Couverture, date, libellés des valeurs, statuts, conditions et preuves arrivent déjà
- * rédigés par Laravel dans la langue de la page. Arabe à valider par le fondateur (web #36).
+ * rédigés par Laravel dans la langue de la page. Arabe validé tel quel par le fondateur le 14 octobre 2026 (web #36).
  */
 const COPY = {
   'ar-sa': {
