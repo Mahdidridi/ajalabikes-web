@@ -25,7 +25,7 @@ export interface AnnotatedLabel {
 
 /** Ce que le serveur transmet à la composition (`annotation.tsx`) : tout est prêt à afficher. */
 export interface AnnotatedProps {
-  /** Nom de la composition, posé sur `data-annotated` : l'adresse du vélo, ou la clé du pilote sur l'aperçu. */
+  /** Nom de la composition, posé sur `data-annotated` : l'adresse du vélo. */
   name: string;
   image: Media;
   hotspots: HotspotImage;

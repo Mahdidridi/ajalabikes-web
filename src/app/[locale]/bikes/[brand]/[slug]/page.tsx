@@ -71,8 +71,8 @@ async function similarFor(params: Props['params']) {
 }
 
 /**
- * Le corps de la fiche vit dans `BuildDetails`, partagé avec l'aperçu du pilote web #49. La photo
- * de tête porte ses notes dessinées quand l'API les sert (web #52) ; sinon, la galerie ordinaire.
+ * Le corps de la fiche vit dans `BuildDetails`. La photo de tête porte ses notes dessinées quand
+ * l'API les sert (web #52) ; sinon, la galerie ordinaire.
  */
 export default async function BuildPage({ params }: Props) {
   // Les deux lectures partent avant le premier `await` sur une réponse : le bloc ne retarde pas la fiche.
