@@ -5,7 +5,7 @@ import type { Locale, SimilarBuild, SimilarBuilds } from '@/lib/api';
 
 /**
  * Libellés d'interface seulement. Le titre de la méthode, ses critères, l'avertissement MSRP et les raisons arrivent
- * déjà rédigés par Laravel dans la langue de la page. Arabe à valider par le fondateur (web #35).
+ * déjà rédigés par Laravel dans la langue de la page. Arabe validé par le fondateur à la mise en ligne, le 14 octobre 2026 (web #35).
  */
 const COPY = {
   'ar-sa': {

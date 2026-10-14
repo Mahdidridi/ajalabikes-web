@@ -547,6 +547,8 @@ npx playwright test tests/e2e/annotated-photo.spec.ts
 Décision du fondateur du 2 octobre 2026 (issue #35) : afficher sur la fiche les vélos proches que l'API calcule depuis le
 1er octobre (api #52, méthode `1-draft.2`, encore un brouillon tant que le jeu doré n'est pas calibré : le calibrage changera
 l'ordre des cartes, pas leur affichage). Chantier lancé le 14 octobre, sur son choix « Vélos proches ».
+**En production le 14 octobre 2026** (PR #58, `main` `ba9a8ec`, release `20261014083707`) : e2e complète 558/558 avant fusion,
+contrôles de prod 106/106.
 
 - **Où** : `<section id="similar">` après `#components`, avant le pied de fraîcheur (`src/components/SimilarBikes.tsx`, Server
   Component, **zéro JavaScript** : les deux replis sont des `<details>` natifs). Titre `h2`, `method.title`, critères repliés sous
@@ -570,7 +572,8 @@ l'ordre des cartes, pas leur affichage). Chantier lancé le 14 octobre, sur son 
   `reflow.spec.ts` rouge) ; la barre passe à la ligne, 24 px entre deux rangées (cible tactile minimale). Sur deux rangées elle
   mesure 57 px (Pixel 7, anglais) : **les quatre sections passent à `scroll-mt-16`** (64 px) — à 48 px, le saut cachait leur titre
   sous la barre collante.
-- **Textes arabes à valider par le fondateur** : « دراجات مشابهة » (titre et ancre), « كيف نختار », « عرض الكل ({n}) », « قارن ».
+- **Textes arabes validés par le fondateur à la mise en ligne (14 octobre 2026)** : « دراجات مشابهة » (titre et ancre), « كيف نختار »,
+  « عرض الكل ({n}) », « قارن ».
 - **Tests** : `api-query.spec.ts` (6 cas : adresse, tag, 404 silencieux, 503, 422, panne réseau, JSON illisible) ;
   `similar-bikes.spec.tsx` (composant seul, oracle des libellés en toutes lettres : 0 vélo → rien, 4 + « Show all (6) », raisons,
   liens, `<bdi>`, aucun lien dans un lien, `h2`/`h3`) ; `similar.spec.ts` (pages réelles, attentes lues dans l'API : la Madone
@@ -586,6 +589,8 @@ l'ordre des cartes, pas leur affichage). Chantier lancé le 14 octobre, sur son 
 Choix du fondateur du 14 octobre 2026, après la mise en ligne des vélos proches : afficher `equipment_specs`, que l'API sert dans la
 réponse de la fiche depuis le 1er octobre — des valeurs **publiées par le constructeur, avec leur preuve et leur date**. Aucun nouvel
 appel : la donnée arrive avec `getBuild()`. Contrat vérifié ce jour : types régénérés depuis l'API `main` = 0 différence.
+**En production le 14 octobre 2026** (PR #59, `main` `2cfd47c`, release `20261014093858`) : e2e complète 622/622 avant fusion, contrôles
+de prod 548/548 ; le fondateur garde affichées, comme l'API les sert, les 4 fiches Trek à une seule valeur (Marlin 4 à 7 Gen 3).
 
 - **Où** : `<section id="equipment">` entre `#geometry` et `#components` (`src/components/EquipmentSpecs.tsx`, Server Component, **zéro
   JavaScript**). `ComponentList` reste dessous, inchangé : le premier bloc donne les valeurs normalisées, le second la liste brute.
@@ -605,7 +610,7 @@ appel : la donnée arrive avec `getBuild()`. Contrat vérifié ce jour : types r
   ses 165 fiches mais une seule valeur sur 4 d'entre elles (« Maximum fork travel », ambigu, une compatibilité libellée comme telle). Aucun
   filtre par marque ici ; masquer Trek serait une décision d'API (`unavailable`). L'aperçu du pilote (même `BuildDetails`, même `build`)
   montre aussi le bloc.
-- **Textes arabes à valider par le fondateur** : « التجهيزات » (titre et ancre), « تاريخ التحقق: {date} », « صفحة الشركة المصنّعة »,
+- **Textes arabes validés tels quels par le fondateur (14 octobre 2026)** : « التجهيزات » (titre et ancre), « تاريخ التحقق: {date} », « صفحة الشركة المصنّعة »,
   « القيم المنشورة لـ: {…} », « نص المصدر ».
 - **Barre d'ancres à cinq liens** : deux rangées à 320 px (57 px mesurés, en anglais comme en arabe), sous les 64 px de
   `scroll-mt-16` ; testé.
