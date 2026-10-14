@@ -80,12 +80,15 @@ export function BuildDetails({
   annotated,
   similar,
   glossary,
+  canonicalPath,
 }: {
   build: Build;
   locale: Locale;
   annotated?: GalleryAnnotation;
   similar?: SimilarBuilds | null;
   glossary?: GeometryGlossary | null;
+  /** Le canonical de la page, sous la locale (web #15) — absent : l'adresse modèle. */
+  canonicalPath?: string;
 }) {
   const t = COPY[locale];
 
@@ -102,8 +105,8 @@ export function BuildDetails({
     <main className={`mx-auto flex w-full ${annotated ? 'max-w-[1264px]' : 'max-w-4xl'} flex-col gap-8 p-6`}>
       {/* Fil d'Ariane et produit pour Google — tout vient de `build`, sans
           offre ni prix : le MSRP US n'est pas un prix local. */}
-      <JsonLd data={buildBreadcrumbJsonLd(locale, build)} />
-      <JsonLd data={productJsonLd(locale, build)} />
+      <JsonLd data={buildBreadcrumbJsonLd(locale, build, canonicalPath)} />
+      <JsonLd data={productJsonLd(locale, build, canonicalPath)} />
       <header className="flex flex-wrap items-start justify-between gap-4 border-b-2 border-neutral-900 pb-4 dark:border-neutral-100">
         <div>
           <p className="font-mono text-xs uppercase tracking-widest opacity-60">
