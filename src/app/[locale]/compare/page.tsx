@@ -11,10 +11,14 @@ import {
   ApiValidationError, getCatalog, getCompare, getGeometryGlossary, isLocale,
   type BuildCard, type Locale,
 } from '@/lib/api';
+import { GEOMETRY_COPY } from '@/lib/geometry-copy';
 import { sizeCatalogue } from '@/lib/images';
 import { seoFor } from '@/lib/seo';
 
-/** Libellés d'interface uniquement — toute DONNÉE arrive déjà localisée de l'API. */
+/**
+ * Libellés d'interface uniquement — toute DONNÉE arrive déjà localisée de l'API. Ceux du dessin et du glossaire
+ * vivent dans `geometry-copy.ts`, partagés avec la fiche (web #66).
+ */
 const COPY = {
   'ar-sa': {
     title: 'قارن الدراجات',
@@ -27,24 +31,6 @@ const COPY = {
     size: 'اختر المقاس',
     diff_only: 'الاختلافات فقط',
     all_rows: 'كل الصفوف',
-    dash: '—',
-    geometry: {
-      title: 'الإطارات متراكبة',
-      drawn: 'الإطارات المرسومة: {bikes}.',
-      undrawable: '{bike}: لم يُرسم لأن {missing} غير منشورة.',
-      highlighted: 'القياس المميَّز: {label}.',
-      nothingToDraw: 'لا يمكن رسم أي إطار بالقياسات المنشورة.',
-      listSeparator: '، ',
-      size: 'مقاس {label}',
-      explain: 'شرح {label}',
-      highlight: 'إبراز {label} في الرسم',
-      notPublished: 'غير منشور',
-      doubtful: 'قيمة منشورة مشكوك فيها',
-      effect: 'الأثر:',
-      caveat: 'تحفُّظ:',
-      sourceLabels: 'تسميات الشركة المصنِّعة:',
-      related: 'قياسات مرتبطة:',
-    },
   },
   'en-sa': {
     title: 'Compare bikes',
@@ -57,24 +43,6 @@ const COPY = {
     size: 'Choose size',
     diff_only: 'Differences only',
     all_rows: 'All rows',
-    dash: '—',
-    geometry: {
-      title: 'Overlaid frames',
-      drawn: 'Frames drawn: {bikes}.',
-      undrawable: '{bike} is not drawn: {missing} not published.',
-      highlighted: 'Highlighted measurement: {label}.',
-      nothingToDraw: 'No frame can be drawn from the published measurements.',
-      listSeparator: ', ',
-      size: 'Size for {label}',
-      explain: 'Explain {label}',
-      highlight: 'Highlight {label} on the drawing',
-      notPublished: 'Not published',
-      doubtful: 'Published value looks wrong',
-      effect: 'Effect:',
-      caveat: 'Caveat:',
-      sourceLabels: 'Manufacturer labels:',
-      related: 'Related measurements:',
-    },
   },
 } as const;
 
@@ -104,6 +72,7 @@ export default async function ComparePage({ params, searchParams }: PageProps<'/
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
   const t = COPY[locale as Locale];
+  const g = GEOMETRY_COPY[locale as Locale];
 
   const q = await searchParams;
   const brut = typeof q.bikes === 'string' ? q.bikes : '';
@@ -285,7 +254,7 @@ export default async function ComparePage({ params, searchParams }: PageProps<'/
               section={section}
               columnCount={largeurTotale}
               canAdd={peutAjouter}
-              dash={t.dash}
+              dash={g.dash}
             />
           ))}
         </table>
@@ -296,7 +265,7 @@ export default async function ComparePage({ params, searchParams }: PageProps<'/
           section={geometrie}
           bikes={velosDeLaPlanche}
           glossary={glossaire}
-          labels={t.geometry}
+          labels={g}
         />
       )}
     </main>

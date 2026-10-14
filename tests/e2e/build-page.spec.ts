@@ -11,6 +11,8 @@ const SPECIALIZED = '/en-sa/bikes/specialized/allez-elite';
  * page affichent aussi un millesime et un prix (« 2027 », « $5,999.99 ») : ce que la fiche dit d'ELLE-MEME se lit ici.
  */
 const header = (page: Page) => page.locator('main > header');
+/** La cellule du reach dans la colonne de la taille choisie (web #66 : toutes les tailles sont dans le tableau). */
+const reach = (page: Page) => page.locator('#geometry tr[data-row="reach"] td[data-selected]');
 
 test('la fiche arabe est en RTL et affiche le reach en millimetres', async ({ page }) => {
   await page.goto(TREK);
@@ -19,17 +21,19 @@ test('la fiche arabe est en RTL et affiche le reach en millimetres', async ({ pa
   await expect(header(page).getByRole('heading', { name: 'Fuel MX 9.8 XT' })).toBeVisible();
 
   // Chiffres 0-9 et unite arabe, formates par Laravel et non par le front
-  // (un seul systeme de chiffres sur la page, api #11).
-  await expect(page.getByText('426 مم')).toBeVisible();
-  // La valeur telle que Trek la publie reste visible a cote.
-  await expect(page.getByText('42.6 cm')).toBeVisible();
+  // (un seul systeme de chiffres sur la page, api #11). Depuis web #66, la ligne
+  // porte toutes les tailles : on lit la colonne de la taille choisie.
+  await expect(reach(page)).toHaveText('426 مم');
+  // La valeur telle que Trek la publie reste accessible, par la bascule.
+  await page.locator('#geometry button[aria-pressed]', { hasText: 'كما نشرتها الشركة' }).click();
+  await expect(reach(page)).toHaveText('42.6 cm');
 });
 
 test('la meme fiche en anglais passe en LTR', async ({ page }) => {
   await page.goto(TREK_EN);
 
   await expect(page.locator('html')).toHaveAttribute('dir', 'ltr');
-  await expect(page.getByText('426 mm')).toBeVisible();
+  await expect(reach(page)).toHaveText('426 mm');
 });
 
 test('un prix ne devient jamais zero', async ({ page }) => {
@@ -73,31 +77,34 @@ test('un prix present porte toujours son avertissement', async ({ page }) => {
 });
 
 test('les deux marques affichent leur reach en millimetres', async ({ page }) => {
+  // Le critere du chantier, verifie a l'ecran : deux unites d'origine, une seule en sortie.
   await page.goto(TREK_EN);
-  const trek = await page.getByRole('row').filter({ hasText: 'Reach' }).first().innerText();
+  await expect(reach(page)).toContainText('mm');
+  await page.locator('#geometry button[aria-pressed]', { hasText: 'As published' }).click();
+  await expect(reach(page)).toHaveText('42.6 cm'); // publie en centimetres
 
   await page.goto(SPECIALIZED);
-  const spec = await page.getByRole('row').filter({ hasText: 'Reach' }).first().innerText();
-
-  // Le critere du chantier, verifie a l'ecran : deux unites d'origine, une seule en sortie.
-  expect(trek).toContain('mm');
-  expect(trek).toContain('42.6 cm'); // publie en centimetres
-  expect(spec).toContain('mm');
-  expect(spec).toContain('mm'); // publie deja en millimetres
+  await expect(reach(page)).toContainText('mm');
+  await page.locator('#geometry button[aria-pressed]', { hasText: 'As published' }).click();
+  await expect(reach(page)).toContainText('mm'); // publie deja en millimetres
 });
 
 test('changer de taille change la geometrie sans recharger', async ({ page }) => {
   await page.goto(TREK_EN);
 
-  await expect(page.getByText('426 mm')).toBeVisible();
+  await expect(reach(page)).toHaveText('426 mm');
+  const before = await page.locator('#geometry svg[role="img"]').getAttribute('viewBox');
   await page.getByRole('button', { name: 'XL', exact: false }).first().click();
-  await expect(page.getByText('507 mm')).toBeVisible();
+  await expect(page.locator('#geometry th[data-selected]')).toHaveText(/XL/);
+  await expect(reach(page)).toHaveText('507 mm');
+  await expect(page.locator('#geometry svg[role="img"]')).not.toHaveAttribute('viewBox', before!);
 });
 
 test('le mullet garde sa taille de roue brute', async ({ page }) => {
   await page.goto(TREK_EN);
 
-  await expect(page.getByText('29"/27.5"')).toBeVisible();
+  // Toutes les tailles sont dans le tableau (web #66) : la roue se lit dans la colonne de la taille choisie.
+  await expect(page.locator('#geometry tr[data-row="wheel_size"] td[data-selected]')).toHaveText('29"/27.5"');
 });
 
 test('un montage inconnu rend 404', async ({ page }) => {
