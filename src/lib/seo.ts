@@ -49,6 +49,12 @@ type SeoInput = {
   locale: Locale;
   /** Le chemin SOUS la locale, sans query : `''` (accueil), `/bikes`, `/bikes/trek/marlin-7`. */
   path: string;
+  /**
+   * Le canonical quand il n'est pas la page elle-même — absent : `path`. Seule l'adresse millésime de l'année en
+   * cours s'en sert (web #15, décision du 5 septembre 2026) : canonical vers l'adresse modèle. Les hreflang restent
+   * ceux de `path`, l'adresse servie dans chaque locale (« au même type d'adresse », issue #15).
+   */
+  canonicalPath?: string;
   /** Le titre de la page, sans le nom du site — absent : le nom du site seul. */
   title?: string;
   /** Absente : la signature de la marque, comme le layout. */
@@ -219,10 +225,10 @@ export function robotsRules(locked: boolean): MetadataRoute.Robots {
  * layout declare (fusion superficielle de Next) : `openGraph` et `robots`
  * sont donc emis en entier ici, jamais a moitie.
  */
-export function seoFor({ locale, path, title, description, indexable = true }: SeoInput): Metadata {
+export function seoFor({ locale, path, canonicalPath, title, description, indexable = true }: SeoInput): Metadata {
   const titreComplet = title ? `${title} · ${SITE_NAME}` : SITE_NAME;
   const resume = description ?? SIGNATURE[locale];
-  const canonical = absoluteUrl(locale, path);
+  const canonical = absoluteUrl(locale, canonicalPath ?? path);
 
   return {
     title: { absolute: titreComplet },

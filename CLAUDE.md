@@ -149,7 +149,9 @@ ont chacune une page à chemin propre. Les chemins sont construits par `src/lib/
 - **Une fiche, une URL** (`src/app/[locale]/bikes/[brand]/[slug]/page.tsx`, `resolve()` partagé par la page et
   `generateMetadata`) : si `getBuild` renvoie un build dont `slug` ou `brand.slug` diffère de l'URL — ancien slug résolu
   par la future table `slug_redirects` de l'API, fusion —, `permanentRedirect` (308, mis en cache ISR) vers
-  `/{locale}/bikes/{brand.slug}/{slug}`. Un slug inconnu de l'API reste 404. `tests/e2e/redirects.spec.ts` : le cas
+  `/{locale}/bikes/{brand.slug}/{slug}`. *Révisé le 14 octobre 2026 (web #15, section suivante) : l'adresse millésime de
+  l'édition servie est rendue sans redirection, et une redirection mène à l'adresse qui montre cette édition.*
+  Un slug inconnu de l'API reste 404. `tests/e2e/redirects.spec.ts` : le cas
   de redirection est actif : son ancienne entree `fuel-mx-9-8-xt` est resolue par l'API au moment du test, puis
   la destination exacte et son statut 200 direct sont verifies. Le web repond en 308 (`permanentRedirect`) : le 301
   demande par le texte de #37 contredit le comportement et la documentation existants, sans changement applicatif ici.
@@ -169,6 +171,37 @@ ont chacune une page à chemin propre. Les chemins sont construits par `src/lib/
   `skipTrailingSlashRedirect: true` — la redirection native de Next se déclenchait avant le proxy et `/EN-SA/Bikes/`
   coûtait deux sauts ; `www` → apex est une règle nginx du site Forge (301, un saut), pas du code.
   `tests/e2e/redirects.spec.ts` couvre les six cas.
+
+### Adresses millésime (web #15) — 14 octobre 2026
+
+Règle du fondateur du 5 septembre 2026 (`../CLAUDE.md`, « Conventions → Routes ») ; contrat d'api #21 (`year`, `is_current`,
+`model_path`, `editions`). **Mesuré en production le 14 octobre 2026** : toute adresse millésime répondait 308 vers l'adresse
+modèle (`resolve()` comparait le slug demandé au slug sans année) ; l'édition 2026 d'un modèle qui a une 2027 était
+inaccessible, et 40 éditions supplantées annotées restaient invisibles. L'API servait déjà la bonne édition.
+
+- **Résolveur pur** `resolveBuildAddress()` (`src/lib/build-address.ts`), appelé par `resolve()` de la fiche : l'adresse
+  modèle et l'adresse millésime `{slug}-{année}` **de l'édition servie** sont rendues telles quelles, sans redirection.
+  Toute autre adresse (ancien slug de `slug_redirects`, fusion, autre marque) redirige en 308 vers l'adresse qui montre
+  **cette** édition : l'adresse modèle si elle est courante, son adresse millésime sinon (avant : toujours l'adresse
+  modèle, qui montre une autre édition). Un `-20xx` inconnu de l'API reste 404. L'année et le statut viennent de l'API ;
+  le front ne compare que des chaînes.
+- **Canonical** : adresse modèle → propre (inchangé) ; adresse millésime de l'année en cours → adresse modèle ; adresse
+  millésime supplantée → propre ; vélo nommé comme sa famille (`model_path` nul, 3 vélos au 14 octobre) → son adresse
+  millésime reste canonique même en cours, l'adresse modèle appartenant à la famille. `seoFor` reçoit `canonicalPath`
+  (canonical et `og:url`) ; **les hreflang restent ceux de l'adresse servie** (millésime ↔ millésime, issue #15), avec les
+  catchalls `ar` / `en` et `x-default` → `en-sa`. Le `Product` et le fil d'Ariane du JSON-LD suivent le canonical.
+- **Tags de cache** (`buildCacheTags`) : l'API invalide toutes les éditions d'un modèle par `build:{marque}:{slug du
+  modèle}` (`CatalogChanged::buildTag`, `canonical_slug` commun). `getBuild` et `getSimilarBuilds` portent donc, sur une
+  adresse millésime, le tag du slug demandé **et** celui du modèle ; l'adresse modèle garde son seul tag. Aucun nouveau
+  type de tag : le contrat du 2 septembre est inchangé.
+- **Laissés de côté** : le sélecteur de millésimes et le bandeau « modèle actuel » (nouveaux textes à valider), le bloc
+  « ce qui change » (`changes_since_previous` n'est pas servi), les liens internes (les cartes lient déjà l'adresse
+  modèle, bâtie sur `slug` et non sur `model_path`) et le sitemap (verrouillé), le 404 de l'adresse modèle d'un vélo
+  nommé comme sa famille (attend la page famille, #14).
+- **Tests** : `build-address.spec.ts` (résolveur, tags, `canonicalPath`, sur des réponses synthétiques) ;
+  `edition-address.spec.ts` (pages réelles, attentes lues dans l'API : Trek Fuel+ EX 9.8 Eagle 90 Gen 2, 2026 et 2027 ;
+  200 sans `Location`, année affichée, canonical, hreflang, `Product`, 404 d'une année jamais publiée, purge du tag du
+  modèle qui re-rend l'édition supplantée, en anglais et en arabe).
 
 ### Decision du 5 octobre 2026 - web #42, en-tetes des redirections ISR
 
@@ -205,7 +238,7 @@ ont chacune une page à chemin propre. Les chemins sont construits par `src/lib/
 
 Contrat partagé avec l'API : `../tasks/2026-09-02-cache-contrat.md`. Les tags y sont la référence ; aucun autre n'est inventé sans le mettre à jour.
 
-- **Lectures API** (`src/lib/api.ts`) : `cache: 'force-cache'` + `next: { tags, revalidate: 86400 }`. Les 24 h sont un filet, l'invalidation par tag est le mécanisme. `getBuild` → `build:{brand}:{slug}` · `getCatalog` → `catalog` · `getFinderTree` / `getFinderResults` → `bikefinder` · `getCompare` → `compare`.
+- **Lectures API** (`src/lib/api.ts`) : `cache: 'force-cache'` + `next: { tags, revalidate: 86400 }`. Les 24 h sont un filet, l'invalidation par tag est le mécanisme. `getBuild` → `build:{brand}:{slug}` (plus `build:{brand}:{slug du modèle}` sur une adresse millésime, web #15) · `getCatalog` → `catalog` · `getFinderTree` / `getFinderResults` → `bikefinder` · `getCompare` → `compare`.
 - **Pages** : fiche vélo, pages marque et catégorie, étapes du finder sont rendues au premier appel puis servies du cache (`revalidate = 86400`, `dynamicParams = true`, `generateStaticParams` vide — sans lui, même vide, Next rend la route à chaque requête). Accueil et racine du finder sont prérendus par locale avec le même `revalidate`. Catalogue et comparateur restent dynamiques (`searchParams`), mais leurs appels API sont cachés.
 - **Route `POST /api/revalidate`** (`src/app/api/revalidate/route.ts`) : `Authorization: Bearer $REVALIDATE_SECRET` (comparaison en temps constant, secret absent = tout refusé), corps `{ "tags": [...], "reason": "..." }`. Réponses : `200 { revalidated, reason, at }` · `401 { "error": "unauthorized" }` · `422 { "error": "tags required" }`. Chaque tag expire immédiatement (`revalidateTag(tag, { expire: 0 })` : la requête suivante re-rend, jamais de page périmée servie après un import) ; `all` = `revalidatePath('/', 'layout')`. Une ligne `[revalidate] {"status","tags","reason","ms"}` par appel dans la sortie du serveur.
 - **Preuve** : l'en-tête `x-nextjs-cache` sur toute page cachée — `MISS` au premier rendu, `HIT` ensuite, de nouveau `MISS` après le tag. Uniquement sous `npm run build && npm start` : `next dev` ne cache rien. Vérifié par `tests/e2e/cache.spec.ts`.

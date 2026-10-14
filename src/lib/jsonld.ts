@@ -88,14 +88,19 @@ export function breadcrumbJsonLd(
  * que Google affiche a la place de l'URL. La page marque `/bikes/{brand}` est
  * figee par la decision du 2 septembre 2026.
  */
-export function buildBreadcrumbJsonLd(locale: Locale, build: Build): JsonLdObject {
+export function buildBreadcrumbJsonLd(
+  locale: Locale,
+  build: Build,
+  // Le canonical de la page (web #15) : une edition supplantee n'est pas a l'adresse modele.
+  path = `/bikes/${build.brand.slug}/${build.slug}`,
+): JsonLdObject {
   const t = TRAIL_COPY[locale];
 
   return breadcrumbJsonLd(locale, [
     { name: t.home, path: '' },
     { name: t.bikes, path: '/bikes' },
     { name: build.brand.name, path: `/bikes/${build.brand.slug}` },
-    { name: build.model_name, path: `/bikes/${build.brand.slug}/${build.slug}` },
+    { name: build.model_name, path },
   ]);
 }
 
@@ -126,13 +131,18 @@ export function categoryBreadcrumbJsonLd(locale: Locale, category: { name: strin
  * inviter Google Images. L'API n'expose ni description, ni `sku`, ni `model` :
  * ils n'apparaissent pas tant qu'elle ne les fournit pas.
  */
-export function productJsonLd(locale: Locale, build: Build): JsonLdObject {
+export function productJsonLd(
+  locale: Locale,
+  build: Build,
+  // Le canonical de la page (web #15) : une edition supplantee n'est pas a l'adresse modele.
+  path = `/bikes/${build.brand.slug}/${build.slug}`,
+): JsonLdObject {
   const produit: JsonLdObject = {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: bikeName(build),
     brand: { '@type': 'Brand', name: build.brand.name },
-    url: absoluteUrl(locale, `/bikes/${build.brand.slug}/${build.slug}`),
+    url: absoluteUrl(locale, path),
   };
 
   const images = build.images.map((media) => media.sizes.detail.url);

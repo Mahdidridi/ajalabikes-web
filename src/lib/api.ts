@@ -1,3 +1,4 @@
+import { buildCacheTags } from '@/lib/build-address';
 import type { components, operations } from '@/types/api';
 
 /**
@@ -113,7 +114,8 @@ export async function getBuild(
   brand: string,
   slug: string,
 ): Promise<Build | null> {
-  const res = await fetch(`${BASE}/v1/${locale}/builds/${brand}/${slug}`, cached([`build:${brand}:${slug}`]));
+  // Une adresse millésime porte aussi le tag de son modèle, celui que l'API émet (web #15, `buildCacheTags`).
+  const res = await fetch(`${BASE}/v1/${locale}/builds/${brand}/${slug}`, cached(buildCacheTags(brand, slug)));
 
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`API ${res.status} sur ${brand}/${slug}`);
@@ -139,7 +141,7 @@ export async function getSimilarBuilds(
   slug: string,
 ): Promise<SimilarBuilds | null> {
   try {
-    const res = await fetch(`${BASE}/v1/${locale}/builds/${brand}/${slug}/similar`, cached([`build:${brand}:${slug}`]));
+    const res = await fetch(`${BASE}/v1/${locale}/builds/${brand}/${slug}/similar`, cached(buildCacheTags(brand, slug)));
 
     if (res.status === 404) return null;
     if (!res.ok) {

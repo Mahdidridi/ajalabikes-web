@@ -3,6 +3,7 @@ import { notFound, permanentRedirect } from 'next/navigation';
 import { BuildDetails } from '@/components/BuildDetails';
 import { headAnnotation } from '@/components/hotspots/annotation';
 import { getBuild, getGeometryGlossary, getSimilarBuilds, isLocale } from '@/lib/api';
+import { resolveBuildAddress } from '@/lib/build-address';
 import { bikeDescription, bikeTitle, seoFor } from '@/lib/seo';
 
 /**
@@ -25,11 +26,13 @@ type Props = PageProps<'/[locale]/bikes/[brand]/[slug]'>;
  * metadonnees : Next memoise `getBuild` au sein d'un rendu, l'API n'est
  * interrogee qu'une fois.
  *
- * UNE FICHE, UNE URL. Si l'API repond avec d'autres slugs que ceux demandes
- * — un ancien slug qu'elle resout par sa table `slug_redirects`, une fusion —,
- * la fiche a demenage : redirection PERMANENTE vers l'adresse vivante (308
- * chez Next), plutot que la meme fiche servie a deux adresses. Un slug que
- * l'API ne connait pas reste un 404, comme avant.
+ * DEUX ADRESSES PAR VELO (web #15, decision du 5 septembre 2026) : l'adresse
+ * modele et l'adresse millesime `{slug}-{annee}` de l'edition servie sont
+ * rendues telles quelles — l'API repond deja l'edition de l'annee demandee.
+ * Toute autre adresse — un ancien slug que l'API resout par sa table
+ * `slug_redirects`, une fusion — a demenage : redirection PERMANENTE (308 chez
+ * Next) vers l'adresse qui montre cette edition (`resolveBuildAddress`). Un
+ * slug que l'API ne connait pas reste un 404, comme avant.
  */
 async function resolve(params: Props['params']) {
   const { locale, brand, slug } = await params;
@@ -38,24 +41,26 @@ async function resolve(params: Props['params']) {
   const build = await getBuild(locale, brand, slug);
   if (!build) notFound();
 
-  if (build.brand.slug !== brand || build.slug !== slug) {
-    permanentRedirect(`/${locale}/bikes/${build.brand.slug}/${build.slug}`);
-  }
+  const address = resolveBuildAddress({ brand, slug }, build);
+  if (address.kind === 'redirect') permanentRedirect(`/${locale}${address.path}`);
 
-  return { locale, build };
+  return { locale, build, address };
 }
 
 /**
- * Le canonical suit les slugs que l'API renvoie — apres `resolve`, ce sont
- * aussi ceux de l'URL. Titre et description sont propres a la fiche, batis
- * sur ses champs : 634 fiches, 634 descriptions, jamais la signature.
+ * Le canonical suit la regle des deux adresses : propre, sauf l'adresse
+ * millesime de l'annee en cours, canonique vers l'adresse modele ; les
+ * hreflang sont ceux de l'adresse servie. Titre et description sont propres
+ * a la fiche, batis sur ses champs : 634 fiches, 634 descriptions, jamais la
+ * signature.
  */
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { locale, build } = await resolve(params);
+  const { locale, build, address } = await resolve(params);
 
   return seoFor({
     locale,
-    path: `/bikes/${build.brand.slug}/${build.slug}`,
+    path: address.path,
+    canonicalPath: address.canonicalPath,
     title: bikeTitle(build),
     description: bikeDescription(locale, build),
   });
@@ -95,7 +100,7 @@ export default async function BuildPage({ params }: Props) {
   // Les trois lectures partent avant le premier `await` sur une réponse : les blocs ne retardent pas la fiche.
   const similar = similarFor(params);
   const glossary = glossaryFor(params);
-  const { locale, build } = await resolve(params);
+  const { locale, build, address } = await resolve(params);
   const annotated = headAnnotation({
     name: `${build.brand.slug}/${build.slug}`,
     head: build.images[0],
@@ -104,6 +109,13 @@ export default async function BuildPage({ params }: Props) {
   });
 
   return (
-    <BuildDetails build={build} locale={locale} annotated={annotated} similar={await similar} glossary={await glossary} />
+    <BuildDetails
+      build={build}
+      locale={locale}
+      annotated={annotated}
+      similar={await similar}
+      glossary={await glossary}
+      canonicalPath={address.canonicalPath}
+    />
   );
 }
