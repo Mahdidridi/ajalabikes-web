@@ -581,6 +581,39 @@ l'ordre des cartes, pas leur affichage). Chantier lancé le 14 octobre, sur son 
   carte, mais un montant nul isolé.
 - **Relevé à porter à la calibration (API, pas ce dépôt)** : la raison « Same category: … » est servie sur chaque carte.
 
+## Équipements sur la fiche (web #36) — décision du 14 octobre 2026
+
+Choix du fondateur du 14 octobre 2026, après la mise en ligne des vélos proches : afficher `equipment_specs`, que l'API sert dans la
+réponse de la fiche depuis le 1er octobre — des valeurs **publiées par le constructeur, avec leur preuve et leur date**. Aucun nouvel
+appel : la donnée arrive avec `getBuild()`. Contrat vérifié ce jour : types régénérés depuis l'API `main` = 0 différence.
+
+- **Où** : `<section id="equipment">` entre `#geometry` et `#components` (`src/components/EquipmentSpecs.tsx`, Server Component, **zéro
+  JavaScript**). `ComponentList` reste dessous, inchangé : le premier bloc donne les valeurs normalisées, le second la liste brute.
+- **Règle unique** `hasEquipment()` : le bloc ET son ancre `#equipment` n'existent que pour une publication `current` avec au moins une
+  valeur (`stale`, `unavailable` ou 0 valeur : ni titre, ni ancre).
+- **En tête** : `coverage.label`, « Checked: {date} » (`checked_at_formatted`, qui dit lui-même « date non renseignée » quand il le faut),
+  lien « Manufacturer page » vers `source_url` (`target="_blank"`, `rel="nofollow noopener noreferrer"`), et la condition commune
+  (`shared_conditions_formatted`, Canyon « taille M ») une seule fois — alors jamais par ligne.
+- **Liste** : `<dl>` dans l'ordre servi, lignes en `grid-cols-subgrid` ; un filet sans libellé quand `role` change (pure mise en page, la
+  donnée arrive groupée par rôle). Valeur en `<bdi>`, `precision_label` après « · », `conditions_formatted` en petit, badge `status_label`
+  pour `ambiguous` / `conflict` — les candidats restent ceux de `value_formatted`, le site n'en choisit aucun.
+- **Preuves** repliées sous « Source text » (`<details>` natif) : extrait entre guillemets, en `<bdi>` (texte brut, échappé par React, jamais
+  `dangerouslySetInnerHTML`), **puis l'unité d'origine** (décision du jour, hors issue : le poids Canyon a pour preuve « 15.74 » en `lbs` ;
+  sans l'unité, « 7.14 kg » à côté de « 15.74 » passerait pour une erreur — la valeur brute reste visible à côté de la normalisée), la
+  catégorie d'origine et la date d'observation, chacune seulement si non nulle.
+- **Relevé de la prod (540 fiches)** : blocs sur Specialized 149, Scott 80, Giant 69, Canyon 57 — et **Trek 4** : l'API sert `current` sur
+  ses 165 fiches mais une seule valeur sur 4 d'entre elles (« Maximum fork travel », ambigu, une compatibilité libellée comme telle). Aucun
+  filtre par marque ici ; masquer Trek serait une décision d'API (`unavailable`). L'aperçu du pilote (même `BuildDetails`, même `build`)
+  montre aussi le bloc.
+- **Textes arabes à valider par le fondateur** : « التجهيزات » (titre et ancre), « تاريخ التحقق: {date} », « صفحة الشركة المصنّعة »,
+  « القيم المنشورة لـ: {…} », « نص المصدر ».
+- **Barre d'ancres à cinq liens** : deux rangées à 320 px (57 px mesurés, en anglais comme en arabe), sous les 64 px de
+  `scroll-mt-16` ; testé.
+- **Tests** : `equipment-specs.spec.tsx` (composant seul, oracle des libellés : rien hors `current`, en-tête, condition commune, ordre,
+  filets, badges, preuves et unité, « < » et « & » en texte, `<bdi>`) ; `equipment.spec.ts` (pages réelles, attentes lues dans l'API :
+  `canyon/aeroad-cfr-axs`, `specialized/aethos-2-expert-shimano-ultegra-di2`, `specialized/chisel-hardtail` (ambigu), `giant/cypress-2`
+  (conflit), `trek/madone-sl-6-gen-8` (aucune valeur), `scott/scale-920` (« & ») ; aucun défilement ; ancres à 320 px ; arabe).
+
 ## Budgets performance
 
 LCP ≤ 2,5 s p75 mobile · INP ≤ 200 ms · CLS ≤ 0,1 · TTFB page cachée ≤ 800 ms depuis le Golfe
