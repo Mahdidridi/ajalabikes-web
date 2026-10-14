@@ -9,6 +9,12 @@ import { GeometryTable } from './GeometryTable';
  *
  * Toutes les tailles arrivent dans la reponse initiale : changer de taille ne
  * declenche aucun appel reseau.
+ *
+ * Un bouton ne depasse jamais la largeur de sa rangee et son nom s'y coupe
+ * (regle du 11 octobre 2026 : aucune page ne defile en largeur). Releve le
+ * 14 octobre 2026 : Scott nomme les tailles des Gambler 10, 20 et RC
+ * « L_HIGH_BB_SETTING_POSITION_DE_BOITIER_HAUTE » (44 a 48 caracteres sans
+ * espace) et la fiche du Gambler 10 mesurait 428 px a 390 px.
  */
 export function SizePicker({
   sizes,
@@ -36,10 +42,10 @@ export function SizePicker({
             type="button"
             aria-pressed={i === index}
             onClick={() => setIndex(i)}
-            className="border border-neutral-300 px-4 py-2 text-sm leading-tight transition-colors aria-pressed:border-emerald-700 aria-pressed:bg-emerald-700 aria-pressed:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 dark:border-neutral-700 dark:aria-pressed:border-emerald-500 dark:aria-pressed:bg-emerald-600"
+            className="max-w-full border border-neutral-300 px-4 py-2 text-sm leading-tight transition-colors aria-pressed:border-emerald-700 aria-pressed:bg-emerald-700 aria-pressed:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700 dark:border-neutral-700 dark:aria-pressed:border-emerald-500 dark:aria-pressed:bg-emerald-600"
           >
-            <span className="block font-mono font-semibold">{s.label}</span>
-            {s.label_alt && <span className="block font-mono text-xs">{s.label_alt}</span>}
+            <span className="block font-mono font-semibold wrap-break-word">{s.label}</span>
+            {s.label_alt && <span className="block font-mono text-xs wrap-break-word">{s.label_alt}</span>}
           </button>
         ))}
       </div>
