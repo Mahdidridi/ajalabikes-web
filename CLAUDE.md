@@ -202,6 +202,13 @@ inaccessible, et 40 éditions supplantées annotées restaient invisibles. L'API
   `edition-address.spec.ts` (pages réelles, attentes lues dans l'API : Trek Fuel+ EX 9.8 Eagle 90 Gen 2, 2026 et 2027 ;
   200 sans `Location`, année affichée, canonical, hreflang, `Product`, 404 d'une année jamais publiée, purge du tag du
   modèle qui re-rend l'édition supplantée, en anglais et en arabe).
+- **En production depuis le 15 octobre 2026 vers 00:34 UTC+1** (PR #72, `main` `aa7ad45`, release `20261014233318`, retour arrière
+  `20261014202407`, sur le « Oui, mets en ligne » du fondateur) : typecheck, lint et build verts ; 70 specs ciblées ; suite complète
+  avec un seul échec, étranger à la PR (`annotated-photo.spec.ts`, cibles tactiles : sur le Vado SL 2 5.0 Step-Through EQ, la pastille
+  du phare servie par l'API depuis le lot 7 est à 16 px de celle du guidon à 320 px — issue api #76, règle de distance minimale entre
+  deux ancres à écrire côté API ; le test est juste et reste tel quel) ; contrôle de production en lecture seule, sans suivre les
+  redirections : 475 vérifications, 0 écart — 40 éditions non courantes annotées en 200 avec leurs notes et un canonical propre,
+  9 Trek Fuel 2027 en 200 avec canonical vers l'adresse modèle et sans notes, 10 adresses modèle inchangées.
 
 ### Decision du 5 octobre 2026 - web #42, en-tetes des redirections ISR
 
