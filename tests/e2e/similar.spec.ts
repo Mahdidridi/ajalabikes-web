@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import type { Locale } from '@/lib/api';
 import { readSimilar } from './helpers/catalog-api';
+import { settled } from './helpers/scroll';
 
 /**
  * Le bloc « Vélos proches » sur les fiches RÉELLES (web #35). Les attentes se lisent dans l'API au moment du test :
@@ -73,6 +74,8 @@ for (const locale of LOCALES) {
     // le titre de la section commence SOUS elle, jamais caché dessous.
     for (const href of hrefs) {
       await bar.locator(`a[href="${href}"]`).click();
+      // Le défilement est doux depuis web #65 : on mesure une fois la page immobile.
+      await settled(page);
       const title = page.locator(`${href} h2`).first();
       await expect(title, href).toBeInViewport();
       const barBox = (await bar.boundingBox())!;

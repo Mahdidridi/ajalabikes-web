@@ -260,6 +260,7 @@ export function GeometryFigure({
             return (
               <g
                 key={`mark-${i}`}
+                data-mark={marque.key}
                 className={serie.stroke}
                 stroke="currentColor"
                 strokeWidth={10}
@@ -285,9 +286,11 @@ export function GeometryFigure({
           if (!estDessine(bike)) return null;
 
           return (
-            <span key={i} className="inline-flex items-center gap-2">
+            // Le nom se coupe dans la légende : Scott nomme une taille « L_HIGH_BB_SETTING_POSITION_DE_BOITIER_HAUTE »
+            // (48 caractères sans espace), qui élargissait la fiche à 377 px sur un écran de 320 px (règle du 11 octobre 2026).
+            <span key={i} className="inline-flex max-w-full items-center gap-2">
               <SeriesMark index={i} />
-              <bdi className="font-mono">{nommer(i)}</bdi>
+              <bdi className="min-w-0 font-mono wrap-break-word">{nommer(i)}</bdi>
             </span>
           );
         })}

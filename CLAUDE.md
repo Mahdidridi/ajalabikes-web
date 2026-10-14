@@ -665,8 +665,50 @@ HTTP 200 contrôles sur 20 pages des cinq marques (ordre des sections, ancres, n
   valeur d'équipement : ni bloc ni ancre, premier bloc Composants), `scott/scale-600` (non annotée, 896 px), `specialized/allez-elite`
   (plus d'image sous la géométrie), barre collée et bloc courant, deux colonnes à 1280 px et une à 390 px, 320 px sans défilement ;
   `gallery.spec.ts` (absence d'image sous la géométrie sur Specialized et Trek).
-- **Étape 2 : web #66** — tableau de toutes les tailles, dessin de la taille choisie à gauche (même en arabe), cote surlignée au
-  survol, explications du glossaire, bascule valeur / « كما نشرتها الشركة » (remplace web #29).
+- **Étape 2 : web #66** — la géométrie complète, section suivante.
+
+## Géométrie sur la fiche (web #66) — décision du 14 octobre 2026
+
+Étape 2 de la structure du 14 octobre 2026 ; elle réalise web #29 sous la forme décidée ce jour (le point 5 de #29, « image
+constructeur repliée », était caduc depuis le 13 septembre). **Aucun changement d'API, aucun nouveau texte** : le dessin et les
+repères par taille sont ceux d'api #40, le glossaire celui d'api #41, les libellés ceux du comparateur.
+
+- **Où** : `section#geometry`, `src/components/GeometryMatrix.tsx` (Client Component ; `SizePicker` et `GeometryTable` sont
+  supprimés). Boutons de taille comme avant (`button[aria-pressed]` + `<span>` du libellé, césure : `reflow.spec.ts`) ; la
+  première taille est choisie par défaut (aucune règle métier côté front).
+- **Le dessin de la taille choisie à GAUCHE, le tableau de TOUTES les tailles à droite** — `flex flex-wrap rtl:flex-row-reverse` :
+  à gauche en arabe comme en anglais (un cadre n'est jamais retourné en miroir, `dir="ltr"` reste posé sur le dessin seul dans
+  `GeometryFigure`), au-dessus du tableau quand la ligne se replie (téléphone, fiche non annotée à 896 px). Le dessin est
+  `GeometryFigure` tel quel, nourri par `singleBikeFigure()` (`src/lib/geometry-matrix.ts`), qui met `sizes[].figure` dans la
+  forme du comparateur — un changement de forme, aucun point recalculé. Non dessinable : le message `nothingToDraw` du
+  comparateur, aucun SVG, le tableau reste.
+- **Tableau** (`matrixRows()`, `headRows()`) : lignes de tête `wheel_size` / `rider_height` / `rider_inseam` seulement si une
+  taille les porte (Trek et Canyon publient la taille du cycliste, Trek seul l'entrejambe) ; puis les cotes, **dans l'ordre source
+  de la première taille**, suivies des clés que seules d'autres tailles portent (Canyon `rim_height`, Scott
+  `maximum_seatpost_insertion`) ; cellule absente = `dash` ; cellules en `<bdi>` ; colonne de la taille choisie `data-selected`
+  et `bg-surface` ; première colonne collante (`sticky start-0`) dans une boîte `overflow-x-auto` ; chaque ligne porte
+  `data-row="{clé}"`. L'ordre du registre reste servi par le comparateur seul — à servir un jour par l'API si on le veut ici.
+- **Bascule** « Value » / « As published » (`COPY.value` / `COPY.source` de `BuildDetails`, deux `button[aria-pressed]`) : la
+  valeur normalisée par Laravel, ou la valeur telle que publiée avec son unité d'origine (Trek : « 42.6 cm » sous « 426 mm »).
+  **Une anomalie n'est jamais normalisée** : la cellule montre la valeur publiée avec le libellé `doubtful` (Specialized Enduro
+  Comp 2025, angle de direction publié en millimètres sur ses 4 tailles).
+- **Surlignage** : survol, focus ou clic d'une ligne pose `activeMark` sur le dessin (`[data-mark="{clé}"]` sur le repère),
+  seulement pour une cote que le dessin de la taille choisie sait repérer ; un clic maintient, Échap efface — les gestes du
+  comparateur. Le repère positionnel A, B, C de l'ancien tableau a disparu : il ne renvoyait à aucun dessin.
+- **Glossaire** : un bouton « ? » (`aria-expanded`) par cote connue du glossaire ouvre `GeometryGlossaryPanel` sous la ligne
+  (`src/components/GeometryGlossaryPanel.tsx`, extrait de `GeometryBlock` et partagé avec le comparateur, dont le rendu ne
+  change pas). La page lit le glossaire en parallèle de la fiche (`glossaryFor()`, `page.tsx`) dans un `try` : une panne donne
+  `null` et une fiche sans « ? », jamais une fiche en erreur — même doctrine que les vélos proches.
+- **Libellés partagés** : `src/lib/geometry-copy.ts` (`GEOMETRY_COPY`), déplacés tels quels depuis la page de comparaison ; le
+  titre du dessin sur la fiche est celui du bloc (« Geometry » / « الهندسة »).
+- **Légende du dessin** : le nom se coupe (`max-w-full`, `wrap-break-word`) — Scott nomme une taille de 48 caractères sans
+  espace, qui élargissait le Gambler 10 à 377 px sur 320 (règle du 11 octobre).
+- **Tests** : `geometry-matrix.spec.tsx` (composant seul : pivot, anomalie, mode publié, lignes de tête, adaptateur, rendu,
+  « ? », non dessinable, arabe) ; `geometry-matrix.spec.ts` (pages réelles, attentes lues dans l'API : `giant/talon-1`,
+  `trek/fuel-mx-9-8-xt-gen-7`, `trek/checkpoint-alr-5-gen-3`, `scott/scale-925`, `scott/scale-600`, `specialized/enduro-comp`,
+  dessin à gauche en arabe à 1280 px et au-dessus à 390 px) ; `build-page.spec.ts` adapté (la colonne choisie, la bascule) ;
+  `geometry-figure.spec.tsx`, `compare.spec.ts` inchangés et verts. Pièges rencontrés : un composant rendu dans un spec `.tsx`
+  porte le pragma `@jsxImportSource react` ; React écrit `29&quot;` dans le HTML statique.
 
 ## Budgets performance
 

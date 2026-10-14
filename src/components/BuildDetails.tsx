@@ -2,11 +2,12 @@ import Link from 'next/link';
 import { BikeGallery, type GalleryAnnotation } from '@/components/BikeGallery';
 import { ComponentList } from '@/components/ComponentList';
 import { EquipmentSpecs, equipmentTitle, hasEquipment } from '@/components/EquipmentSpecs';
+import { GeometryMatrix } from '@/components/GeometryMatrix';
 import { JsonLd } from '@/components/JsonLd';
 import { SectionNav, type SectionNavItem } from '@/components/SectionNav';
 import { SimilarBikes, hasSimilar, similarTitle } from '@/components/SimilarBikes';
-import { SizePicker } from '@/components/SizePicker';
-import type { Build, Locale, SimilarBuilds } from '@/lib/api';
+import type { Build, GeometryGlossary, Locale, SimilarBuilds } from '@/lib/api';
+import { GEOMETRY_COPY } from '@/lib/geometry-copy';
 import { buildBreadcrumbJsonLd, productJsonLd } from '@/lib/jsonld';
 import { brandPath } from '@/lib/routes';
 
@@ -69,17 +70,22 @@ export const SECTION_TITLE = 'text-2xl font-bold tracking-tight';
  *
  * `similar` : les vélos proches servis par l'API (web #35), lus par la page publique en même temps que la fiche.
  * Sans vélo proche, ni bloc ni ancre.
+ *
+ * `glossary` : le glossaire des cotes (api #41), lu en même temps que la fiche pour les explications « ? » du bloc
+ * Géométrie (web #66) ; nul en cas de panne, et la fiche se rend sans boutons « ? ».
  */
 export function BuildDetails({
   build,
   locale,
   annotated,
   similar,
+  glossary,
 }: {
   build: Build;
   locale: Locale;
   annotated?: GalleryAnnotation;
   similar?: SimilarBuilds | null;
+  glossary?: GeometryGlossary | null;
 }) {
   const t = COPY[locale];
 
@@ -169,15 +175,21 @@ export function BuildDetails({
 
       <section id="geometry" className="flex flex-col gap-4 scroll-mt-16">
         <h2 className={SECTION_TITLE}>{t.geometry}</h2>
-        <SizePicker
+        {/* Toutes les tailles, le dessin de la taille choisie à gauche (web #66). Les libellés du dessin et du glossaire
+            sont ceux du comparateur ; le titre du dessin est celui du bloc. */}
+        <GeometryMatrix
           sizes={build.sizes}
+          bikeName={`${build.brand.name} ${build.model_name}`}
+          glossary={glossary ?? null}
           labels={{
-            height: t.height,
-            inseam: t.inseam,
-            wheels: t.wheels,
+            ...GEOMETRY_COPY[locale],
+            title: t.geometry,
             measure: t.measure,
             value: t.value,
             source: t.source,
+            wheels: t.wheels,
+            height: t.height,
+            inseam: t.inseam,
           }}
         />
       </section>

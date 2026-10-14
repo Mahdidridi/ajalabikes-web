@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import type { Locale } from '@/lib/api';
 import { readBuild, readSimilar } from './helpers/catalog-api';
+import { settled } from './helpers/scroll';
 
 /**
  * La structure du bas de la fiche vélo — décision du fondateur du 14 octobre 2026 (web #65).
@@ -32,23 +33,6 @@ const fiche = (locale: Locale, bike: Bike) => `/${locale}/bikes/${bike.brand}/${
 const bar = (page: Page) => page.locator('main nav');
 /** La galerie est le premier `figure` de la fiche ; la photo annotée vit dedans. */
 const gallery = (page: Page) => page.locator('main > figure').first();
-
-/** Le défilement est doux (`scroll-behavior: smooth`) : on attend que la position se stabilise avant de lire. */
-async function settled(page: Page): Promise<void> {
-  await page.evaluate(() => new Promise<void>((done) => {
-    let last = -1;
-    let stable = 0;
-    const tick = () => {
-      const y = window.scrollY;
-      stable = y === last ? stable + 1 : 0;
-      last = y;
-      if (stable >= 8) done();
-      else setTimeout(tick, 50);
-    };
-    tick();
-  }));
-  await page.waitForTimeout(200);
-}
 
 async function hrefs(page: Page): Promise<string[]> {
   return bar(page).locator('a').evaluateAll((links) => links.map((a) => a.getAttribute('href') ?? ''));

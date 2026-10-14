@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import {
   fill, GeometryFigure, SeriesMark, type GeometryFigureLabels,
 } from '@/components/GeometryFigure';
+import { GeometryGlossaryPanel } from '@/components/GeometryGlossaryPanel';
 import type { CompareRow, CompareSection, GeometryGlossary } from '@/lib/api';
 
 /**
@@ -293,46 +294,21 @@ export function GeometryBlock({ section, bikes, glossary, labels }: {
                       colSpan={bikes.length + 1}
                       className="bg-surface px-3 py-3 text-sm"
                     >
-                      <p>{entry.definition}</p>
-                      <p className="mt-2">
-                        <span className="font-semibold">{labels.effect} </span>
-                        {entry.effect}
-                      </p>
-                      {entry.caveat !== null && (
-                        <p className="mt-2 text-muted">
-                          <span className="font-semibold">{labels.caveat} </span>
-                          {entry.caveat}
-                        </p>
-                      )}
-                      {row.labels_original.some((label) => label !== null) && (
-                        <p className="mt-2 text-xs text-muted">
-                          <span className="font-semibold">{labels.sourceLabels} </span>
-                          {row.labels_original
-                            .map((label, i) => (label === null ? null : (
-                              <bdi key={i} className="me-2 font-mono">{label}</bdi>
-                            )))}
-                        </p>
-                      )}
-                      {/* Une cote liée que le filtre « différences seules » a
-                          retirée du tableau n'a pas de ligne à ouvrir : elle ne
-                          devient pas un lien mort. */}
-                      {entry.related.filter((key) => key in measureLabels).length > 0 && (
-                        <p className="mt-2 text-xs text-muted">
-                          <span className="font-semibold">{labels.related} </span>
-                          {entry.related
-                            .filter((key) => key in measureLabels)
-                            .map((key) => (
-                              <button
-                                key={key}
-                                type="button"
-                                onClick={() => { setOuverte(key); setMaintenue(key); }}
-                                className="me-2 underline underline-offset-2 transition hover:text-foreground"
-                              >
-                                {libelle(key)}
-                              </button>
-                            ))}
-                        </p>
-                      )}
+                      {/* Le panneau est partagé avec la fiche (web #66). Une cote liée que le filtre
+                          « différences seules » a retirée du tableau n'a pas de ligne à ouvrir :
+                          elle n'est pas proposée (jamais un lien mort). */}
+                      <GeometryGlossaryPanel
+                        entry={entry}
+                        labels={labels}
+                        sourceLabels={row.labels_original}
+                        related={entry.related
+                          .filter((key) => key in measureLabels)
+                          .map((key) => ({
+                            key,
+                            label: libelle(key),
+                            open: () => { setOuverte(key); setMaintenue(key); },
+                          }))}
+                      />
                     </td>
                   </tr>
                 ) : null,
