@@ -117,7 +117,9 @@ Gambler 10 mesurait 428 px à 390 px (boutons de taille), et la colonne des libe
 descriptions à 320 px et 24 px à 390 px — sans défilement, donc sans test rouge. Un bouton de taille ne dépasse jamais sa rangée
 (`max-w-full`) et son nom s'y coupe (`SizePicker`) ; l'étiquette de taille sous un libellé ne compte pas dans la largeur de sa colonne
 (`contain-inline-size`) et s'y coupe (`ComponentList`). Garde : la fiche du Gambler 10 parmi les pages, et un nom de 108 caractères injecté
-dans un bouton et dans une étiquette réelle du Talon 1 (la colonne des descriptions garde sa largeur).
+dans un bouton et dans une étiquette réelle du Talon 1 (la colonne des descriptions garde sa largeur). **En production le 14 octobre 2026**
+(PR #61, `main` `180e5a2`, release `20261014124830`, accord du fondateur) : e2e complète 634/634 avant fusion ; contrôle de prod en lecture
+seule, 32 pages (Gambler 10, 20, RC et témoins ; AR et EN ; 320 et 390 px) sans défilement, descriptions à 101 px au moins à 320 px.
 
 ## Routes — pages marque et catégorie (2 septembre 2026)
 
