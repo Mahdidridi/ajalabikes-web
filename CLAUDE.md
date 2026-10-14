@@ -542,6 +542,45 @@ node node_modules/next/dist/bin/next start --hostname 127.0.0.1 --port 3152
 npx playwright test tests/e2e/annotated-photo.spec.ts
 ```
 
+## Vélos proches sur la fiche (web #35) — décision du 14 octobre 2026
+
+Décision du fondateur du 2 octobre 2026 (issue #35) : afficher sur la fiche les vélos proches que l'API calcule depuis le
+1er octobre (api #52, méthode `1-draft.2`, encore un brouillon tant que le jeu doré n'est pas calibré : le calibrage changera
+l'ordre des cartes, pas leur affichage). Chantier lancé le 14 octobre, sur son choix « Vélos proches ».
+
+- **Où** : `<section id="similar">` après `#components`, avant le pied de fraîcheur (`src/components/SimilarBikes.tsx`, Server
+  Component, **zéro JavaScript** : les deux replis sont des `<details>` natifs). Titre `h2`, `method.title`, critères repliés sous
+  « How we choose », `msrp_disclaimer` une seule fois ; 4 cartes, les suivantes sous « Show all (N) » (N = `total`, chiffres
+  latins). Chaque carte est le `BikeCard` du catalogue en `h3` (prop `headingLevel`, défaut `h2` : `bidi.spec.ts` en dépend) ;
+  SOUS la carte, hors de son lien : `reasons[].text` tels que servis (3 au plus, ordre servi, isolats FSI/PDI intacts), puis
+  « Compare » vers `compare_path` tel quel (nom du vélo en `sr-only`). **Rien n'est calculé, trié ni filtré ici.**
+- **Règle unique** `hasSimilar()` : le bloc ET son ancre `#similar` n'existent que si l'API sert au moins un vélo (un cadre nu
+  exclu répond `total: 0` : ni titre, ni ancre).
+- **Lecture** : `getSimilarBuilds` (`src/lib/api.ts`), lancée par la page en même temps que `getBuild`, hors de `resolve()` et de
+  `generateMetadata` (SEO, JSON-LD, noindex inchangés). L'aperçu du pilote ne passe pas `similar` : il reste identique.
+  **Inverse de `getBuild`** : 404, autre statut, panne réseau ou JSON illisible → `null` (hors 404, une ligne `[similar]` au
+  journal du serveur) — la fiche ne tombe jamais à cause d'un bloc secondaire. **Tag `build:{marque}:{slug}` seul**, comme la
+  fiche ; l'issue ajoutait `all`, mais aucune lecture ne porte ce tag (le webhook le traite par `revalidatePath`).
+  `ajala:similar:rebuild --apply` invalide les fiches dont la liste change. **Limite connue** : une fiche rendue pendant une panne
+  de l'endpoint reste en cache sans le bloc jusqu'à la prochaine invalidation de son tag (au plus 24 h).
+- **Grille par largeur du BLOC** (requêtes de conteneur Tailwind : `@container`, `@xl:grid-cols-2`, `@5xl:grid-cols-4`) : la
+  fiche fait 896 px, ou 1264 px avec des notes dessinées ; quatre cartes donnent 1, 2 ou 4 colonnes, jamais 3 + 1 (une grille
+  calée sur l'écran, comme `RecentBikes`, aurait laissé une carte seule).
+- **Barre d'ancres** : `flex-wrap gap-x-5 gap-y-2`. Avec le 4ᵉ lien, la fiche mesurait 336 px à 320 px en anglais (Talon 1,
+  `reflow.spec.ts` rouge) ; la barre passe à la ligne, 24 px entre deux rangées (cible tactile minimale). Sur deux rangées elle
+  mesure 57 px (Pixel 7, anglais) : **les quatre sections passent à `scroll-mt-16`** (64 px) — à 48 px, le saut cachait leur titre
+  sous la barre collante.
+- **Textes arabes à valider par le fondateur** : « دراجات مشابهة » (titre et ancre), « كيف نختار », « عرض الكل ({n}) », « قارن ».
+- **Tests** : `api-query.spec.ts` (6 cas : adresse, tag, 404 silencieux, 503, 422, panne réseau, JSON illisible) ;
+  `similar-bikes.spec.tsx` (composant seul, oracle des libellés en toutes lettres : 0 vélo → rien, 4 + « Show all (6) », raisons,
+  liens, `<bdi>`, aucun lien dans un lien, `h2`/`h3`) ; `similar.spec.ts` (pages réelles, attentes lues dans l'API : la Madone
+  SL 6 Gen 8 — 10 proches le 14 octobre — et le cadre nu `giant/propel-advanced-pro-ff` à `total: 0` ; ordre, « Show all (N) »,
+  comparaison ouverte, chaque ancre de la barre pose son titre sous la barre, aucun défilement en largeur, rangées pleines,
+  arabe). `build-page.spec.ts` : titre, prix et millésime lus dans l'en-tête de la fiche (`main > header`), les cartes en
+  affichent aussi ; le contrôle « aucun zéro » ne cherche plus la sous-chaîne « 0.00 », qui attrapait « 7,000.00 US$ » d'une
+  carte, mais un montant nul isolé.
+- **Relevé à porter à la calibration (API, pas ce dépôt)** : la raison « Same category: … » est servie sur chaque carte.
+
 ## Budgets performance
 
 LCP ≤ 2,5 s p75 mobile · INP ≤ 200 ms · CLS ≤ 0,1 · TTFB page cachée ≤ 800 ms depuis le Golfe
