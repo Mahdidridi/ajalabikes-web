@@ -47,6 +47,14 @@ const nextConfig: NextConfig = {
         source: '/finder-art/:path*',
         headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
       },
+      {
+        /**
+         * Le logo (`public/brand`, decision du 15 octobre 2026) : meme regle, la
+         * version est dans le nom (`wordmark-black-240-v1.webp`).
+         */
+        source: '/brand/:path*',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+      },
     ];
   },
 

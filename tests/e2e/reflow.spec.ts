@@ -43,8 +43,9 @@ for (const locale of ['ar-sa', 'en-sa']) {
   }
 }
 
-// Passer à la ligne est le dernier recours (320 et 340 px en anglais) : sur les téléphones courants, dès 360 px, la
-// barre tient sur une ligne — langue et thème à la hauteur de la marque.
+// Passer à la ligne est le dernier recours (320 et 340 px en anglais ; 320 px en arabe depuis le logo dessiné du
+// 15 octobre 2026) : sur les téléphones courants, dès 360 px, la barre tient sur une ligne — langue et thème à la
+// hauteur de la marque.
 for (const locale of ['ar-sa', 'en-sa']) {
   test(`${locale} 360 et 390 px : l’en-tête tient sur une ligne`, async ({ page }) => {
     for (const width of [360, 390]) {
