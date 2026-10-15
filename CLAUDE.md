@@ -463,6 +463,13 @@ dans l'en-tête, le pied de page et les deux pages d'erreur autonomes (404 racin
   fichier, huit fichiers en WebP immuable) ; `not-found.spec.ts` (logo dans les 404 et la 500, encre blanche en sombre).
 - **Pas fait, à décider** : le favicon (toujours celui de `create-next-app`), le `logo` de l'`Organization` en JSON-LD,
   une image Open Graph.
+- **En production le 15 octobre 2026** (PR #75, `main` `510488b`, release `20261015160517`, retour arrière
+  `20261014233318`), sur « Oui, fusionne et déploie » du fondateur : suite e2e complète 806/808 avant fusion (les 2 échecs
+  sont le défaut de données connu api #76, les cibles tactiles du Vado SL 2 à 320 px, identiques sur `main`), purge
+  (`compare:version` 35), contrôle de prod en lecture seule : **210 vérifications, 0 écart** (huit fichiers servis en WebP
+  immuable ; les deux encres dans le HTML de neuf pages, `noindex` intact ; la bonne encre chargée en clair et en sombre,
+  en arabe et en anglais, à 1280, 390 et 360 px ; tailles 32 / 20 / 176 px ; en-tête sur une ligne, aucun défilement en
+  largeur ; bascule au clic ; 404 autonome en sombre ; aucune erreur de console).
 
 ## Pilote des hotspots éditoriaux (web #49, étape 1) — décisions du fondateur du 10 octobre 2026
 
