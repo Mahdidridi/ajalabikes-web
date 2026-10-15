@@ -1,10 +1,11 @@
 import Link from 'next/link';
 import type { Locale } from '@/lib/api';
+import { BrandLogo } from './BrandLogo';
 
 /**
  * Le pied de page, présent sur toutes les pages. Bloc Tailwind Plus « Simple
  * centered » (Marketing › Footers), adapté : la rangée de liens du site, puis
- * la marque et sa signature, puis la provenance des données et le copyright.
+ * le logo et sa signature, puis la provenance des données et le copyright.
  * Sans icônes sociales — aucun compte n'existe, on n'en invente pas.
  *
  * Pas de bascule de langue ici — elle vit dans la navbar, déjà visible
@@ -54,14 +55,19 @@ export function SiteFooter({ locale }: { locale: Locale }) {
           ))}
         </nav>
 
-        <div className="flex flex-col items-center gap-1.5">
-          {/* Le même duo que la navbar : le nom arabe EST la marque. */}
-          <p className="flex items-baseline gap-1.5">
-            <span className="text-base font-extrabold tracking-tight">درّاجة</span>
-            <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-muted">
-              Darraja Bikes
-            </span>
-          </p>
+        <div className="flex flex-col items-center gap-3">
+          {/*
+           * Le logo complet (décision du 15 octobre 2026) : le mot dessiné et « DARRAJA BIKES »
+           * dessous — le même duo que la navbar, dans l'image. Sous le premier écran : `lazy`,
+           * l'encre de l'autre thème n'est jamais téléchargée.
+           */}
+          <BrandLogo
+            shape="lockup"
+            alt="درّاجة Darraja Bikes"
+            sizes="176px"
+            loading="lazy"
+            className="h-auto w-44"
+          />
           <p className="text-sm text-muted">{t.tagline}</p>
         </div>
 

@@ -109,7 +109,7 @@ et la liste des composants élargissait la fiche jusqu'au mot le plus long (Vado
 servi par l'API, page portée à 423 px dès 390 px). Règles : une colonne de grille qui reçoit des données prend
 `minmax(0, 1fr)` et ses textes se coupent (`wrap-break-word`) — une donnée ne fixe jamais la largeur de la page ; l'en-tête
 resserre ses espacements sous 380 px et ne passe à la ligne qu'en dernier recours (une ligne dès 360 px, deux en dessous en
-anglais). Garde : `tests/e2e/reflow.spec.ts` (accueil, catalogue, bikefinder, comparateur, trois fiches ; AR et EN ; 320 et
+anglais ; en arabe, deux lignes à 320 px depuis le logo dessiné du 15 octobre 2026, une ligne dès 330 px — voir « Logo »). Garde : `tests/e2e/reflow.spec.ts` (accueil, catalogue, bikefinder, comparateur, trois fiches ; AR et EN ; 320 et
 390 px ; un mot de 120 caractères injecté dans la liste ; en-tête sur une ligne à 360 et 390 px).
 **Précisé le 14 octobre 2026 — les noms de taille.** Scott nomme les tailles des Gambler 10, 20 et RC
 « L_HIGH_BB_SETTING_POSITION_DE_BOITIER_HAUTE » (44 à 48 caractères sans espace) : relevé sur les planches du lot Scott, la fiche du
@@ -422,6 +422,47 @@ par lui sur un aperçu de la vraie page.
 - **Tests** : `finder-tones.spec.tsx` (attributs des cinq tuiles, deux largeurs, décorative, aucune image hors racine ni sur
   une clé inconnue) ; `finder.spec.ts` (image chargée, entière dans sa tuile, proportions réservées = fichier, hauteurs égales
   par rangée, dix fichiers servis en WebP immuable).
+
+## Logo (décision du fondateur du 15 octobre 2026)
+
+Le mot « درّاجة » dessiné à la main — trait d'encre, shadda posé sur une touche de crayon jaune — remplace le nom en texte
+dans l'en-tête, le pied de page et les deux pages d'erreur autonomes (404 racine, 500). Composant `BrandLogo`
+(`src/components/BrandLogo.tsx`).
+
+- **Provenance et droits** : quatre PNG à fond transparent (1536×1024) fournis par le fondateur le 15 octobre 2026, générés
+  par lui avec ChatGPT à partir de son propre logo dessiné ; originaux conservés hors dépôt. Ni photo ni marque de tiers.
+  Deux encres — **noire pour le thème clair, blanche pour le sombre** (le shadda reste noir sur son jaune) — et deux formes :
+  le mot seul (`wordmark`) et le mot avec « DARRAJA BIKES » dessous (`lockup`).
+- **Où** : en-tête = le mot seul, **20 px de haut sur téléphone, 32 px dès `sm`** ; « Darraja Bikes » reste du texte à côté
+  (sr-only sur téléphone) et le nom accessible du lien ne change pas (« درّاجة Darraja Bikes », texte alternatif en
+  `lang="ar"`). 20 px parce qu'à 360 px, en anglais, la barre n'avait que 15 px de marge pour tenir sur une ligne (mesuré le
+  15 octobre 2026 : le nom en texte faisait 36,5 px de large, le mot dessiné en fait 48). Conséquence mesurée : l'en-tête
+  arabe, qui tenait sur une ligne à 320 px, y passe désormais sur deux (une ligne dès 330 px) ; l'anglais ne change pas (une
+  ligne dès 360 px). Pied de page = le logo complet, **176 px de large** (`w-44`), au-dessus de la signature. Pages d'erreur
+  autonomes = le mot seul, comme l'en-tête.
+- **Thème** : les deux encres sont dans le DOM et le CSS n'affiche que la bonne (`.logo-on-light` / `.logo-on-dark`,
+  `globals.css`). Le logo passe par les **deux portes** du thème, comme les couleurs : `data-theme` posé par le script,
+  sinon la préférence du système. La variante `dark:` ne suit que `data-theme` : sans JavaScript, ou avant le script d'une
+  page d'erreur, elle laisserait le logo noir sur le fond sombre. Ces règles sont hors couche et priment sur les
+  utilitaires : ne jamais poser `hidden` ou `block` sur ces images.
+- **Chargement** : en-tête en `eager` (les deux encres partent, 4 à 10 Ko chacune : la bascule de thème n'attend rien) ;
+  pied de page en `lazy` — l'encre masquée n'est jamais téléchargée.
+- **Fichiers** : `public/brand/{wordmark,lockup}-{black,white}-{largeur}-v1.webp` — mot seul en 120 × 50 et 240 × 100
+  (4 à 10 Ko, même boîte dans les deux encres : rien ne bouge à la bascule de thème), logo complet en 400 et 600 px de large
+  (noir 600 × 285, blanc 600 × 306 : la signature n'est pas à la même distance dans les deux dessins ; 18 à 44 Ko), en
+  `srcset` en largeurs. Servis en `Cache-Control: public, max-age=31536000, immutable` (`next.config.ts`) : changer de logo =
+  de nouveaux noms (`-v2`), jamais les anciens écrasés, et les dimensions de `SHAPES` mises à jour (celles du plus grand
+  fichier de chaque encre).
+- **Recette** (Pillow) : rogner à l'emprise visible (alpha > 6 — la toile porte un voile d'alpha 1 à 6) plus 4 px ;
+  compléter la toile, transparente et centrée, jusqu'aux proportions **exactes** de la cible (sinon l'arrondi de la petite
+  hauteur décale la place réservée : 1 % mesuré, test rouge) ; redimensionner en Lanczos **en alpha prémultiplié**
+  (`RGBa`), sinon la couleur des pixels transparents bave sur les bords ; WebP qualité 90, `alpha_quality` 100, `method` 6
+  (le sans-perte pèse 1,5 à 2,5 fois plus).
+- **Tests** : `tests/e2e/brand-logo.spec.ts` (noir en clair, blanc en sombre, choix gardé au rechargement, préférence du
+  système, sans JavaScript, encre masquée du pied de page jamais téléchargée, tailles, place réservée = proportions du
+  fichier, huit fichiers en WebP immuable) ; `not-found.spec.ts` (logo dans les 404 et la 500, encre blanche en sombre).
+- **Pas fait, à décider** : le favicon (toujours celui de `create-next-app`), le `logo` de l'`Organization` en JSON-LD,
+  une image Open Graph.
 
 ## Pilote des hotspots éditoriaux (web #49, étape 1) — décisions du fondateur du 10 octobre 2026
 

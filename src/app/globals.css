@@ -79,6 +79,35 @@
   }
 }
 
+/*
+ * Le logo (décision du fondateur du 15 octobre 2026, `src/components/BrandLogo.tsx`) : encre noire sur le thème clair,
+ * blanche sur le sombre. Il passe par les DEUX portes du thème, comme les couleurs ci-dessus — la variante `dark:` ne
+ * suit que `data-theme` : sans JavaScript, ou avant le script d'une page d'erreur, le logo noir disparaîtrait sur le
+ * fond sombre. Hors couche, ces règles priment sur les utilitaires Tailwind : ne pas poser `hidden` ou `block` sur ces
+ * images.
+ */
+.logo-on-dark {
+  display: none;
+}
+
+:root[data-theme="dark"] .logo-on-light {
+  display: none;
+}
+
+:root[data-theme="dark"] .logo-on-dark {
+  display: block;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .logo-on-light {
+    display: none;
+  }
+
+  :root:not([data-theme="light"]) .logo-on-dark {
+    display: block;
+  }
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

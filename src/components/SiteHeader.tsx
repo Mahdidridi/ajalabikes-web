@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Suspense } from 'react';
 import type { Locale } from '@/lib/api';
+import { BrandLogo } from './BrandLogo';
 import { LangSwitch } from './LangSwitch';
 import { ThemeToggle } from './ThemeToggle';
 
@@ -41,12 +42,22 @@ export function SiteHeader({ locale }: { locale: Locale }) {
       <nav className="mx-auto flex w-full max-w-7xl flex-wrap items-center gap-x-5 gap-y-2 px-4 py-3 max-[379px]:gap-x-3 sm:px-6">
         {/*
          * La marque : le nom arabe EST la marque, l'alphabet latin l'accompagne.
+         * Depuis le 15 octobre 2026, le nom arabe est le logo dessiné (`BrandLogo`) ;
+         * son texte alternatif garde au lien le même nom accessible qu'avant.
          * Sur téléphone la nav n'a pas la place des deux : « Darraja Bikes » passe
-         * en sr-only — l'arabe seul reste à l'écran, le nom complet reste lu par
-         * les lecteurs d'écran et par Playwright.
+         * en sr-only — le logo seul reste à l'écran, le nom complet reste lu par
+         * les lecteurs d'écran et par Playwright. 20 px de haut sur téléphone :
+         * à 360 px, en anglais, il restait 15 px de marge à la barre pour tenir
+         * sur une ligne (mesuré le 15 octobre 2026) ; 32 px dès `sm`.
          */}
-        <Link href={`/${locale}`} className="flex items-baseline gap-1.5">
-          <span className="text-lg font-extrabold tracking-tight">درّاجة</span>
+        <Link href={`/${locale}`} className="flex items-center gap-2">
+          <BrandLogo
+            shape="wordmark"
+            alt="درّاجة"
+            lang="ar"
+            sizes="(min-width: 640px) 77px, 48px"
+            className="h-5 w-auto sm:h-8"
+          />
           <span className="max-sm:sr-only text-xs font-medium uppercase tracking-[0.2em] text-muted">
             Darraja Bikes
           </span>

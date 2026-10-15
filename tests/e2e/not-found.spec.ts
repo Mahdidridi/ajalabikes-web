@@ -18,6 +18,7 @@ async function assertShell(page: Page, locale: typeof LOCALES[number]) {
   await expect(page.locator('html')).toHaveAttribute('lang', locale.lang);
   await expect(page.locator('html')).toHaveAttribute('dir', locale.dir);
   await expect(page.getByRole('banner')).toBeVisible();
+  await expect(page.getByRole('banner').getByRole('img', { name: 'درّاجة', exact: true })).toBeVisible();
   await expect(page.getByRole('contentinfo')).toBeVisible();
   await expect(page.locator(`main a[href="/${locale.locale}"]`)).toBeVisible();
   await expect(page.locator(`main a[href="/${locale.locale}/bikes"]`)).toBeVisible();
@@ -88,6 +89,7 @@ test('unsupported locales and unmatched routes return a bilingual 404 without re
     assertNotFound(await page.goto(path));
     await expect(page.getByRole('heading', { name: 'الصفحة غير موجودة', exact: true })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Page not found', exact: true })).toBeVisible();
+    await expect(page.getByRole('banner').getByRole('img', { name: 'درّاجة', exact: true })).toBeVisible();
     await expect(page.locator('section[lang="ar"][dir="rtl"]')).toBeVisible();
     await expect(page.locator('section[lang="en"][dir="ltr"]')).toBeVisible();
     await expect(page.locator('main a[href="/ar-sa"]')).toBeVisible();
@@ -96,18 +98,27 @@ test('unsupported locales and unmatched routes return a bilingual 404 without re
   await screenshot(page, info, '404-bilingual');
 });
 
+/** Le logo blanc du thème sombre est le seul affiché (décision du 15 octobre 2026). */
+async function assertDarkLogo(page: Page) {
+  const banner = page.getByRole('banner');
+  await expect(banner.locator('img[src*="/brand/wordmark-white-"]')).toBeVisible();
+  await expect(banner.locator('img[src*="/brand/wordmark-black-"]')).toBeHidden();
+}
+
 test('standalone error documents preserve the saved theme', async ({ page, errorApp }, info) => {
   await page.emulateMedia({ colorScheme: 'light' });
   await page.addInitScript(() => localStorage.setItem('theme', 'dark'));
   assertNotFound(await page.goto('/xx-yy/abc'));
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(10, 10, 10)');
+  await assertDarkLogo(page);
   await screenshot(page, info, '404-bilingual-dark');
   errorApp.fail(true);
   try {
     expect((await page.goto(`/en-sa/bikes/trek/${randomUUID()}`))?.status()).toBe(500);
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
     await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(10, 10, 10)');
+    await assertDarkLogo(page);
     await screenshot(page, info, '500-bilingual-dark');
   } finally {
     errorApp.fail(false);

@@ -34,8 +34,9 @@ const TRAIL_COPY = {
 } as const satisfies Record<Locale, { home: string; bikes: string }>;
 
 /**
- * L'editeur du site. Ni `logo` (aucune image de logo aux dimensions requises
- * n'existe encore) ni `sameAs` (aucun profil public) : rien n'est invente.
+ * L'editeur du site. Ni `logo` (le logo dessine du 15 octobre 2026, `public/brand`,
+ * n'est pas encore declare ici : a decider) ni `sameAs` (aucun profil public) :
+ * rien n'est invente.
  */
 export function organizationJsonLd(): JsonLdObject {
   return {
