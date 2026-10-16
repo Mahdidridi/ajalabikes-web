@@ -825,6 +825,39 @@ explication, taille → colonne et dessin).
   `geometry-figure.spec.tsx`, `compare.spec.ts` inchangés et verts. Pièges rencontrés : un composant rendu dans un spec `.tsx`
   porte le pragma `@jsxImportSource react` ; React écrit `29&quot;` dans le HTML statique.
 
+## Comparateur — l'exemple de la page nue (décision du 16 octobre 2026)
+
+Demande du fondateur du 16 octobre 2026 : « Comparer » ne s'ouvre plus sur un tableau vide (une phrase et une case « Ajouter
+un vélo ») mais sur une vraie comparaison de deux vélos, qui montre d'emblée ce que fait le comparateur, dessin de géométrie compris.
+
+- **La paire** (`src/lib/compare-example.ts`, `EXAMPLE_COMPARISON`) : **Trek Marlin 6 Gen 3 et Giant Talon 1, en taille M** — choix
+  éditorial du fondateur parmi trois paires vérifiées le jour même contre l'API (même catégorie, même prix constructeur, dessin affiché
+  en M) : deux semi-rigides cross-country à 999,99 $ et 1 000 $ US (prix constructeur), millésime 2027, roues de 29" en taille M
+  (le `wheel_size` de la carte du catalogue, 27,5", n'est pas celui de la taille M). Écartées : Trek Marlin 7 Gen 3 / Scott Scale 970
+  (1 399,99 $ chacun) et Trek Fuel EX 8 Gen 7 / Canyon Spectral CF 7 (3 999,99 $ et 3 999 $). La taille est posée pour les deux
+  vélos et affichée dans leurs sélecteurs : sans taille, l'API ne sert pas la géométrie (`requires_sizes`, `figure` nul), donc pas de
+  dessin ; jamais de comparaison silencieuse entre tailles. Ce n'est pas une règle métier : une paire choisie automatiquement (la plus
+  comparée, par pays…) vivrait dans Laravel.
+- **Quand** (`exampleSelection()`) : seulement sur la page nue — aucun `bikes` dans l'adresse ; un lien de campagne (`utm_*`) reste la
+  page nue. Une sélection dans l'adresse l'emporte toujours, même vide : `?bikes=` donne le tableau vide d'avant. Si le catalogue ne
+  sert plus l'un des deux vélos, ou si l'API refuse ou tombe sur la comparaison, la page nue redevient le tableau vide d'avant —
+  jamais une erreur.
+- **Étiquette** : « Example » / « مثال » (pastille `bg-tone-butter`, encre `text-tone-ink` : le jaune du logo), devant l'intro qui reste
+  affichée — personne ne doit y lire sa propre sélection. Seul texte nouveau ; « مثال » validé par le fondateur sur la planche du
+  16 octobre 2026 (« Oui, mets en ligne »).
+- **Gestes** : le sélecteur complète la sélection de l'ADRESSE, jamais l'exemple — depuis la page nue, choisir un vélo démarre sa propre
+  comparaison (deux choix pour comparer deux vélos, comme avant ; il en aurait fallu quatre). « Remove » sur un vélo de l'exemple garde
+  l'autre (`?bikes=giant/talon-1&sizes=M`) ; changer une taille ou « Differences only » fixe la paire dans l'adresse : ce n'est plus un
+  exemple. L'état vit toujours dans l'URL (règle 4) : la page nue a un contenu fixe et son adresse ne change pas.
+- **SEO** : rien ne change — même canonical (`/{locale}/compare`), page nue toujours indexable comme cible, `noindex` verrouillé ; son
+  contenu est désormais réel et stable. À revoir avec la liste blanche `/compare/{a}-vs-{b}` le jour où elle existera.
+- **Tests** : `compare-example.spec.ts` — la règle seule (page nue, campagne, sélection même vide, vélo sorti du catalogue), le garde-fou
+  (l'API sert les deux vélos et leur géométrie en M : si un vélo disparaît, le site retombe sans bruit sur la page vide, ce test le dit),
+  les pages réelles en arabe et en anglais (étiquette, deux colonnes, M sur les deux cartes, dessin), choisir un vélo depuis l'exemple,
+  retirer un vélo de l'exemple, même paire choisie dans l'adresse, `?bikes=` vide. `compare.spec.ts` inchangé et vert (« choisir deux
+  vélos par le sélecteur » part de la page nue) ; `reflow.spec.ts` couvre la page nue avec l'exemple à 320 et 390 px. Changer de paire =
+  `compare-example.ts`, ce spec et cette section, dans le même commit.
+
 ## Budgets performance
 
 LCP ≤ 2,5 s p75 mobile · INP ≤ 200 ms · CLS ≤ 0,1 · TTFB page cachée ≤ 800 ms depuis le Golfe

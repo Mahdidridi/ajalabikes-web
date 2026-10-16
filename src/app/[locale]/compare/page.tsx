@@ -9,8 +9,9 @@ import { SizeSelect } from '@/components/SizeSelect';
 import { InvalidSelection } from '@/components/InvalidSelection';
 import {
   ApiValidationError, getCatalog, getCompare, getGeometryGlossary, isLocale,
-  type BuildCard, type Locale,
+  type BuildCard, type CompareData, type Locale,
 } from '@/lib/api';
+import { exampleSelection } from '@/lib/compare-example';
 import { GEOMETRY_COPY } from '@/lib/geometry-copy';
 import { sizeCatalogue } from '@/lib/images';
 import { seoFor } from '@/lib/seo';
@@ -23,6 +24,7 @@ const COPY = {
   'ar-sa': {
     title: 'قارن الدراجات',
     intro: 'أضف دراجتين أو ثلاث دراجات لمقارنتها جنبًا إلى جنب.',
+    example: 'مثال',
     add: 'أضف دراجةً',
     search: 'ابحث عن دراجة…',
     no_match: 'لا نتائج.',
@@ -35,6 +37,7 @@ const COPY = {
   'en-sa': {
     title: 'Compare bikes',
     intro: 'Add two or three bikes to compare them side by side.',
+    example: 'Example',
     add: 'Add a bike',
     search: 'Find a bike…',
     no_match: 'No match.',
@@ -51,7 +54,8 @@ const COPY = {
  * `sizes`, `diff`) est un etat d'interface : canonical de la page nue,
  * politique cible `noindex, follow`. Les comparaisons indexables seront la
  * liste blanche de Laravel, `/compare/{a}-vs-{b}` (decision 3 du 2 septembre
- * 2026) — pas ces permutations.
+ * 2026) — pas ces permutations. Depuis le 16 octobre 2026, la page nue montre
+ * un exemple fixe (`compare-example.ts`) : contenu stable, adresse inchangée.
  */
 export async function generateMetadata({
   params,
@@ -76,9 +80,10 @@ export default async function ComparePage({ params, searchParams }: PageProps<'/
 
   const q = await searchParams;
   const brut = typeof q.bikes === 'string' ? q.bikes : '';
-  const paires = brut.split(',').filter(Boolean).slice(0, 3);
+  // La sélection de l'adresse, telle quelle : c'est elle que le sélecteur complète.
+  const choisis = brut.split(',').filter(Boolean).slice(0, 3);
   const sizesBrut = typeof q.sizes === 'string' ? q.sizes : '';
-  const sizes = paires.map((_, i) => sizesBrut.split(',')[i] || null);
+  const taillesChoisies = choisis.map((_, i) => sizesBrut.split(',')[i] || null);
   const diffOnly = q.diff === '1';
 
   // Les 98 cartes alimentent le sélecteur ET les colonnes avant que la
@@ -89,17 +94,31 @@ export default async function ComparePage({ params, searchParams }: PageProps<'/
   ]);
   const carteDe = new Map(catalogue.data.map((b) => [`${b.brand.slug}/${b.slug}`, b]));
 
-  // La comparaison n'existe qu'à partir de deux vélos — l'API le garantit.
-  let data;
-  try {
-    data = paires.length >= 2
-      ? await getCompare(locale, paires.join(','), sizes.some(Boolean) ? sizes.map((s) => s ?? '').join(',') : undefined)
-      : null;
-  } catch (error) {
-    if (error instanceof ApiValidationError) return <InvalidSelection locale={locale} context="compare" />;
-    throw error;
+  // Page nue : l'exemple (décision du fondateur du 16 octobre 2026, `compare-example.ts`). Il ne fait jamais tomber la
+  // page : un vélo sorti du catalogue, un refus ou une panne de l'API rendent la page vide d'avant.
+  let exemple = exampleSelection(q, (key) => carteDe.has(key));
+  let data: CompareData | null = null;
+  if (exemple) {
+    data = await getCompare(locale, exemple.bikes.join(','), exemple.sizes.join(',')).catch(() => null);
+    if (data === null) exemple = null;
+  } else if (choisis.length >= 2) {
+    // La comparaison n'existe qu'à partir de deux vélos — l'API le garantit.
+    try {
+      data = await getCompare(
+        locale,
+        choisis.join(','),
+        taillesChoisies.some(Boolean) ? taillesChoisies.map((s) => s ?? '').join(',') : undefined,
+      );
+    } catch (error) {
+      if (error instanceof ApiValidationError) return <InvalidSelection locale={locale} context="compare" />;
+      throw error;
+    }
+    if (data === null) notFound();
   }
-  if (paires.length >= 2 && data === null) notFound();
+
+  // Ce que la page montre : l'exemple, ou la sélection de l'adresse.
+  const paires = exemple ? exemple.bikes : choisis;
+  const sizes: (string | null)[] = exemple ? exemple.sizes : taillesChoisies;
 
   const cartes: BuildCard[] = data
     ? data.bikes
@@ -118,10 +137,12 @@ export default async function ComparePage({ params, searchParams }: PageProps<'/
 
   const sansIndex = <T,>(liste: T[], i: number) => liste.filter((_, j) => j !== i);
 
+  // Le sélecteur complète la sélection de l'adresse, jamais l'exemple : depuis la page nue, choisir un vélo démarre SA
+  // comparaison, comme avant l'exemple (deux choix pour comparer deux vélos, pas quatre).
   const optionsAjout = catalogue.data
     .map((b) => ({ value: `${b.brand.slug}/${b.slug}`, label: `${b.brand.name} ${b.model_name}` }))
-    .filter((o) => !paires.includes(o.value))
-    .map((o) => ({ label: o.label, href: urlCompare([...paires, o.value], [...sizes, null], diffOnly) }));
+    .filter((o) => !choisis.includes(o.value))
+    .map((o) => ({ label: o.label, href: urlCompare([...choisis, o.value], [...taillesChoisies, null], diffOnly) }));
 
   const sections = data?.sections.map((section) => ({
     ...section,
@@ -155,7 +176,20 @@ export default async function ComparePage({ params, searchParams }: PageProps<'/
     <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 sm:p-6">
       <header className="flex flex-col gap-1">
         <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">{t.title}</h1>
-        {cartes.length < 2 && <p className="text-sm text-muted">{t.intro}</p>}
+        {/* L'exemple se dit exemple : personne ne doit y lire sa propre sélection. Le jaune est celui du logo. */}
+        {(cartes.length < 2 || exemple) && (
+          <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted">
+            {exemple && (
+              <span
+                data-compare-example
+                className="rounded-full bg-tone-butter px-2.5 py-0.5 text-xs font-semibold text-tone-ink"
+              >
+                {t.example}
+              </span>
+            )}
+            <span>{t.intro}</span>
+          </p>
+        )}
       </header>
 
       {sections && (
