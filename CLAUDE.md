@@ -857,6 +857,13 @@ un vélo ») mais sur une vraie comparaison de deux vélos, qui montre d'emblée
   retirer un vélo de l'exemple, même paire choisie dans l'adresse, `?bikes=` vide. `compare.spec.ts` inchangé et vert (« choisir deux
   vélos par le sélecteur » part de la page nue) ; `reflow.spec.ts` couvre la page nue avec l'exemple à 320 et 390 px. Changer de paire =
   `compare-example.ts`, ce spec et cette section, dans le même commit.
+- **En production le 16 octobre 2026** (PR #79, `main` `c3b365b`, release `20261016155820`, retour arrière `20261016140408`), sur
+  « Oui, mets en ligne » du fondateur, qui a validé « مثال » sur la planche : CI verte ; suite e2e complète 827/830 avant fusion (les 2
+  échecs connus api #76, cibles tactiles du Vado SL 2 à 320 px, et `annotated-photo.spec.ts` « polices manuscrites » sur ordinateur,
+  vert 3 fois sur 3 au rejeu : test instable, sans lien avec la page) ; purge (`compare:version` 37) ; contrôle de prod en lecture seule :
+  **52 vérifications conformes** (HTML en arabe et en anglais : étiquette, les deux vélos, `noindex`, canonical inchangé, `?bikes=` vide
+  et paire choisie sans étiquette ; navigateur à 1280, 390 et 320 px : étiquette, deux colonnes, M sur les deux cartes, dessin de
+  géométrie, aucun défilement en largeur, aucune erreur de console ; choisir un vélo depuis l'exemple démarre sa propre comparaison).
 
 ## Budgets performance
 
