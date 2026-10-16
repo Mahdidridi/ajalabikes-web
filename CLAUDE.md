@@ -481,6 +481,16 @@ dans l'en-tête, le pied de page et les deux pages d'erreur autonomes (404 racin
   immuable ; les deux encres dans le HTML de neuf pages, `noindex` intact ; la bonne encre chargée en clair et en sombre,
   en arabe et en anglais, à 1280, 390 et 360 px ; tailles 32 / 20 / 176 px ; en-tête sur une ligne, aucun défilement en
   largeur ; bascule au clic ; 404 autonome en sombre ; aucune erreur de console).
+- **En production le 16 octobre 2026** (PR #77, `main` `6e67384`, release `20261016140408`, retour arrière
+  `20261015160517`), sur « Oui, mets en ligne » du fondateur — le nom latin n'est plus affiché dans l'en-tête (décision du
+  16 octobre, plus haut) : CI verte, suite e2e complète 808/810 avant fusion (les 2 échecs sont le défaut de données connu
+  api #76, les cibles tactiles du Vado SL 2 à 320 px, **rejoués à l'identique sur le code de `main`** : mêmes messages,
+  « point 1 / point 2 : cible de 16.2 px »), purge (`compare:version` 36), contrôle de prod en lecture seule : **216
+  vérifications conformes** (HTML de dix pages en arabe et en anglais : nom latin en `sr-only`, plus de petites capitales dans
+  l'en-tête, deux encres, pied de page, titre, `noindex` ; navigateur en arabe et en anglais, clair et sombre, à 1280, 768,
+  390 et 360 px : en-tête de 59 px sur une ligne, lien de la marque de 76,8 px dès 640 px et de 48 px en dessous, bonne
+  encre, nom accessible du lien inchangé, aucun défilement en largeur, aucune erreur de console), plus la 404 racine lue dans
+  un navigateur (nom latin écrit visible, bonne encre ; son seul message de console est celui de toute réponse 404).
 
 ## Pilote des hotspots éditoriaux (web #49, étape 1) — décisions du fondateur du 10 octobre 2026
 
