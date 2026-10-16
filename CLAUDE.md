@@ -865,6 +865,31 @@ un vélo ») mais sur une vraie comparaison de deux vélos, qui montre d'emblée
   et paire choisie sans étiquette ; navigateur à 1280, 390 et 320 px : étiquette, deux colonnes, M sur les deux cartes, dessin de
   géométrie, aucun défilement en largeur, aucune erreur de console ; choisir un vélo depuis l'exemple démarre sa propre comparaison).
 
+## Mesure d'audience — Google Analytics 4 (décision du 16 octobre 2026)
+
+Décision du fondateur du 16 octobre 2026 : mesurer l'audience avant et après la levée du noindex du 21 octobre (`../CLAUDE.md`,
+« Indexation »). Il a créé lui-même le compte « Darraja Bikes », la propriété **darrajabikes.com** (fuseau Arabie saoudite, devise SAR) et
+son flux Web (mesures améliorées activées : pages vues, y compris les navigations de l'application par l'historique du navigateur,
+défilement, clics sortants vers les marques). **ID de mesure `G-PNW83E7CDS`** — public, il figure dans chaque page.
+
+- **Où** : `src/lib/analytics.ts` (`GA_MEASUREMENT_ID`, `GA_HOSTNAME`, `analyticsBootstrap()`) et `src/components/AnalyticsScript.tsx`, un
+  script en ligne rendu par le serveur dans le `<head>` du layout, comme `ThemeScript` : la file `dataLayer`, `js`, `config` (qui envoie la
+  page vue) puis le chargeur gtag.js en asynchrone — rien ne bloque l'affichage. Pas de dépendance nouvelle, pas de `next/script`.
+- **Seulement sur l'hôte de production** : le script s'arrête avant toute file de mesure si `location.hostname` n'est pas
+  `darrajabikes.com` — jamais en local, jamais pendant la suite e2e (des centaines de visites qui fausseraient les chiffres), jamais sur un
+  autre hôte. **Aucune variable d'environnement** : rien à configurer sur le serveur, un build local ne peut pas mesurer par erreur. `www`
+  est redirigé vers l'apex par nginx avant toute page.
+- **Contrôles de production** : tout script navigateur lancé contre darrajabikes.com (contrôles après déploiement) doit bloquer
+  `googletagmanager.com` et `google-analytics.com` (`page.route` → abort), sinon il compte des visites dans les statistiques du fondateur.
+- **Non mesuré** : les deux documents d'erreur autonomes (404 racine, 500) n'ont pas la balise.
+- **Consentement** : pas de bandeau pour l'instant (choix du fondateur du 16 octobre 2026) ; la page « Confidentialité » de la levée du
+  noindex doit dire que le site dépose les cookies d'Analytics ; le bandeau reste une décision à prendre (obligatoire pour les visiteurs
+  européens).
+- **Tests** : `tests/e2e/analytics.spec.ts` — l'ID et l'hôte de la propriété ; chaque page arabe et anglaise porte la balise dans son HTML
+  serveur et, sur l'hôte de test, ne contacte jamais Google ni ne crée de `dataLayer` ; le même code exécuté avec l'hôte du test et un
+  chargeur simulé (`page.route`) demande `gtag/js?id=…` avec le bon ID et pose `js` puis `config` ; un autre hôte ne charge rien. Changer
+  de propriété = `analytics.ts`, ce test et cette section, dans le même commit.
+
 ## Budgets performance
 
 LCP ≤ 2,5 s p75 mobile · INP ≤ 200 ms · CLS ≤ 0,1 · TTFB page cachée ≤ 800 ms depuis le Golfe

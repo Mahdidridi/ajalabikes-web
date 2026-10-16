@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono, Noto_Sans_Arabic } from 'next/font/google';
 import { notFound } from 'next/navigation';
+import { AnalyticsScript } from '@/components/AnalyticsScript';
 import { SiteFooter } from '@/components/SiteFooter';
 import { SiteHeader } from '@/components/SiteHeader';
 import { ThemeScript } from '@/components/ThemeScript';
@@ -76,6 +77,11 @@ export default async function LocaleLayout({ children, params }: LayoutProps<'/[
          * s'afficherait blanche un instant à chaque navigation.
          */}
         <ThemeScript />
+        {/*
+         * Google Analytics 4 (décision du 16 octobre 2026) : ne parle à Google que
+         * sur darrajabikes.com, jamais en local ni pendant les tests.
+         */}
+        <AnalyticsScript />
       </head>
       <body className="flex min-h-full flex-col">
         <SiteHeader locale={locale} />
