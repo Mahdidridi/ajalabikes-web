@@ -41,16 +41,20 @@ export function SiteHeader({ locale }: { locale: Locale }) {
     <header className="border-b border-border">
       <nav className="mx-auto flex w-full max-w-7xl flex-wrap items-center gap-x-5 gap-y-2 px-4 py-3 max-[379px]:gap-x-3 sm:px-6">
         {/*
-         * La marque : le nom arabe EST la marque, l'alphabet latin l'accompagne.
-         * Depuis le 15 octobre 2026, le nom arabe est le logo dessiné (`BrandLogo`) ;
-         * son texte alternatif garde au lien le même nom accessible qu'avant.
-         * Sur téléphone la nav n'a pas la place des deux : « Darraja Bikes » passe
-         * en sr-only — le logo seul reste à l'écran, le nom complet reste lu par
-         * les lecteurs d'écran et par Playwright. 20 px de haut sur téléphone :
-         * à 360 px, en anglais, il restait 15 px de marge à la barre pour tenir
-         * sur une ligne (mesuré le 15 octobre 2026) ; 32 px dès `sm`.
+         * La marque : le nom arabe EST la marque. Depuis le 15 octobre 2026, c'est le
+         * logo dessiné (`BrandLogo`) ; son texte alternatif et « Darraja Bikes » donnent
+         * au lien son nom accessible.
+         * Décision du fondateur du 16 octobre 2026 : le nom latin n'est plus affiché
+         * dans l'en-tête, sur aucun écran. En petites capitales grises à côté du mot
+         * dessiné, il ressemblait à un quatrième lien du menu et alourdissait la barre.
+         * Il reste dans le lien, en sr-only — lu par les lecteurs d'écran et par
+         * Playwright ; sans lui, l'image serait le seul nom du lien. Le nom latin vit
+         * au pied de page (logo complet), dans le titre de chaque page et sur les pages
+         * d'erreur. 20 px de haut sur téléphone : à 360 px, en anglais, il restait
+         * 15 px de marge à la barre pour tenir sur une ligne (mesuré le 15 octobre
+         * 2026) ; 32 px dès `sm`.
          */}
-        <Link href={`/${locale}`} className="flex items-center gap-2">
+        <Link href={`/${locale}`} className="flex items-center">
           <BrandLogo
             shape="wordmark"
             alt="درّاجة"
@@ -58,9 +62,7 @@ export function SiteHeader({ locale }: { locale: Locale }) {
             sizes="(min-width: 640px) 77px, 48px"
             className="h-5 w-auto sm:h-8"
           />
-          <span className="max-sm:sr-only text-xs font-medium uppercase tracking-[0.2em] text-muted">
-            Darraja Bikes
-          </span>
+          <span className="sr-only">Darraja Bikes</span>
         </Link>
 
         <div className="flex items-center gap-4 text-sm font-medium max-[379px]:gap-3">

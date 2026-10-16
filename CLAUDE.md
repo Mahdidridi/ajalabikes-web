@@ -433,13 +433,24 @@ dans l'en-tête, le pied de page et les deux pages d'erreur autonomes (404 racin
   par lui avec ChatGPT à partir de son propre logo dessiné ; originaux conservés hors dépôt. Ni photo ni marque de tiers.
   Deux encres — **noire pour le thème clair, blanche pour le sombre** (le shadda reste noir sur son jaune) — et deux formes :
   le mot seul (`wordmark`) et le mot avec « DARRAJA BIKES » dessous (`lockup`).
-- **Où** : en-tête = le mot seul, **20 px de haut sur téléphone, 32 px dès `sm`** ; « Darraja Bikes » reste du texte à côté
-  (sr-only sur téléphone) et le nom accessible du lien ne change pas (« درّاجة Darraja Bikes », texte alternatif en
+- **Où** : en-tête = le mot seul, **20 px de haut sur téléphone, 32 px dès `sm`** ; « Darraja Bikes » reste dans le lien, en
+  `sr-only` sur tous les écrans (décision du 16 octobre 2026, ci-dessous), et le nom accessible du lien ne change pas (« درّاجة Darraja Bikes », texte alternatif en
   `lang="ar"`). 20 px parce qu'à 360 px, en anglais, la barre n'avait que 15 px de marge pour tenir sur une ligne (mesuré le
   15 octobre 2026 : le nom en texte faisait 36,5 px de large, le mot dessiné en fait 48). Conséquence mesurée : l'en-tête
   arabe, qui tenait sur une ligne à 320 px, y passe désormais sur deux (une ligne dès 330 px) ; l'anglais ne change pas (une
   ligne dès 360 px). Pied de page = le logo complet, **176 px de large** (`w-44`), au-dessus de la signature. Pages d'erreur
   autonomes = le mot seul, comme l'en-tête.
+- **Plus de nom latin dans l'en-tête (décision du fondateur du 16 octobre 2026)** : le texte « Darraja Bikes » en petites
+  capitales (`text-xs uppercase tracking-[0.2em] text-muted`), jusque-là affiché dès `sm` à côté du mot dessiné, n'est plus
+  affiché sur aucun écran. Même gris et même graisse que les liens du menu, il se lisait comme un quatrième lien et alourdissait
+  la barre (mesuré le 16 octobre : le lien de la marque faisait 209 px de large, dont 124 pour ce texte, contre 77 pour le mot
+  dessiné ; il en fait 77 et la barre garde ses 59 px de haut). Il **reste dans le lien, en `sr-only`** : sans lui, l'image
+  serait le seul nom du lien — le nom accessible et `getByRole('link', { name: 'Darraja Bikes' })` ne changent pas. Le nom latin
+  reste visible au pied de page (logo complet et ©), dans le `<title>` de chaque page et sur les pages d'erreur 404 et 500, dont
+  l'en-tête autonome n'a ni menu ni pied de page et garde le nom écrit. Ordinateur et téléphone sont désormais pareils (seule la
+  hauteur du mot change). Conséquence assumée : en haut de page, sur ordinateur, un lecteur anglais ne voit plus le nom latin.
+  Revenir en arrière = rendre au `<span>` de `SiteHeader.tsx` ses anciennes classes (`max-sm:sr-only text-xs font-medium
+  uppercase tracking-[0.2em] text-muted`).
 - **Thème** : les deux encres sont dans le DOM et le CSS n'affiche que la bonne (`.logo-on-light` / `.logo-on-dark`,
   `globals.css`). Le logo passe par les **deux portes** du thème, comme les couleurs : `data-theme` posé par le script,
   sinon la préférence du système. La variante `dark:` ne suit que `data-theme` : sans JavaScript, ou avant le script d'une
@@ -460,7 +471,7 @@ dans l'en-tête, le pied de page et les deux pages d'erreur autonomes (404 racin
   (le sans-perte pèse 1,5 à 2,5 fois plus).
 - **Tests** : `tests/e2e/brand-logo.spec.ts` (noir en clair, blanc en sombre, choix gardé au rechargement, préférence du
   système, sans JavaScript, encre masquée du pied de page jamais téléchargée, tailles, place réservée = proportions du
-  fichier, huit fichiers en WebP immuable) ; `not-found.spec.ts` (logo dans les 404 et la 500, encre blanche en sombre).
+  fichier, huit fichiers en WebP immuable, nom latin de l'en-tête sans place à l'écran) ; `not-found.spec.ts` (logo dans les 404 et la 500, encre blanche en sombre).
 - **Pas fait, à décider** : le favicon (toujours celui de `create-next-app`), le `logo` de l'`Organization` en JSON-LD,
   une image Open Graph.
 - **En production le 15 octobre 2026** (PR #75, `main` `510488b`, release `20261015160517`, retour arrière
