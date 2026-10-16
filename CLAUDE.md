@@ -889,6 +889,14 @@ défilement, clics sortants vers les marques). **ID de mesure `G-PNW83E7CDS`** �
   serveur et, sur l'hôte de test, ne contacte jamais Google ni ne crée de `dataLayer` ; le même code exécuté avec l'hôte du test et un
   chargeur simulé (`page.route`) demande `gtag/js?id=…` avec le bon ID et pose `js` puis `config` ; un autre hôte ne charge rien. Changer
   de propriété = `analytics.ts`, ce test et cette section, dans le même commit.
+- **En production le 16 octobre 2026** (PR #81, `main` `10d02e3`, release `20261016165547`, retour arrière `20261016155820`), sur
+  « Oui, mets en ligne » du fondateur : CI verte ; suite e2e complète 838/840 avant fusion (les 2 échecs connus api #76, cibles tactiles du
+  Vado SL 2 à 320 px) ; purge (`compare:version` 38) ; la balise est dans le `<head>` de cinq pages servies (arabe et anglais, accueil,
+  catalogue, comparateur, fiche). **Preuve dans Analytics** : un navigateur neuf charge `gtag.js?id=G-PNW83E7CDS` et envoie la page vue de
+  `/ar-sa/bikes` puis, au clic sur « قارن » (navigation de l'application, sans rechargement), celle de `/ar-sa/compare` — réponses 204 ; le
+  rapport « temps réel » de la propriété les affiche avec leurs titres arabes. Relevé à garder : dans le Chrome du fondateur, un envoi a
+  reçu un 503 et une navigation interne n'a rien envoyé (une extension qui filtre Google, très probablement) — ses propres visites ne sont
+  donc comptées qu'en partie, ce qui ne touche pas les visiteurs.
 
 ## Budgets performance
 
