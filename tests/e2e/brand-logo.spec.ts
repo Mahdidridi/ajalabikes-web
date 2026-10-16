@@ -3,8 +3,9 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 /*
  * Le logo de Darraja Bikes — décision du fondateur du 15 octobre 2026 : le mot « درّاجة » dessiné à la main, en encre
  * NOIRE sur le thème clair et BLANCHE sur le thème sombre (le shadda reste noir sur sa touche de crayon jaune). Dans
- * l'en-tête, le mot seul — le nom latin reste du texte à côté, lu par les lecteurs d'écran et masqué sur téléphone ;
- * au pied de page, le mot et « DARRAJA BIKES » dessous.
+ * l'en-tête, le mot seul — le nom latin reste dans le lien, lu par les lecteurs d'écran, mais n'est affiché nulle part
+ * (décision du fondateur du 16 octobre 2026 : ni sur téléphone, ni sur ordinateur) ; au pied de page, le mot et
+ * « DARRAJA BIKES » dessous.
  *
  * Le logo suit les DEUX portes du thème, comme les couleurs : le choix mémorisé (`data-theme`), sinon la préférence
  * du système — y compris sans JavaScript, où un logo noir disparaîtrait sur le fond sombre.
@@ -58,6 +59,27 @@ for (const locale of ['ar-sa', 'en-sa'] as const) {
     await expectTheme(page, 'dark');
   });
 }
+
+// Décision du fondateur du 16 octobre 2026 : « Darraja Bikes » en petites capitales, à côté du mot dessiné, ressemblait à
+// un quatrième lien du menu et alourdissait la barre. Le texte reste dans le lien — c'est lui qui le nomme pour les lecteurs
+// d'écran —, réduit à un point comme sur téléphone depuis le 15 octobre ; le nom latin vit au pied de page et dans le titre.
+test('en-tête : le nom latin nomme le lien mais n’occupe aucune place à l’écran, sur ordinateur comme sur téléphone', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'light' });
+  for (const locale of ['ar-sa', 'en-sa'] as const) {
+    await page.goto(`/${locale}`);
+    const link = brandLink(page);
+    await expect(link, locale).toHaveAccessibleName('درّاجة Darraja Bikes');
+
+    // Le texte est là (trouvé par son nom), mais réduit à un point : rien n'est affiché à côté du mot dessiné…
+    const label = (await link.getByText('Darraja Bikes', { exact: true }).boundingBox())!;
+    expect(label.width, `${locale} : largeur du nom latin`).toBeLessThanOrEqual(1);
+    expect(label.height, `${locale} : hauteur du nom latin`).toBeLessThanOrEqual(1);
+
+    // … et le lien ne mesure que le logo : aucune place gardée pour un texte.
+    const { logo } = await shownLogo(link, 'درّاجة');
+    expect((await link.boundingBox())!.width, `${locale} : largeur du lien`).toBeCloseTo((await logo.boundingBox())!.width, 0);
+  }
+});
 
 test('sans choix mémorisé, le logo suit la préférence du système ; un choix clair mémorisé l’emporte', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'dark' });
