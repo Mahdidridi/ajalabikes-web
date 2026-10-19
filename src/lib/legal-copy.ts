@@ -63,7 +63,9 @@ export const LEGAL_COPY: Record<LegalPageKey, Record<Locale, LegalPageCopy>> = {
           title: 'سجلات الخادم',
           blocks: [
             {
-              p: 'كأي موقع على الإنترنت، يسجّل خادمنا معلومات تقنية عن كل طلب: عنوان IP، والتاريخ والوقت، والصفحة المطلوبة، والمتصفح المستخدَم. لا تُستخدم هذه السجلات إلا لأمن الموقع وحسن عمله، وتُحفظ لمدة {retention}، ولا نشاركها مع أحد. الموقع مستضاف لدى Hetzner في ألمانيا.',
+              // Relevé sur le serveur le 19 octobre 2026 : `access_log off` sur les deux sites (Forge) ; seules les erreurs
+              // sont écrites, rotation quotidienne, 52 fichiers gardés (`/etc/logrotate.d/nginx`).
+              p: 'لا يحتفظ خادمنا بسجلٍّ للزيارات. وعند حدوث خطأ، يسجّل سطرًا تقنيًا قد يتضمّن عنوان IP، والتاريخ والوقت، والصفحة المطلوبة. لا تُستخدم سجلات الأخطاء هذه إلا لإصلاح المشكلات، ولا نشاركها مع أحد، وتُحذف تلقائيًا بعد {retention}. الموقع مستضاف لدى Hetzner في ألمانيا.',
             },
           ],
         },
@@ -127,7 +129,7 @@ export const LEGAL_COPY: Record<LegalPageKey, Record<Locale, LegalPageCopy>> = {
           title: 'Server logs',
           blocks: [
             {
-              p: 'Like every website, our server records technical information about each request: the IP address, the date and time, the page requested and the browser used. These logs are used only for the security and proper running of the site; they are kept for {retention} and are not shared with anyone. The site is hosted by Hetzner, in Germany.',
+              p: 'Our server keeps no log of visits. When an error occurs, it records a technical line that may include the IP address, the date and time, and the page requested. These error logs are used only to fix problems, are not shared with anyone, and are deleted automatically after {retention}. The site is hosted by Hetzner, in Germany.',
             },
           ],
         },
