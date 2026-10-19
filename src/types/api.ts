@@ -215,7 +215,7 @@ export interface components {
              *     categorie assez peuplees.
              */
             indexable: boolean;
-            indexable_reasons: ("no_product_photo" | "media_rights_incomplete" | "few_bikes_in_brand" | "few_bikes_in_category")[];
+            indexable_reasons: ("no_product_photo" | "media_rights_incomplete" | "few_bikes_in_brand" | "few_bikes_in_category" | "address_pending")[];
             year: number | null;
             /**
              * @description Un millesime inconnu se declare. 48 velos sur 98 n'en ont pas :
@@ -282,7 +282,7 @@ export interface components {
              *     categorie assez peuplees.
              */
             indexable: boolean;
-            indexable_reasons: ("no_product_photo" | "media_rights_incomplete" | "few_bikes_in_brand" | "few_bikes_in_category")[];
+            indexable_reasons: ("no_product_photo" | "media_rights_incomplete" | "few_bikes_in_brand" | "few_bikes_in_category" | "address_pending")[];
             year: number | null;
             /** @description Un champ inconnu est declare absent, jamais omis ni estime. */
             year_label: string;
@@ -713,7 +713,7 @@ export interface components {
              *     categorie assez peuplees.
              */
             indexable: boolean;
-            indexable_reasons: ("no_product_photo" | "media_rights_incomplete" | "few_bikes_in_brand" | "few_bikes_in_category")[];
+            indexable_reasons: ("no_product_photo" | "media_rights_incomplete" | "few_bikes_in_brand" | "few_bikes_in_category" | "address_pending")[];
             year: number | null;
             /**
              * @description Un millesime inconnu se declare. 48 velos sur 98 n'en ont pas :
@@ -913,16 +913,22 @@ export interface operations {
                             next_cursor: string | null;
                             has_more: boolean;
                         };
+                        /**
+                         * @description Le meme Indexability que les cartes : les pages marque et categorie
+                         *     suivent le seuil des fiches, sans requete de plus.
+                         */
                         facets: {
                             brands: {
                                 key: string;
                                 label: string;
                                 count: number;
+                                indexable: boolean;
                             }[];
                             categories: {
                                 key: string;
                                 label: string;
                                 count: number;
+                                indexable: boolean;
                             }[];
                             wheel_sizes: {
                                 key: string;

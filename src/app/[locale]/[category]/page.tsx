@@ -82,7 +82,8 @@ async function resolve(params: Props['params']) {
 
 /**
  * Canonical, hreflang et titre par le helper SEO ; le noindex reste verrouille
- * (`INDEXING_LOCKED`). La cible, a la levee : indexable.
+ * (`INDEXING_LOCKED`). La cible, a la levee : l'`indexable` de la facette,
+ * decide par l'API (seuil de 5 velos, le meme que les fiches).
  */
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, key, bucket, page } = await resolve(params);
@@ -95,6 +96,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description: t.description
       .replace('{name}', bucket.label)
       .replace('{count}', bikesCount(locale, page.meta.total)),
+    indexable: bucket.indexable,
   });
 }
 

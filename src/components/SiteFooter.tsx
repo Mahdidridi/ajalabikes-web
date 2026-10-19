@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { Locale } from '@/lib/api';
+import { LEGAL_PAGES, type LegalPageKey } from '@/lib/legal';
 import { BrandLogo } from './BrandLogo';
 
 /**
@@ -21,6 +22,8 @@ const COPY = {
     // La signature de la marque : elle ne suit pas le vocabulaire mesuré.
     tagline: 'منصة عربية لاكتشاف الدراجات ومقارنتها',
     sources: 'المواصفات والصور من المواقع الرسمية للشركات المصنعة.',
+    legal: 'المعلومات القانونية',
+    legalLinks: { privacy: 'الخصوصية', 'image-rights': 'حقوق الصور', contact: 'اتصل بنا', terms: 'شروط الاستخدام' },
   },
   'en-sa': {
     nav: 'Site links',
@@ -29,8 +32,10 @@ const COPY = {
     finder: 'Bike finder',
     tagline: "The Gulf's bike comparison platform",
     sources: "Specifications and photos from manufacturers' official websites.",
+    legal: 'Legal information',
+    legalLinks: { privacy: 'Privacy', 'image-rights': 'Image rights', contact: 'Contact', terms: 'Terms of use' },
   },
-} as const;
+} as const satisfies Record<Locale, { legalLinks: Record<LegalPageKey, string> } & Record<string, unknown>>;
 
 export function SiteFooter({ locale }: { locale: Locale }) {
   const t = COPY[locale];
@@ -70,6 +75,22 @@ export function SiteFooter({ locale }: { locale: Locale }) {
           />
           <p className="text-sm text-muted">{t.tagline}</p>
         </div>
+
+        {/*
+         * Les pages légales (web #16, plan de levée du noindex) : une rangée à part, plus discrète que la navigation.
+         * `py-1` : 24 px de haut par lien, la cible tactile minimale (WCAG 2.5.8).
+         */}
+        <nav aria-label={t.legal} className="flex flex-wrap justify-center gap-x-6 text-xs">
+          {LEGAL_PAGES.map((page) => (
+            <Link
+              key={page}
+              href={`/${locale}/${page}`}
+              className="rounded-sm py-1 text-muted transition hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            >
+              {t.legalLinks[page]}
+            </Link>
+          ))}
+        </nav>
 
         <div className="flex flex-col gap-1 text-xs text-muted">
           <p>{t.sources}</p>
