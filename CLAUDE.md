@@ -916,14 +916,18 @@ nez et deux flèches de comparaison** — dire « ici on compare » avant toute 
   côté gauche, la photo de DROITE est donc **affichée en miroir** (`-scale-x-100` sur son cadre ; le fichier servi par l'API reste
   intact). Il avait le choix entre « côte à côte, photos intactes » (recommandé) et « face à face » : il a choisi face à face.
   Effet connu : une inscription de la photo retournée se lit à l'envers (la jante « Aeolus » de la Madone SL 7).
-- **Crédit** : `© {attribution}` de l'API sous la paire, une fois par maison (« © Trek Bicycle Corporation »), police mono 11 px
-  comme la galerie des fiches. **Sans crédit, pas de photo** : une photo sans `attribution` fait tomber la paire.
+- **Crédit — retiré de l'accueil le 21 octobre 2026 au soir (décision du fondateur)** : la ligne « © Trek Bicycle Corporation » sous
+  la paire (crédit de l'API, mis en ligne avec #83) a été retirée sur sa demande. Choix proposé et retenu : la provenance des photos
+  est dite **au pied de page de tout le site** — « المواصفات والصور من المواقع الرسمية للشركات المصنعة. » / « Specifications and photos
+  from manufacturers' official websites. » (« والصور » / « and photos » ajoutés, texte arabe validé par lui) ; l'alternative « retirer
+  sans rien ajouter » a été écartée. Les fiches gardent le crédit de chaque photo (galerie). Second écart à la posture des images
+  pour cet emplacement (photo retournée ET sans crédit sous l'image), décidé par lui ; la paire n'exige plus d'`attribution`.
 - **Cadrage** (`frame`) : les conversions gardent des marges transparentes (Trek 22 % en haut, Scott 39 %). Chaque photo est posée
   dans un cadre aux proportions de son vélo, agrandie et décalée de ses marges : les deux roues tombent sur la même ligne et les
   deux vélos sont à la même échelle. Valeurs mesurées sur l'alpha de `detail_2x`, identiques sur les quatre conversions à 0,3 % près ;
   changer de photo = les remesurer.
 - **Mise en page** (`src/components/home/HomeHeroPair.tsx`) : `figure` en `dir="ltr"` — la paire ne se retourne pas avec la page
-  arabe ; photos décoratives (`alt=""`), crédit lu par tous ; cadres à 44 % de la largeur, flèches à 10 % (le jaune du logo, mesuré
+  arabe ; entièrement décorative (`aria-hidden`, photos en `alt=""`) ; cadres à 44 % de la largeur, flèches à 10 % (le jaune du logo, mesuré
   `#F8C848`, pointe `#F2B705`) ; `priority` (dans le premier écran sur ordinateur et téléphone, la plus grande chose de la page) ;
   `sizes` = 480 px dès 1024 px, 50vw en dessous — sur téléphone, `card` (400 px). Le hero resserre son bas (`pb-10`) quand la paire
   est là : les vélos suivent les boutons et la figure finit sur la bande des marques.
@@ -933,8 +937,8 @@ nez et deux flèches de comparaison** — dire « ici on compare » avant toute 
   `build:{marque}:{slug}` : l'accueil se re-rend quand l'un d'eux change). **Bloc secondaire** : un vélo absent, une photo retirée,
   une API en panne → pas de paire, l'accueil d'avant à l'identique, une ligne `[hero]` au journal en cas d'erreur.
 - **Tests** : `tests/e2e/home-hero.spec.ts` — la règle seule (ordre, miroir à droite, crédit dédoublonné, repli sans paire), le
-  garde-fou (l'API sert les six photos avec leur crédit), les pages réelles en arabe et en anglais (photos de l'API, place réservée,
-  même ordre dans les deux langues, miroir à droite seulement, sous les boutons, crédit lu dans l'API), **le cadrage lu sur la photo
+  garde-fou (l'API sert les six photos), les pages réelles en arabe et en anglais (photos de l'API, place réservée, même ordre dans
+  les deux langues, miroir à droite seulement, sous les boutons, aucun crédit sous les vélos, provenance au pied de page), **le cadrage lu sur la photo
   servie elle-même** (alpha relu dans le navigateur, en-tête CORS ajouté par le test : chaque vélo remplit son cadre à 2 px près),
   le halo en sombre et son absence en clair. Les assertions du miroir et du cadrage ont été prouvées par mutation (miroir retiré,
   cadrage faussé : rouges). `reflow.spec.ts` couvre l'accueil à 320 et 390 px. Changer une paire = `home-hero.ts`, ce spec et cette

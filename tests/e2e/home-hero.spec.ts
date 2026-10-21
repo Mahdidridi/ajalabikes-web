@@ -1,4 +1,4 @@
-import { expect, test, type APIRequestContext } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { ACTIVE_HERO_PAIR, HERO_PAIRS, heroPair } from '@/lib/home-hero';
 import type { Media } from '@/lib/images';
 import { requiredApiBaseUrl } from './helpers/environment';
@@ -7,50 +7,31 @@ import { requiredApiBaseUrl } from './helpers/environment';
  * L'accueil montre DEUX VRAIS VÉLOS DE ROUTE FACE À FACE sous ses deux boutons, deux flèches entre eux — décision du
  * fondateur du 21 octobre 2026, d'après le hero de 99 Spokes. Photos du catalogue telles que la marque les publie, choisies
  * pour leur logo ton sur ton ; aucune galerie n'ayant de vue du côté gauche, la photo de DROITE est affichée en miroir
- * (exception à la règle « image non modifiée », décidée par le fondateur, accueil seulement). Chaque photo garde son crédit.
+ * (exception à la règle « image non modifiée », décidée par le fondateur, accueil seulement). Plus aucun crédit sous les vélos
+ * depuis le soir même (décision du fondateur) : la provenance des photos est dite au pied de page de tout le site.
  */
 const ACTIVE = HERO_PAIRS.find((p) => p.key === ACTIVE_HERO_PAIR)!;
 const [GAUCHE, DROITE] = ACTIVE.bikes;
 
-/** Une photo de l'API, réduite à ce que la règle lit : son id et son crédit. */
-const photo = (id: number, attribution: string | null = 'Maison'): Media => {
+/** Une photo de l'API, réduite à ce que la règle lit : son id. */
+const photo = (id: number): Media => {
   const size = (w: number) => ({ url: `https://media.test/${id}/${w}.webp`, w, h: Math.round(w * 0.75) });
-  return { id, alt: '', attribution, sizes: { thumb: size(200), card: size(400), detail: size(800), detail_2x: size(1600) } };
+  return { id, alt: '', attribution: 'Maison', sizes: { thumb: size(200), card: size(400), detail: size(800), detail_2x: size(1600) } };
 };
-
-/** Le crédit de chaque photo de la paire active, tel que l'API le sert — jamais recopié ici. */
-async function creditsFromApi(request: APIRequestContext, locale: string): Promise<string[]> {
-  const credits: string[] = [];
-  for (const { bike, media } of ACTIVE.bikes) {
-    const res = await request.get(`${requiredApiBaseUrl()}/v1/${locale}/builds/${bike}`);
-    const { data } = await res.json();
-    credits.push(data.images.find((m: Media) => m.id === media).attribution);
-  }
-  return [...new Set(credits)];
-}
 
 test.describe('heroPair : la règle seule', () => {
   test('les deux photos servies : la paire, dans l’ordre, la droite en miroir', () => {
-    const pair = heroPair(ACTIVE, [[photo(1), photo(GAUCHE.media, 'A')], [photo(DROITE.media, 'B'), photo(2)]]);
+    const pair = heroPair(ACTIVE, [[photo(1), photo(GAUCHE.media)], [photo(DROITE.media), photo(2)]]);
 
     expect(pair?.bikes.map((b) => b.media.id)).toEqual([GAUCHE.media, DROITE.media]);
     expect(pair?.bikes.map((b) => b.mirrored)).toEqual([false, true]);
     expect(pair?.bikes.map((b) => b.frame)).toEqual([GAUCHE.frame, DROITE.frame]);
-    expect(pair?.credits).toEqual(['A', 'B']);
   });
 
-  test('une même maison n’est créditée qu’une fois', () => {
-    const pair = heroPair(ACTIVE, [[photo(GAUCHE.media, 'Trek')], [photo(DROITE.media, 'Trek')]]);
-
-    expect(pair?.credits).toEqual(['Trek']);
-  });
-
-  test('un vélo absent, une photo retirée ou un crédit manquant : pas de paire, l’accueil d’avant', () => {
+  test('un vélo absent ou une photo retirée : pas de paire, l’accueil d’avant', () => {
     expect(heroPair(ACTIVE, [null, [photo(DROITE.media)]])).toBeNull();
     expect(heroPair(ACTIVE, [[photo(GAUCHE.media)], null])).toBeNull();
     expect(heroPair(ACTIVE, [[photo(GAUCHE.media)], [photo(999_999)]])).toBeNull();
-    expect(heroPair(ACTIVE, [[photo(GAUCHE.media, null)], [photo(DROITE.media)]])).toBeNull();
-    expect(heroPair(ACTIVE, [[photo(GAUCHE.media)], [photo(DROITE.media, '')]])).toBeNull();
   });
 
   test('la paire active fait partie de la liste, et chaque paire a deux vélos', () => {
@@ -59,7 +40,7 @@ test.describe('heroPair : la règle seule', () => {
   });
 });
 
-test('l’API sert toujours la photo de chaque vélo de chaque paire, avec son crédit', async ({ request }) => {
+test('l’API sert toujours la photo de chaque vélo de chaque paire', async ({ request }) => {
   // Le garde-fou : si une photo disparaît, l'accueil retombe sans bruit sur sa version d'avant — ce test, lui, le dit.
   for (const pair of HERO_PAIRS) {
     for (const { bike, media } of pair.bikes) {
@@ -69,13 +50,17 @@ test('l’API sert toujours la photo de chaque vélo de chaque paire, avec son c
       const { data } = await res.json();
       const image = data.images.find((m: Media) => m.id === media);
       expect(image, `${pair.key} ${bike} #${media}`).toBeTruthy();
-      expect(image.attribution, `${pair.key} ${bike} #${media}`).toBeTruthy();
     }
   }
 });
 
+const PROVENANCE = {
+  'ar-sa': 'المواصفات والصور من المواقع الرسمية للشركات المصنعة.',
+  'en-sa': "Specifications and photos from manufacturers' official websites.",
+} as const;
+
 for (const locale of ['ar-sa', 'en-sa'] as const) {
-  test(`${locale} : deux vrais vélos face à face sous les boutons, la droite en miroir, crédités`, async ({ page, request }) => {
+  test(`${locale} : deux vrais vélos face à face sous les boutons, la droite en miroir, sans crédit ni marque dessous`, async ({ page }) => {
     await page.goto(`/${locale}`);
 
     const figure = page.locator('[data-hero-pair]');
@@ -112,9 +97,11 @@ for (const locale of ['ar-sa', 'en-sa'] as const) {
     const boutons = (await page.locator('main > section').first().getByRole('link').last().boundingBox())!;
     expect(gauche.y).toBeGreaterThan(boutons.y + boutons.height);
 
-    // Le crédit de chaque maison, tel que l'API le sert, une fois chacun.
-    const credits = await creditsFromApi(request, locale);
-    await expect(figure.locator('figcaption')).toHaveText(credits.map((c) => `© ${c}`).join(' · '));
+    // Plus de ligne de crédit sous les vélos (décision du 21 octobre 2026, soir) : la figure ne porte que les photos et les flèches.
+    await expect(figure.locator('figcaption')).toHaveCount(0);
+    await expect(figure).not.toContainText('©');
+    // La provenance des photos est dite au pied de page, dans la langue de la page.
+    await expect(page.locator('footer')).toContainText(PROVENANCE[locale]);
   });
 }
 
@@ -175,7 +162,7 @@ test('le cadrage : chaque vélo remplit exactement son cadre, lu sur la photo se
 test.describe('en thème sombre', () => {
   test.use({ colorScheme: 'dark' });
 
-  test('un halo clair derrière les vélos et leur crédit : des cadres noirs restent visibles sur fond noir', async ({ page }) => {
+  test('un halo clair derrière les vélos : des cadres noirs restent visibles sur fond noir', async ({ page }) => {
     await page.goto('/en-sa');
 
     const scene = page.locator('[data-hero-pair].hero-pair-stage');

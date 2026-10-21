@@ -9,26 +9,22 @@ import { sizeCatalogue } from '@/lib/images';
  * `dir="ltr"` : la paire ne se retourne pas avec la page arabe — la photo de gauche montre son côté transmission, celle
  * de droite est affichée en miroir pour lui faire face ; échangées, les deux vélos se tourneraient le dos.
  *
- * Les photos sont décoratives (`alt` vide) : le titre de la page dit déjà ce qu'elles montrent. Le crédit, lui, est lu
- * par tous, comme dans la galerie des fiches. Les deux photos sont chargées d'emblée (`priority`) : sous les boutons, elles
- * sont dans le premier écran sur ordinateur comme sur téléphone, et elles sont la plus grande chose de la page.
+ * Entièrement décorative (`aria-hidden`, photos en `alt` vide) : le titre de la page dit déjà ce qu'elle montre. Aucun crédit
+ * sous les vélos (décision du fondateur du 21 octobre 2026, au soir) : la provenance des photos est au pied de page. Les deux
+ * photos sont chargées d'emblée (`priority`) : sous les boutons, elles sont dans le premier écran sur ordinateur comme sur
+ * téléphone, et elles sont la plus grande chose de la page.
  */
 export function HomeHeroPair({ pair }: { pair: HeroPair }) {
   const [left, right] = pair.bikes;
 
   return (
-    // En thème sombre, un halo clair derrière les vélos ET leur crédit (`globals.css`, `.hero-pair-stage`) : posé sur la
-    // seule scène, il s'arrêtait net sous les roues ; posé sur la figure, il finit sur la bande des marques.
-    <figure data-hero-pair dir="ltr" className="hero-pair-stage mx-auto w-full max-w-245">
-      <div className="flex items-end justify-center">
-        <HeroBikePhoto bike={left} />
-        <HeroArrows />
-        <HeroBikePhoto bike={right} />
-      </div>
-      <figcaption className="pt-2 pb-3 text-center font-mono text-[11px] opacity-75">
-        {pair.credits.map((credit) => `© ${credit}`).join(' · ')}
-      </figcaption>
-    </figure>
+    // En thème sombre, un halo clair derrière les vélos (`globals.css`, `.hero-pair-stage`) ; la paire finit sur la bande des
+    // marques, les roues posées sur sa ligne.
+    <div data-hero-pair aria-hidden="true" dir="ltr" className="hero-pair-stage mx-auto flex w-full max-w-245 items-end justify-center">
+      <HeroBikePhoto bike={left} />
+      <HeroArrows />
+      <HeroBikePhoto bike={right} />
+    </div>
   );
 }
 

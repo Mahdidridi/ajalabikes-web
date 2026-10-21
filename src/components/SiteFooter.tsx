@@ -20,7 +20,7 @@ const COPY = {
     finder: 'دليل اختيار الدراجة',
     // La signature de la marque : elle ne suit pas le vocabulaire mesuré.
     tagline: 'منصة عربية لاكتشاف الدراجات ومقارنتها',
-    sources: 'المواصفات من المواقع الرسمية للشركات المصنعة.',
+    sources: 'المواصفات والصور من المواقع الرسمية للشركات المصنعة.',
   },
   'en-sa': {
     nav: 'Site links',
@@ -28,7 +28,7 @@ const COPY = {
     compare: 'Compare',
     finder: 'Bike finder',
     tagline: "The Gulf's bike comparison platform",
-    sources: "Specifications from manufacturers' official websites.",
+    sources: "Specifications and photos from manufacturers' official websites.",
   },
 } as const;
 

@@ -266,7 +266,7 @@ test('le pied de page porte les liens du site, la signature et la provenance', a
   );
   await expect(pied.getByText(SIGNATURE_EN)).toBeVisible();
   await expect(
-    pied.getByText("Specifications from manufacturers' official websites."),
+    pied.getByText("Specifications and photos from manufacturers' official websites."),
   ).toBeVisible();
   await expect(pied.getByText(/© \d{4} Darraja Bikes/)).toBeVisible();
 });

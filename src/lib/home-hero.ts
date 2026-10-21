@@ -6,8 +6,9 @@ import type { Media } from '@/lib/images';
  *
  * Le fondateur a voulu de VRAIS vélos du catalogue, « sans la marque ». Une photo de marque ne se retouche pas (règle
  * « Images » du CLAUDE.md racine) : les photos sont donc choisies, sans retouche, parmi les 1 099 photos des 116 vélos de
- * route en ligne ce jour-là, pour leur logo ton sur ton, illisible à cette taille. Chaque photo garde son crédit (`©`),
- * comme dans la galerie des fiches.
+ * route en ligne ce jour-là, pour leur logo ton sur ton, illisible à cette taille. Sous les vélos, AUCUN crédit : le soir même,
+ * le fondateur a fait retirer la ligne « © Trek Bicycle Corporation » ; la provenance des photos est dite au pied de page de
+ * tout le site (« المواصفات والصور من المواقع الرسمية للشركات المصنعة. »). Les fiches gardent le crédit de chaque photo.
  *
  * EXCEPTION À LA RÈGLE « image non modifiée », décidée par le fondateur le 21 octobre 2026 pour l'accueil seulement :
  * aucune de ces galeries ne publie la vue du côté gauche, la photo de DROITE est donc AFFICHÉE en miroir (CSS ; le
@@ -65,13 +66,12 @@ export const ACTIVE_HERO_PAIR: (typeof HERO_PAIRS)[number]['key'] = 'blanc';
 
 export type HeroBike = { readonly media: Media; readonly frame: HeroFrame; readonly mirrored: boolean };
 
-export type HeroPair = { readonly bikes: readonly [HeroBike, HeroBike]; readonly credits: readonly string[] };
+export type HeroPair = { readonly bikes: readonly [HeroBike, HeroBike] };
 
 /**
  * La paire prête à afficher, ou `null`. `galleries` = les photos que l'API sert pour chacun des deux vélos, dans l'ordre
- * de la paire (`null` = vélo absent ou API en panne). Chaque vélo doit être servi AVEC sa photo et un crédit : sans
- * crédit, pas de photo (règle « Images »). Sinon `null`, et l'accueil s'affiche comme avant — jamais une erreur.
- * La photo de droite est en miroir (voir plus haut) ; une maison créditée deux fois ne s'écrit qu'une fois.
+ * de la paire (`null` = vélo absent ou API en panne). Chaque vélo doit être servi AVEC sa photo ; sinon `null`, et
+ * l'accueil s'affiche comme avant — jamais une erreur. La photo de droite est en miroir (voir plus haut).
  */
 export function heroPair(
   entry: HeroPairEntry,
@@ -79,10 +79,10 @@ export function heroPair(
 ): HeroPair | null {
   const bikes = entry.bikes.map(({ media: id, frame }, i) => {
     const media = galleries[i]?.find((m) => m.id === id);
-    return media?.attribution ? { media, frame, mirrored: i === 1 } : null;
+    return media ? { media, frame, mirrored: i === 1 } : null;
   });
   const [left, right] = bikes;
   if (!left || !right) return null;
 
-  return { bikes: [left, right], credits: [...new Set([left.media.attribution!, right.media.attribution!])] };
+  return { bikes: [left, right] };
 }
