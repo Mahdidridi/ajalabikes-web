@@ -53,12 +53,8 @@ function token(name: string, locale: Locale): ReactNode {
     }
     case 'publisher':
       return fact(LEGAL_FACTS.publisher, 'publisher', locale);
-    case 'country':
-      return fact(LEGAL_FACTS.publisherCountry?.[locale], 'publisherCountry', locale);
     case 'retention':
       return fact(LEGAL_FACTS.logRetention?.[locale], 'logRetention', locale);
-    case 'law':
-      return fact(LEGAL_FACTS.governingLaw?.[locale], 'governingLaw', locale);
     case 'page': {
       const page = arg as LegalPageKey;
       return (

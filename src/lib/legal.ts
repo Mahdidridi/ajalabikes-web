@@ -16,26 +16,23 @@ export type LegalPageKey = (typeof LEGAL_PAGES)[number];
 type PerLocale = Record<Locale, string>;
 
 export const LEGAL_FACTS: {
-  /** Le responsable de la publication : une personne ou une société, telle qu'elle doit être écrite. */
+  /**
+   * Le responsable de la publication, tel qu'il doit être écrit. Décision du fondateur du 21 octobre 2026 : ni son nom ni son
+   * pays ne sont publiés — l'équipe du site (« فريق Darraja Bikes » / « the Darraja Bikes team »), et l'adresse de contact.
+   */
   publisher: string | null;
-  /** Son pays, dans chaque langue. */
-  publisherCountry: PerLocale | null;
   /** L'adresse de contact publiée — jamais l'adresse personnelle du fondateur sans son accord explicite. */
   contactEmail: string | null;
   /** La durée de conservation des journaux du serveur, dans chaque langue (« 14 jours » / « 14 days »). */
   logRetention: PerLocale | null;
-  /** Le droit applicable aux conditions d'utilisation, dans chaque langue. */
-  governingLaw: PerLocale | null;
   /** La date de « dernière mise à jour », dans chaque langue. */
   updatedAt: PerLocale | null;
 } = {
-  publisher: null,
-  publisherCountry: null,
+  publisher: 'Darraja Bikes',
   contactEmail: 'contact@darrajabikes.com',
   // `maxage 60` dans /etc/logrotate.d/nginx, appliqué par le fondateur le 21 octobre 2026 (vérifié sur le serveur) :
   // aucun journal d'erreurs n'est gardé plus de 60 jours — « deux mois au plus », sa formulation du 19 octobre.
   logRetention: { 'ar-sa': 'شهرين على الأكثر', 'en-sa': 'two months at most' },
-  governingLaw: null,
   updatedAt: null,
 };
 

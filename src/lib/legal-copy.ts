@@ -6,7 +6,7 @@ import type { LegalPageKey } from '@/lib/legal';
  * 19 octobre 2026). Un texte se change ici et nulle part ailleurs ; le resoumettre au fondateur.
  *
  * Jetons remplacés au rendu (`src/components/LegalPage.tsx`) :
- * - `{email}` l'adresse de contact (lien), `{publisher}`, `{country}`, `{retention}`, `{law}` — les faits de
+ * - `{email}` l'adresse de contact (lien), `{publisher}`, `{retention}` — les faits de
  *   `LEGAL_FACTS` (`src/lib/legal.ts`), marqués « à compléter » tant qu'ils manquent ;
  * - `{page:privacy}`, `{page:image-rights}` — un lien vers la page, son titre pour texte ;
  * - `{cookie:0}`, `{cookie:1}` — les noms des cookies de Google Analytics ; `{optout}` — le lien de désactivation.
@@ -287,7 +287,7 @@ export const LEGAL_COPY: Record<LegalPageKey, Record<Locale, LegalPageCopy>> = {
                 // L'arabe d'abord : une parenthèse ouverte après un nom latin se rangeait du mauvais côté (capture du 19 octobre).
                 'اسم الموقع: درّاجة (Darraja Bikes)',
                 'العنوان: darrajabikes.com',
-                'المسؤول عن النشر: {publisher} — {country}',
+                'المسؤول عن النشر: فريق {publisher}',
                 'البريد الإلكتروني: {email}',
                 'الاستضافة: Hetzner Online GmbH، ألمانيا',
               ],
@@ -329,7 +329,7 @@ export const LEGAL_COPY: Record<LegalPageKey, Record<Locale, LegalPageCopy>> = {
               ul: [
                 'Site name: Darraja Bikes (درّاجة)',
                 'Address: darrajabikes.com',
-                'Publisher: {publisher} — {country}',
+                'Publisher: the {publisher} team',
                 'Email: {email}',
                 'Hosting: Hetzner Online GmbH, Germany',
               ],
@@ -397,10 +397,10 @@ export const LEGAL_COPY: Record<LegalPageKey, Record<Locale, LegalPageCopy>> = {
           blocks: [{ p: 'لا تستخدم الموقع بطريقة تضرّ بعمله، كإغراقه بطلباتٍ آلية.' }],
         },
         {
-          title: 'التعديلات والقانون المطبَّق',
+          title: 'التعديلات',
           blocks: [
             {
-              p: 'قد نحدّث هذه الشروط، والنسخة المنشورة على الموقع هي المعتمدة. القانون المطبَّق: {law}.',
+              p: 'قد نحدّث هذه الشروط، والنسخة المنشورة على الموقع هي المعتمدة.',
             },
           ],
         },
@@ -454,8 +454,8 @@ export const LEGAL_COPY: Record<LegalPageKey, Record<Locale, LegalPageCopy>> = {
           blocks: [{ p: 'Do not use the site in a way that harms its operation, for example by flooding it with automated requests.' }],
         },
         {
-          title: 'Changes and applicable law',
-          blocks: [{ p: 'We may update these terms; the version published on the site applies. Applicable law: {law}.' }],
+          title: 'Changes',
+          blocks: [{ p: 'We may update these terms; the version published on the site applies.' }],
         },
       ],
     },
