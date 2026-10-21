@@ -232,16 +232,6 @@ test('l accueil mène aux pages marque et catégorie', async ({ page, request })
   }
 });
 
-test('les deux pages ne sont pas indexables', async ({ page }) => {
-  // Décision du 28 août 2026 : rien n'est indexé tant que les URL ne sont pas
-  // figées. Le helper SEO (canonical, hreflang) viendra par-dessus.
-  for (const chemin of [TREK_EN, ROAD_EN]) {
-    const reponse = await page.goto(chemin);
-
-    expect(await reponse!.text(), chemin).toContain('noindex');
-  }
-});
-
 test('les deux pages sont rendues une fois puis servies du cache', async ({ request }) => {
   // Même schéma que la fiche : ISR, tag `catalog`. La preuve est l'en-tête
   // `x-nextjs-cache` ; on attend le HIT en interrogeant pour laisser le rendu

@@ -10,7 +10,8 @@ const LOCALES = [
 function assertNotFound(response: Response | null) {
   expect(response?.status()).toBe(404);
   expect(response?.headers()['location']).toBeUndefined();
-  expect(response?.headers()['x-robots-tag']).toBe('noindex, nofollow');
+  // Un 404 n'a pas besoin d'en-tete robots : Google n'indexe pas une reponse 404, et l'en-tete global est retire.
+  expect(response?.headers()['x-robots-tag']).toBeUndefined();
   expect(response?.request().redirectedFrom()).toBeNull();
 }
 
@@ -48,7 +49,7 @@ for (const locale of LOCALES) {
     errorApp.fail(true);
     try {
       const response = await page.goto(`/${locale.locale}/bikes?brand=${randomUUID()}`);
-      expect(response?.headers()['x-robots-tag']).toBe('noindex, nofollow');
+      expect(response?.headers()['x-robots-tag']).toBeUndefined();
       await expect(page.getByRole('heading', { level: 1 })).toHaveText(locale.error);
       await assertShell(page, locale);
       await expect(page.locator('body')).not.toContainText(/PRIVATE_UPSTREAM_DETAIL|API 503|digest|Application error/);
@@ -66,7 +67,7 @@ for (const locale of LOCALES) {
     try {
       const response = await page.goto(`/${locale.locale}/bikes/trek/${randomUUID()}`);
       expect(response?.status()).toBe(500);
-      expect(response?.headers()['x-robots-tag']).toBe('noindex, nofollow');
+      expect(response?.headers()['x-robots-tag']).toBeUndefined();
       for (const language of LOCALES) {
         await expect(page.getByRole('heading', { name: language.error, exact: true })).toBeVisible();
       }

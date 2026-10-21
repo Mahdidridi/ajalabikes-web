@@ -203,11 +203,3 @@ test('la liste entière se déroule et le bouton s efface à la fin', async ({ p
   await expect(page.locator('main a.rounded-xl')).toHaveCount(catalog.meta.total);
   await expect(page.getByRole('link', { name: 'Show more' })).toHaveCount(0);
 });
-
-test('le catalogue n est pas indexable', async ({ page }) => {
-  // Decision du 11 aout 2026 : rien n'est indexe tant que la strategie
-  // d'indexation n'est pas decidee.
-  const reponse = await page.goto(EN);
-
-  expect(await reponse!.text()).toContain('noindex');
-});

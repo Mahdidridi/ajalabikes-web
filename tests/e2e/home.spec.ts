@@ -282,14 +282,6 @@ test('la page ne deborde pas horizontalement, meme avec les halos du hero', asyn
   }
 });
 
-test('l accueil n est pas indexable', async ({ page }) => {
-  // Decision du 11 aout 2026 : rien n'est indexe avant la strategie
-  // d'indexation — l'accueil herite du noindex du layout.
-  const reponse = await page.goto(EN);
-
-  expect(await reponse!.text()).toContain('noindex');
-});
-
 test('aucune image ne repasse par l optimiseur de Next', async ({ page }) => {
   const optimisees: string[] = [];
   page.on('request', (r) => {

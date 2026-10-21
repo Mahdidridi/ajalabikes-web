@@ -28,8 +28,8 @@ for (const locale of LOCALES) {
       await expect(tab.locator('link[rel="canonical"]')).toHaveAttribute('href', `${SITE}/${locale}/${page}`);
       // Le groupe hreflang a cinq liens, le meme pour toute page (`hreflangGroup`).
       await expect(tab.locator('link[rel="alternate"][hreflang]')).toHaveCount(5);
-      // Le verrou d'indexation reste pose : ces pages ne levent rien.
-      await expect(tab.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
+      // Verrou leve : ces pages sont indexables, sans leurs images (`noimageindex`, droits non documentes).
+      await expect(tab.locator('meta[name="robots"]')).toHaveAttribute('content', 'index, follow, noimageindex');
 
       const blocks = await tab.locator('script[type="application/ld+json"]').allTextContents();
       const types = blocks.map((b) => JSON.parse(b)['@type']);

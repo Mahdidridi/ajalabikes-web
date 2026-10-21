@@ -75,7 +75,7 @@ for (const { locale, lang } of [{ locale: 'en-sa', lang: 'en' }, { locale: 'ar-s
         expect(res.status()).toBe(308);
         expect(res.headers()['x-nextjs-cache']).toBe(cache);
         expect(redirectLocation(res).href).toBe(new URL(vivant, res.url()).href);
-        expect(res.headers()['x-robots-tag']).toBe('noindex, nofollow');
+        expect(res.headers()['x-robots-tag']).toBeUndefined();
         expect(res.headers()['cache-control']).toContain('s-maxage=86400');
       }
     }

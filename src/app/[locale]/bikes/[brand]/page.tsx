@@ -68,9 +68,9 @@ async function resolve(params: Props['params']) {
 }
 
 /**
- * Canonical, hreflang et titre par le helper SEO ; le noindex reste verrouille
- * (`INDEXING_LOCKED`). La cible, a la levee : l'`indexable` de la facette,
- * decide par l'API (seuil de 5 velos, le meme que les fiches).
+ * Canonical, hreflang et titre par le helper SEO ; la politique robots est
+ * l'`indexable` de la facette, decide par l'API (seuil de 5 velos, le meme que
+ * les fiches) — sauf si le verrou (`INDEXING_LOCKED`) referme tout.
  */
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale, bucket, page } = await resolve(params);
