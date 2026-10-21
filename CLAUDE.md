@@ -922,6 +922,9 @@ nez et deux flèches de comparaison** — dire « ici on compare » avant toute 
   from manufacturers' official websites. » (« والصور » / « and photos » ajoutés, texte arabe validé par lui) ; l'alternative « retirer
   sans rien ajouter » a été écartée. Les fiches gardent le crédit de chaque photo (galerie). Second écart à la posture des images
   pour cet emplacement (photo retournée ET sans crédit sous l'image), décidé par lui ; la paire n'exige plus d'`attribution`.
+  **En production le 21 octobre 2026 au soir** (PR #85, `main` `e47e4db`, release `20261021190508`, retour arrière `20261021182916`) :
+  suite complète 856/858 (api #76), purge `compare:version` 41, contrôle de prod 91/91 (le seul message de console : gtag.js bloqué par le
+  contrôle) ; plus de « © » dans l'accueil, la phrase du pied de page en arabe et en anglais.
 - **Cadrage** (`frame`) : les conversions gardent des marges transparentes (Trek 22 % en haut, Scott 39 %). Chaque photo est posée
   dans un cadre aux proportions de son vélo, agrandie et décalée de ses marges : les deux roues tombent sur la même ligne et les
   deux vélos sont à la même échelle. Valeurs mesurées sur l'alpha de `detail_2x`, identiques sur les quatre conversions à 0,3 % près ;
