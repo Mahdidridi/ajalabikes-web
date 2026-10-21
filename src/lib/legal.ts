@@ -31,7 +31,7 @@ export const LEGAL_FACTS: {
 } = {
   publisher: null,
   publisherCountry: null,
-  contactEmail: null,
+  contactEmail: 'contact@darrajabikes.com',
   logRetention: null,
   governingLaw: null,
   updatedAt: null,
