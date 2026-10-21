@@ -939,6 +939,12 @@ nez et deux flèches de comparaison** — dire « ici on compare » avant toute 
   le halo en sombre et son absence en clair. Les assertions du miroir et du cadrage ont été prouvées par mutation (miroir retiré,
   cadrage faussé : rouges). `reflow.spec.ts` couvre l'accueil à 320 et 390 px. Changer une paire = `home-hero.ts`, ce spec et cette
   section, dans le même commit.
+- **En production le 21 octobre 2026** (PR #83, `main` `bbe84af`, release `20261021182916`, retour arrière `20261016165547`), sur
+  « mets ça en prod, go » du fondateur : CI verte ; suite e2e complète 858/860 avant fusion (les 2 échecs connus api #76, cibles
+  tactiles du Vado SL 2 à 320 px) ; purge (`compare:version` 40) ; contrôle de prod en lecture seule, Google Analytics bloqué : **84
+  vérifications conformes** (arabe et anglais, 1440, 390 et 320 px, clair et sombre : paire présente, photos 3608 et 3363 de l'API
+  chargées, miroir à droite seulement, ordre et roues alignés, crédit, halo en sombre seulement, aucun défilement en largeur,
+  `noindex` intact). Les seules erreurs de console relevées sont le chargeur gtag.js que le contrôle bloque exprès.
 
 ## Budgets performance
 
