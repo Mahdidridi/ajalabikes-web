@@ -32,7 +32,9 @@ export const LEGAL_FACTS: {
   publisher: null,
   publisherCountry: null,
   contactEmail: 'contact@darrajabikes.com',
-  logRetention: null,
+  // `maxage 60` dans /etc/logrotate.d/nginx, appliqué par le fondateur le 21 octobre 2026 (vérifié sur le serveur) :
+  // aucun journal d'erreurs n'est gardé plus de 60 jours — « deux mois au plus », sa formulation du 19 octobre.
+  logRetention: { 'ar-sa': 'شهرين على الأكثر', 'en-sa': 'two months at most' },
   governingLaw: null,
   updatedAt: null,
 };
