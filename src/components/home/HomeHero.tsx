@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import type { Locale } from '@/lib/api';
+import type { HeroPair } from '@/lib/home-hero';
 import { bikesCount } from '@/lib/vocabulary';
+import { HomeHeroPair } from './HomeHeroPair';
 import { ArrowIcon } from './icons';
 
 /**
@@ -14,6 +16,10 @@ import { ArrowIcon } from './icons';
  * si (« دراجة / دراجات », `src/lib/vocabulary.ts`). Le compteur du bouton
  * vient de l'API, jamais écrit en dur. La pastille annonce la seule
  * nouveauté réelle : le bikefinder.
+ *
+ * Sous les boutons, deux vrais vélos face à face (décision du fondateur du
+ * 21 octobre 2026, `HomeHeroPair`) ; sans eux — un vélo sorti du catalogue,
+ * une API en panne —, le hero d'avant, à l'identique.
  */
 const COPY = {
   'ar-sa': {
@@ -40,7 +46,7 @@ const COPY = {
 const HALO =
   'polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)';
 
-export function HomeHero({ locale, total }: { locale: Locale; total: number }) {
+export function HomeHero({ locale, total, pair }: { locale: Locale; total: number; pair: HeroPair | null }) {
   const t = COPY[locale];
 
   return (
@@ -67,7 +73,10 @@ export function HomeHero({ locale, total }: { locale: Locale; total: number }) {
         />
       </div>
 
-      <div className="mx-auto max-w-2xl py-20 text-center sm:py-28 lg:py-32">
+      {/* Avec la paire de vélos, le bas du hero se resserre : les vélos suivent les boutons et se posent sur la bande des marques. */}
+      <div
+        className={`mx-auto max-w-2xl text-center ${pair ? 'pt-20 pb-10 sm:pt-28 sm:pb-12 lg:pt-32' : 'py-20 sm:py-28 lg:py-32'}`}
+      >
         <div className="mb-8 flex justify-center">
           <p className="relative rounded-full px-3 py-1 text-sm/6 text-muted ring-1 ring-border transition hover:ring-muted">
             {t.pill}{' '}
@@ -102,6 +111,8 @@ export function HomeHero({ locale, total }: { locale: Locale; total: number }) {
           </Link>
         </div>
       </div>
+
+      {pair && <HomeHeroPair pair={pair} />}
 
       <div
         aria-hidden="true"

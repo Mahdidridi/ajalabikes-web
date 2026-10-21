@@ -898,6 +898,48 @@ défilement, clics sortants vers les marques). **ID de mesure `G-PNW83E7CDS`** �
   reçu un 503 et une navigation interne n'a rien envoyé (une extension qui filtre Google, très probablement) — ses propres visites ne sont
   donc comptées qu'en partie, ce qui ne touche pas les visiteurs.
 
+## Accueil — deux vrais vélos face à face (décision du fondateur du 21 octobre 2026)
+
+Demande du fondateur du 21 octobre 2026, d'après le hero de 99 Spokes : sous les deux boutons de l'accueil, **deux vélos nez à
+nez et deux flèches de comparaison** — dire « ici on compare » avant toute lecture, et donner une identité au site.
+
+- **De vraies photos, pas des dessins** : trois paires dessinées en code (encre et crayon, géométrie médiane du catalogue) lui
+  ont été montrées ; refusées (« je veux deux vélos réels »). Il voulait aussi des vélos « sans la marque » : une photo de marque
+  ne se retouche pas (règle « Images » du `CLAUDE.md` racine), les photos sont donc **choisies, sans retouche**, parmi les
+  1 099 photos des 116 vélos de route en ligne ce jour-là, pour leur logo ton sur ton, illisible à cette taille.
+- **La paire affichée : la blanche**, Trek Madone SL 5 Gen 8 (média 3608) face à Trek Madone SL 7 Gen 8 (média 3363), la même dans les
+  deux thèmes — choisie par lui sur les planches claire et sombre de trois paires de même couleur (« la meilleure dans les deux
+  thèmes ») ; restent prêtes la noire (Madone SL 5 Gen 8 3598 / Canyon Endurace CF 7 5535) et la grise (Scott Foil RC Ultimate
+  5713 / Addict RC Team 5718). Une paire qui changerait toute seule (évoqué : toutes les 3 à 5 semaines) serait une règle : elle
+  vivrait dans Laravel. Changer de paire affichée = `ACTIVE_HERO_PAIR` (`src/lib/home-hero.ts`).
+- **EXCEPTION à « image non modifiée », décidée par le fondateur pour l'accueil seulement** : aucune galerie ne publie la vue du
+  côté gauche, la photo de DROITE est donc **affichée en miroir** (`-scale-x-100` sur son cadre ; le fichier servi par l'API reste
+  intact). Il avait le choix entre « côte à côte, photos intactes » (recommandé) et « face à face » : il a choisi face à face.
+  Effet connu : une inscription de la photo retournée se lit à l'envers (la jante « Aeolus » de la Madone SL 7).
+- **Crédit** : `© {attribution}` de l'API sous la paire, une fois par maison (« © Trek Bicycle Corporation »), police mono 11 px
+  comme la galerie des fiches. **Sans crédit, pas de photo** : une photo sans `attribution` fait tomber la paire.
+- **Cadrage** (`frame`) : les conversions gardent des marges transparentes (Trek 22 % en haut, Scott 39 %). Chaque photo est posée
+  dans un cadre aux proportions de son vélo, agrandie et décalée de ses marges : les deux roues tombent sur la même ligne et les
+  deux vélos sont à la même échelle. Valeurs mesurées sur l'alpha de `detail_2x`, identiques sur les quatre conversions à 0,3 % près ;
+  changer de photo = les remesurer.
+- **Mise en page** (`src/components/home/HomeHeroPair.tsx`) : `figure` en `dir="ltr"` — la paire ne se retourne pas avec la page
+  arabe ; photos décoratives (`alt=""`), crédit lu par tous ; cadres à 44 % de la largeur, flèches à 10 % (le jaune du logo, mesuré
+  `#F8C848`, pointe `#F2B705`) ; `priority` (dans le premier écran sur ordinateur et téléphone, la plus grande chose de la page) ;
+  `sizes` = 480 px dès 1024 px, 50vw en dessous — sur téléphone, `card` (400 px). Le hero resserre son bas (`pb-10`) quand la paire
+  est là : les vélos suivent les boutons et la figure finit sur la bande des marques.
+- **Thème sombre** : un halo clair derrière la figure (`.hero-pair-stage`, `globals.css`, les deux portes du thème comme le logo) ;
+  rien en thème clair.
+- **Lecture** (`src/app/[locale]/page.tsx`) : en plus du catalogue, la fiche de chacun des deux vélos (`getBuild`, tag
+  `build:{marque}:{slug}` : l'accueil se re-rend quand l'un d'eux change). **Bloc secondaire** : un vélo absent, une photo retirée,
+  une API en panne → pas de paire, l'accueil d'avant à l'identique, une ligne `[hero]` au journal en cas d'erreur.
+- **Tests** : `tests/e2e/home-hero.spec.ts` — la règle seule (ordre, miroir à droite, crédit dédoublonné, repli sans paire), le
+  garde-fou (l'API sert les six photos avec leur crédit), les pages réelles en arabe et en anglais (photos de l'API, place réservée,
+  même ordre dans les deux langues, miroir à droite seulement, sous les boutons, crédit lu dans l'API), **le cadrage lu sur la photo
+  servie elle-même** (alpha relu dans le navigateur, en-tête CORS ajouté par le test : chaque vélo remplit son cadre à 2 px près),
+  le halo en sombre et son absence en clair. Les assertions du miroir et du cadrage ont été prouvées par mutation (miroir retiré,
+  cadrage faussé : rouges). `reflow.spec.ts` couvre l'accueil à 320 et 390 px. Changer une paire = `home-hero.ts`, ce spec et cette
+  section, dans le même commit.
+
 ## Budgets performance
 
 LCP ≤ 2,5 s p75 mobile · INP ≤ 200 ms · CLS ≤ 0,1 · TTFB page cachée ≤ 800 ms depuis le Golfe

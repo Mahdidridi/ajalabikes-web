@@ -108,6 +108,21 @@
   }
 }
 
+/*
+ * Les deux vélos de l'accueil (décision du fondateur du 21 octobre 2026, `src/components/home/HomeHeroPair.tsx`) : en
+ * thème sombre, un halo clair derrière les photos — un cadre ou des pneus noirs disparaîtraient sur le fond noir. Les
+ * deux portes du thème, comme le logo ; rien en thème clair.
+ */
+:root[data-theme="dark"] .hero-pair-stage {
+  background: radial-gradient(ellipse 58% 70% at 50% 64%, rgb(255 255 255 / 0.16), rgb(255 255 255 / 0.05) 55%, transparent 78%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .hero-pair-stage {
+    background: radial-gradient(ellipse 58% 70% at 50% 64%, rgb(255 255 255 / 0.16), rgb(255 255 255 / 0.05) 55%, transparent 78%);
+  }
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
