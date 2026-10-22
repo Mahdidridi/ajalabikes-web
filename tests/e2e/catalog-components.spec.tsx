@@ -18,8 +18,8 @@ const router = {
 for (const locale of ['en-sa', 'ar-sa'] as const) {
   test(`${locale} : une facette sans categorie garde le catalogue filtre`, async ({ page }) => {
     const categories: Facets['categories'] = [
-      { key: 'uncategorized', label: locale === 'en-sa' ? 'Not categorised' : 'غير مصنّف', count: 1 },
-      { key: 'road', label: locale === 'en-sa' ? 'Road' : 'دراجات هوائية للطرق', count: 2 },
+      { key: 'uncategorized', label: locale === 'en-sa' ? 'Not categorised' : 'غير مصنّف', count: 1, indexable: false },
+      { key: 'road', label: locale === 'en-sa' ? 'Road' : 'دراجات هوائية للطرق', count: 2, indexable: false },
     ];
     await page.setContent(renderToStaticMarkup(<main><HomeCategories locale={locale} categories={categories} /></main>));
     const tile = page.getByRole('link').filter({ has: page.getByText(categories[0].label, { exact: true }) });
@@ -32,7 +32,7 @@ for (const locale of ['en-sa', 'ar-sa'] as const) {
   test(`${locale} : le filtre rend et selectionne la facette sans categorie`, async ({ page }) => {
     const label = locale === 'en-sa' ? 'Not categorised' : 'غير مصنّف';
     const facets: Facets = {
-      categories: [{ key: 'uncategorized', label, count: 2 }],
+      categories: [{ key: 'uncategorized', label, count: 2, indexable: false }],
       brands: [], wheel_sizes: [], price: null,
     };
     await page.setContent(renderToStaticMarkup(

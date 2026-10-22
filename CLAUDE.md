@@ -324,11 +324,11 @@ Décisions du 2 septembre 2026 (`../CLAUDE.md`, « Routes et locales », points 
   la phrase ni etre contamine par elle. Ce que `<bdi>` ne couvre pas : le `<title>` de l'onglet et les
   `<meta>`, qui sont du texte pur — un nom a signe final peut s'y afficher retourne, sans correction propre
   possible.
-- **`INDEXING_LOCKED = true`** force `noindex, nofollow` partout. `indexable: false` (catalogue avec query, comparateur avec query, étapes du bikefinder) est la politique **cible** : `noindex, follow` à la levée. Le `robots: noindex` du layout reste le défaut d'une page qui n'appellerait pas le helper.
-- **JSON-LD** : `src/lib/jsonld.ts` construit, `src/components/JsonLd.tsx` rend — un `<script type="application/ld+json">` par bloc, dans la langue de la page, tout vient de la réponse API (un champ absent est omis). Accueil : `WebSite` (+ `alternateName` « دراجة », `inLanguage`) et `Organization`, sans `SearchAction`. Fiche : `BreadcrumbList` (Accueil → Vélos → Marque `/bikes/{brand}` → Fiche) et `Product` (`name`, `brand`, `url`, `image` = galerie en `detail`) **sans `offers`, sans prix, sans `aggregateRating`**. Catalogue nu : `ItemList` des cartes de la page ; jamais sur un catalogue filtré.
-- **`robots.txt` et `sitemap.xml` — générés, derrière le verrou.** `src/app/robots.ts` rend `robotsRules(INDEXING_LOCKED)` (`src/lib/seo.ts`) : verrouillé, `User-Agent: *` / `Disallow: /` sans ligne `Sitemap:` — le contenu de l'ancien `public/robots.txt`, supprimé (un fichier statique ne coexiste pas avec la route ; Next écrit `User-Agent` avec sa capitale, la casse d'un champ est libre) ; déverrouillé, tout permis sauf `/{locale}/compare?`, `/*per_page=`, `/api/`, plus `Sitemap: https://darrajabikes.com/sitemap.xml`. `src/app/sitemap.ts` rend `sitemapEntries(INDEXING_LOCKED, données)` (`src/lib/sitemap.ts`, fonction pure) : verrouillé, un `urlset` vide sans appel à l'API ; déverrouillé, un seul fichier (≈ 1 300 URL) par locale servie — accueil, catalogue nu, `/finder`, pages marque (facette `brands`), pages catégorie (facette `categories` sauf `uncategorized`, slug de `routes.ts`), toutes les fiches, lues par `getCatalog` à `per_page=800` (borne haute de l'API, ramenée silencieusement, absente du contrat) puis par curseur — chacune avec son groupe hreflang (`hreflangGroup`, le même que le `<head>`). **Pas de `lastmod`** tant que l'API n'expose pas de date de changement fiable ; ni `changefreq` ni `priority`. `revalidate = 86400`, re-rendu sur le tag `catalog`.
+- **`INDEXING_LOCKED = true`** force `noindex, nofollow` partout. `indexable: false` (catalogue avec query, comparateur avec query, étapes du bikefinder) est la politique **cible** : `noindex, follow` à la levée. Le `robots: noindex` du layout reste le défaut d'une page qui n'appellerait pas le helper. **Préparé le 19 octobre 2026 pour l'ouverture** (plan du 16 octobre, `../tasks/plans/2026-10-16-levee-noindex.md`) : la politique est la fonction pure `robotsPolicy(locked, indexable)` ; **`noimageindex` toujours**, verrou posé ou levé (les photos sont celles des constructeurs, leurs droits ne sont pas documentés : elles restent hors de Google Images ; les médias, servis par l'API, restent derrière son `robots.txt` `Disallow: /`) ; fiche, marque et catégorie passent l'`indexable` **décidé par l'API** (photo, seuil de 5 vélos, adresse provisoire d'api #25) — le front ne le recalcule pas.
+- **JSON-LD** : `src/lib/jsonld.ts` construit, `src/components/JsonLd.tsx` rend — un `<script type="application/ld+json">` par bloc, dans la langue de la page, tout vient de la réponse API (un champ absent est omis). Accueil : `WebSite` (+ `alternateName` « دراجة », `inLanguage`) et `Organization`, sans `SearchAction`. Fiche : `BreadcrumbList` (Accueil → Vélos → Marque `/bikes/{brand}` → Fiche) et `Product` (`name`, `brand`, `url`) **sans `image`** (décision du 16 octobre 2026 : les photos restent hors de Google tant que leurs droits ne sont pas documentés), **sans `offers`, sans prix, sans `aggregateRating`**. Catalogue nu : `ItemList` des cartes de la page ; jamais sur un catalogue filtré. Pages légales : `BreadcrumbList` (Accueil → Page) et `WebPage`, ou `ContactPage` pour le contact (`legalPageJsonLd`).
+- **`robots.txt` et `sitemap.xml` — générés, derrière le verrou.** `src/app/robots.ts` rend `robotsRules(INDEXING_LOCKED)` (`src/lib/seo.ts`) : verrouillé, `User-Agent: *` / `Disallow: /` sans ligne `Sitemap:` — le contenu de l'ancien `public/robots.txt`, supprimé (un fichier statique ne coexiste pas avec la route ; Next écrit `User-Agent` avec sa capitale, la casse d'un champ est libre) ; déverrouillé, tout permis sauf `/api/` (le webhook), plus `Sitemap: https://darrajabikes.com/sitemap.xml` — **plus de `Disallow` sur `/{locale}/compare?` ni `/*per_page=` depuis le 16 octobre 2026** : Google ne lit pas le `noindex` d'une adresse qu'on lui interdit de visiter, et chaque fiche lie une dizaine de comparaisons ; elles restent `noindex, follow` par leur propre balise. `src/app/sitemap.ts` rend `sitemapEntries(INDEXING_LOCKED, données)` (`src/lib/sitemap.ts`, fonction pure) : verrouillé, un `urlset` vide sans appel à l'API ; déverrouillé, un seul fichier par locale servie — **seulement ce que l'API dit indexable** (décision du 16 octobre 2026) : accueil, catalogue nu, `/finder`, les quatre pages légales, pages marque (facette `brands`) et catégorie (facette `categories` sauf `uncategorized`, slug de `routes.ts`) indexables, fiches indexables à leur adresse canonique (`currentBuildPath` : l'adresse millésime pour un vélo nommé comme sa famille), lues par `getCatalog` à `per_page=800` (borne haute de l'API, ramenée silencieusement, absente du contrat) puis par curseur — chacune avec son groupe hreflang (`hreflangGroup`, le même que le `<head>`). `lastmod` = `last_changed_at` des fiches (api #13) ; les autres pages n'ont pas de date fiable et n'en reçoivent aucune ; ni `changefreq` ni `priority`. `revalidate = 86400`, re-rendu sur le tag `catalog`.
 - **Tests** : `tests/e2e/seo.spec.ts` — canonical, hreflang réciproques, JSON-LD, noindex, et le `<head>` reçu par un robot sans JavaScript (UA Bingbot : Next diffère sinon les métadonnées des pages dynamiques dans le `<body>`). `tests/e2e/sitemap.spec.ts` — les routes telles que servies (verrou posé) et les fonctions pures avec le verrou simulé à `false` : la politique cible se vérifie sans le lever. Son premier test échoue le jour de la levée : voulu, il dit de mettre à jour les attentes.
-- **Avant la levée** : droits d'images documentés · `indexable` + `last_changed_at` exposés par l'API (contrat régénéré, puis `lastmod` dans le sitemap) · Search Console · mesure TTFB depuis Riyad · audit crawler et Rich Results Test. **Le jour J** : `INDEXING_LOCKED` à `false` **et** retrait de l'en-tête `X-Robots-Tag` de `next.config.ts`, ensemble — `robots.txt` et le sitemap suivent d'eux-mêmes.
+- **Avant la levée** : droits d'images documentés · `indexable` + `last_changed_at` exposés par l'API (contrat régénéré, puis `lastmod` dans le sitemap) · Search Console · mesure TTFB depuis Riyad · audit crawler et Rich Results Test. *État au 22 octobre 2026* : `noimageindex` tient lieu de droits documentés ; `indexable` et `lastmod` faits (api #79 en production le 19 octobre) ; pages légales en place (section suivante) ; audit crawler fait le 16 octobre ; Search Console à vérifier (DNS chez Cloudflare depuis le 22 octobre) ; mesure depuis Riyad non faite. **Le jour J** : `INDEXING_LOCKED` à `false` **et** retrait de l'en-tête `X-Robots-Tag` de `next.config.ts`, ensemble — `robots.txt` et le sitemap suivent d'eux-mêmes.
 
 ### Catchalls hreflang — décision du 5 septembre 2026, appliquée le 5 octobre (web #18)
 
@@ -339,6 +339,35 @@ groupe : accueil, catalogue (nu ou filtré), fiche vélo, marque, catégorie, co
 finder — même groupe depuis les deux locales, canonical propre inchangé. Le sitemap consomme déjà ce helper : ses
 tests de politique cible, verrou simulé à `false`, attendent aussi les cinq liens ; son code ne change pas.
 `INDEXING_LOCKED`, le noindex global, `robots.txt`, le sitemap servi vide et la signature de `seoFor` restent inchangés.
+
+## Pages légales (web #16) — rédigées le 19 octobre 2026, validées par le fondateur le 22
+
+Exigées avant l'ouverture à Google (plan du 16 octobre 2026). Quatre pages, deux langues : `/{locale}/privacy`
+(confidentialité), `/{locale}/image-rights` (droits des images et retrait), `/{locale}/contact` (contact et informations
+légales), `/{locale}/terms` (conditions d'utilisation).
+
+- **Code** : une route par page (`src/app/[locale]/{page}/page.tsx`, Server Components prérendus, `seoFor`), un rendu commun
+  (`src/components/LegalPage.tsx`), les textes dans `src/lib/legal-copy.ts` (source unique, lue aussi par les tests), les
+  **faits que seul le fondateur peut donner** dans `LEGAL_FACTS` (`src/lib/legal.ts`). Un fait à `null` affiche une marque
+  visible (`data-legal-missing`) et fait échouer `legal-pages.spec.ts` : aucune page ne part en ligne avec un blanc. Les noms
+  latins des textes arabes passent par `<bdi>`.
+- **Décisions du fondateur** : responsable de la publication « فريق Darraja Bikes » / « the Darraja Bikes team », **ni son nom
+  ni son pays** (21 octobre) ; **pas de droit applicable** (21 octobre, section « التعديلات » / « Changes ») ; e-mail
+  `contact@darrajabikes.com` (21 octobre), un renvoi **Cloudflare Email Routing** vers sa boîte (DNS du domaine passés de
+  GoDaddy à Cloudflare le 22 octobre, sans proxy) ; journaux du serveur « deux mois au plus » (`maxage 60` appliqué par lui le
+  21 octobre ; aucun journal des visites, `access_log off`) ; retrait d'une image sous 48 heures (16 octobre). Textes relus sur
+  une page privée (v4) et **validés par son « OK » du 22 octobre 2026**, avec la phrase sur le miroir de l'accueil ; date de
+  « dernière mise à jour » : 22 octobre 2026 (`LEGAL_FACTS.updatedAt`, même forme que les dates servies par l'API).
+- **Droits des images** : la page dit « sans retouche » **sauf l'accueil**, dont la photo de droite est affichée en miroir
+  (exception décidée le 21 octobre, section « Accueil » ci-dessous). Si l'accueil change, la phrase change :
+  `legal-pages.spec.ts` vérifie que la page le dit tant que l'accueil montre une photo en miroir.
+- **Autour** : quatre liens au pied de page de tout le site ; JSON-LD `BreadcrumbList` + `WebPage` / `ContactPage` ; les quatre
+  pages entrent au sitemap à la levée du verrou.
+- **Pas un avis juridique** : les cookies et l'adresse IP de Google Analytics 4 ont été vérifiés dans l'aide Google le
+  19 octobre ; une relecture par un avocat saoudien reste souhaitable après l'ouverture.
+- **Tests** : `tests/e2e/legal-pages.spec.ts` — page, titre, canonical, hreflang, JSON-LD et `noindex` (verrou posé) des huit
+  pages ; liens du pied de page (cible tactile de 24 px) ; aucun défilement en largeur à 320 px ; `<bdi>` ; liens entre pages ;
+  le miroir de l'accueil dit par la page Droits des images ; aucun fait manquant.
 
 ## Pages d'erreur (web #10)
 
@@ -915,7 +944,8 @@ nez et deux flèches de comparaison** — dire « ici on compare » avant toute 
 - **EXCEPTION à « image non modifiée », décidée par le fondateur pour l'accueil seulement** : aucune galerie ne publie la vue du
   côté gauche, la photo de DROITE est donc **affichée en miroir** (`-scale-x-100` sur son cadre ; le fichier servi par l'API reste
   intact). Il avait le choix entre « côte à côte, photos intactes » (recommandé) et « face à face » : il a choisi face à face.
-  Effet connu : une inscription de la photo retournée se lit à l'envers (la jante « Aeolus » de la Madone SL 7).
+  Effet connu : une inscription de la photo retournée se lit à l'envers (la jante « Aeolus » de la Madone SL 7). **La page
+  « Droits des images » dit cette exception** depuis le 22 octobre 2026 (section « Pages légales »).
 - **Crédit — retiré de l'accueil le 21 octobre 2026 au soir (décision du fondateur)** : la ligne « © Trek Bicycle Corporation » sous
   la paire (crédit de l'API, mis en ligne avec #83) a été retirée sur sa demande. Choix proposé et retenu : la provenance des photos
   est dite **au pied de page de tout le site** — « المواصفات والصور من المواقع الرسمية للشركات المصنعة. » / « Specifications and photos
@@ -929,7 +959,7 @@ nez et deux flèches de comparaison** — dire « ici on compare » avant toute 
   dans un cadre aux proportions de son vélo, agrandie et décalée de ses marges : les deux roues tombent sur la même ligne et les
   deux vélos sont à la même échelle. Valeurs mesurées sur l'alpha de `detail_2x`, identiques sur les quatre conversions à 0,3 % près ;
   changer de photo = les remesurer.
-- **Mise en page** (`src/components/home/HomeHeroPair.tsx`) : `figure` en `dir="ltr"` — la paire ne se retourne pas avec la page
+- **Mise en page** (`src/components/home/HomeHeroPair.tsx`) : un `div` (`data-hero-pair`) en `dir="ltr"` — la paire ne se retourne pas avec la page
   arabe ; entièrement décorative (`aria-hidden`, photos en `alt=""`) ; cadres à 44 % de la largeur, flèches à 10 % (le jaune du logo, mesuré
   `#F8C848`, pointe `#F2B705`) ; `priority` (dans le premier écran sur ordinateur et téléphone, la plus grande chose de la page) ;
   `sizes` = 480 px dès 1024 px, 50vw en dessous — sur téléphone, `card` (400 px). Le hero resserre son bas (`pb-10`) quand la paire
@@ -939,7 +969,7 @@ nez et deux flèches de comparaison** — dire « ici on compare » avant toute 
 - **Lecture** (`src/app/[locale]/page.tsx`) : en plus du catalogue, la fiche de chacun des deux vélos (`getBuild`, tag
   `build:{marque}:{slug}` : l'accueil se re-rend quand l'un d'eux change). **Bloc secondaire** : un vélo absent, une photo retirée,
   une API en panne → pas de paire, l'accueil d'avant à l'identique, une ligne `[hero]` au journal en cas d'erreur.
-- **Tests** : `tests/e2e/home-hero.spec.ts` — la règle seule (ordre, miroir à droite, crédit dédoublonné, repli sans paire), le
+- **Tests** : `tests/e2e/home-hero.spec.ts` — la règle seule (ordre, miroir à droite, repli sans paire), le
   garde-fou (l'API sert les six photos), les pages réelles en arabe et en anglais (photos de l'API, place réservée, même ordre dans
   les deux langues, miroir à droite seulement, sous les boutons, aucun crédit sous les vélos, provenance au pied de page), **le cadrage lu sur la photo
   servie elle-même** (alpha relu dans le navigateur, en-tête CORS ajouté par le test : chaque vélo remplit son cadre à 2 px près),

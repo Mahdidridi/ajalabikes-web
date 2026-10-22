@@ -62,8 +62,9 @@ type SeoInput = {
   /**
    * Politique CIBLE, appliquee a la levee du verrou : `false` = `noindex,
    * follow` — un etat d'interface (catalogue filtre, comparaison en cours,
-   * etape du bikefinder) ne s'indexe pas, mais ses liens comptent. Le jour ou
-   * l'API exposera `indexable` par fiche, c'est ce champ qui arrive ici.
+   * etape du bikefinder) ne s'indexe pas, mais ses liens comptent. Fiche,
+   * marque et categorie passent l'`indexable` que l'API decide (photo, seuil
+   * de 5 velos, adresse en attente d'api #25) : le front ne le recalcule pas.
    */
   indexable?: boolean;
 };
@@ -180,10 +181,19 @@ export function bikeDescription(
   return clamp(BIKE_DESCRIPTION[locale](bikeTitle(build), sizes));
 }
 
-function robotsFor(indexable: boolean): Metadata['robots'] {
-  if (INDEXING_LOCKED) return { index: false, follow: false };
+/**
+ * La politique robots d'une page, fonction pure (`tests/e2e/seo.spec.ts`).
+ *
+ * `noimageindex` toujours, verrou pose ou leve (decision du 16 octobre 2026,
+ * plan de levee du noindex) : les photos sont celles des constructeurs, leurs
+ * droits ne sont pas documentes ; elles restent hors de Google Images. Les
+ * medias eux-memes sont servis par l'API, dont le `robots.txt` reste
+ * `Disallow: /`.
+ */
+export function robotsPolicy(locked: boolean, indexable: boolean): NonNullable<Metadata['robots']> {
+  if (locked) return { index: false, follow: false, noimageindex: true };
 
-  return { index: indexable, follow: true };
+  return { index: indexable, follow: true, noimageindex: true };
 }
 
 /**
@@ -193,29 +203,18 @@ function robotsFor(indexable: boolean): Metadata['robots'] {
  * Verrouille : tout est interdit et aucun sitemap n'est annonce — le contenu,
  * mot pour mot, de l'ancien fichier statique `public/robots.txt`.
  *
- * Deverrouille : tout est permis sauf ce qui n'est pas une page, et le sitemap
- * est annonce. Les motifs sont ecrits avec la locale en tete parce qu'une
- * regle robots se compare au DEBUT du chemin : `/compare?` ne rencontrerait
- * jamais `/en-sa/compare?…`.
+ * Deverrouille : tout est permis sauf le webhook, et le sitemap est annonce.
+ * Plus de `Disallow` sur `/{locale}/compare?` ni `/*per_page=` (decision du
+ * 16 octobre 2026) : Google ne lit pas le `noindex` d'une adresse qu'on lui
+ * interdit de visiter, et chaque fiche lie une dizaine de comparaisons —
+ * bloquees, elles pourraient etre indexees sans contenu. Elles restent
+ * `noindex, follow` par leur propre balise.
  */
 export function robotsRules(locked: boolean): MetadataRoute.Robots {
   if (locked) return { rules: { userAgent: '*', disallow: '/' } };
 
   return {
-    rules: {
-      userAgent: '*',
-      allow: '/',
-      disallow: [
-        // Une comparaison avec query est un etat d'interface : les permutations
-        // d'un meme ensemble sont infinies. Le comparateur nu reste une page.
-        ...LOCALES.map((locale) => `/${locale}/compare?`),
-        // « Afficher plus » du catalogue, ou que `per_page` tombe dans la query
-        // (`?per_page=48` comme `?brand=trek&per_page=48`).
-        '/*per_page=',
-        // Le webhook d'invalidation.
-        '/api/',
-      ],
-    },
+    rules: { userAgent: '*', allow: '/', disallow: ['/api/'] },
     sitemap: `${SITE_URL}/sitemap.xml`,
   };
 }
@@ -243,6 +242,6 @@ export function seoFor({ locale, path, canonicalPath, title, description, indexa
       locale: ogLocaleOf(locale),
       alternateLocale: LOCALES.filter((l) => l !== locale).map(ogLocaleOf),
     },
-    robots: robotsFor(indexable),
+    robots: robotsPolicy(INDEXING_LOCKED, indexable),
   };
 }

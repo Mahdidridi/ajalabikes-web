@@ -1,5 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { getCatalog, LOCALES, type BuildCard, type CatalogPage, type Facets } from '@/lib/api';
+import { currentBuildPath } from '@/lib/build-address';
+import { LEGAL_PAGES } from '@/lib/legal';
 import { categorySlug, hasCategoryPage } from '@/lib/routes';
 import { absoluteUrl, hreflangGroup } from '@/lib/seo';
 
@@ -11,20 +13,23 @@ import { absoluteUrl, hreflangGroup } from '@/lib/seo';
  * `sitemapEntries` TRANSFORME ces donnees en entrees — une fonction pure,
  * testee sur une fixture par `tests/e2e/sitemap.spec.ts`.
  *
- * Pas de `lastmod` : l'API n'expose pas encore de date de changement fiable
- * par page, et une date inventee vaut moins que pas de date — Google l'ignore
- * des qu'il la prend en defaut. Ni `changefreq` ni `priority` : il ne les lit
- * plus.
+ * Ce qui entre, c'est ce que l'API dit indexable (decision du 16 octobre 2026,
+ * plan de levee du noindex) : une marque ou une categorie sous le seuil de
+ * 5 velos, une fiche sans photo ou a l'adresse encore provisoire (api #25)
+ * n'y sont pas. `lastmod` = `last_changed_at` des fiches, la date de dernier
+ * changement que l'API sert (api #13) ; les autres pages n'ont pas de date
+ * fiable et n'en recoivent aucune — une date inventee vaut moins que pas de
+ * date. Ni `changefreq` ni `priority` : Google ne les lit plus.
  */
 
-/** Un seau de facette reduit a sa cle : c'est le slug de la page marque, la source du slug de categorie. */
-type Bucket = Pick<Facets['brands'][number], 'key'>;
+/** Un seau de facette : sa cle (slug de la page marque, source du slug de categorie) et l'avis de l'API. */
+type Bucket = Pick<Facets['brands'][number], 'key' | 'indexable'>;
 
 export type SitemapData = {
   brands: Bucket[];
   /** La facette complete, `uncategorized` compris : c'est `sitemapEntries` qui l'ecarte. */
   categories: Bucket[];
-  builds: Pick<BuildCard, 'slug' | 'brand'>[];
+  builds: Pick<BuildCard, 'slug' | 'brand' | 'indexable' | 'model_path' | 'year' | 'last_changed_at'>[];
 };
 
 /** Ce que le sitemap recoit tant que le verrou est pose : rien n'est lu. */
@@ -41,7 +46,8 @@ const PER_PAGE = '800';
 const SOURCE_LOCALE = LOCALES[0];
 
 const cartes = (page: CatalogPage): SitemapData['builds'] =>
-  page.data.map(({ slug, brand }) => ({ slug, brand }));
+  page.data.map(({ slug, brand, indexable, model_path, year, last_changed_at }) =>
+    ({ slug, brand, indexable, model_path, year, last_changed_at }));
 
 /**
  * Tout le catalogue, page de curseur apres page de curseur — chaque lecture
@@ -67,27 +73,36 @@ export async function loadSitemapData(): Promise<SitemapData> {
  * soient les donnees recues : un sitemap vide ne dit rien a Google, un
  * sitemap plein pendant un noindex lui dit deux choses contraires.
  *
- * Chaque page sort une fois par locale servie, avec le meme groupe hreflang
- * que son `<head>`. Aucun catalogue filtre, aucune etape du bikefinder,
- * aucune comparaison : ce sont des etats d'interface, `noindex` par politique.
- * Ordre : les pages fixes, les marques, les categories, puis les fiches.
+ * Chaque page indexable sort une fois par locale servie, avec le meme groupe
+ * hreflang que son `<head>`. Aucun catalogue filtre, aucune etape du
+ * bikefinder, aucune comparaison : ce sont des etats d'interface, `noindex`
+ * par politique. Une fiche sort a son adresse canonique (`currentBuildPath`) :
+ * l'adresse millesime pour un velo nomme comme sa famille. Ordre : les pages
+ * fixes, les marques, les categories, puis les fiches.
  */
 export function sitemapEntries(locked: boolean, data: SitemapData): MetadataRoute.Sitemap {
   if (locked) return [];
 
-  const chemins = [
-    '',
-    '/bikes',
-    '/finder',
-    ...data.brands.map((b) => `/bikes/${b.key}`),
+  const pages: { chemin: string; lastModified?: string }[] = [
+    { chemin: '' },
+    { chemin: '/bikes' },
+    { chemin: '/finder' },
+    // Les pages legales (web #16) : indexables, comme toute page du site.
+    ...LEGAL_PAGES.map((page) => ({ chemin: `/${page}` })),
+    ...data.brands.filter((b) => b.indexable).map((b) => ({ chemin: `/bikes/${b.key}` })),
     // Seules les categories qui ont une page : la table de `routes.ts`, jamais un slug derive.
-    ...data.categories.flatMap((c) => (hasCategoryPage(c.key) ? [`/${categorySlug(c.key)}`] : [])),
-    ...data.builds.map((b) => `/bikes/${b.brand.slug}/${b.slug}`),
+    ...data.categories.flatMap((c) =>
+      c.indexable && hasCategoryPage(c.key) ? [{ chemin: `/${categorySlug(c.key)}` }] : [],
+    ),
+    ...data.builds
+      .filter((b) => b.indexable)
+      .map((b) => ({ chemin: currentBuildPath(b), lastModified: b.last_changed_at })),
   ];
 
-  return chemins.flatMap((chemin) =>
+  return pages.flatMap(({ chemin, lastModified }) =>
     LOCALES.map((locale) => ({
       url: absoluteUrl(locale, chemin),
+      ...(lastModified ? { lastModified } : {}),
       alternates: { languages: hreflangGroup(chemin) },
     })),
   );

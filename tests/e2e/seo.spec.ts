@@ -1,6 +1,6 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 import type { Build, BuildCard, Locale } from '@/lib/api';
-import { bikeDescription, hreflangGroup, seoFor } from '@/lib/seo';
+import { bikeDescription, hreflangGroup, robotsPolicy, seoFor } from '@/lib/seo';
 import { currentBuild, expectedBikeCount, readBuild, readCatalog, requiredFacet } from './helpers/catalog-api';
 import { expectLatinBrand } from './helpers/catalog-invariants';
 
@@ -257,9 +257,19 @@ test.describe('hreflang', () => {
           canonical: `${SITE}/${locale}${path}`,
           languages: expected,
         });
-        expect(metadata.robots).toEqual({ index: false, follow: false });
+        expect(metadata.robots).toEqual({ index: false, follow: false, noimageindex: true });
       }
     }
+  });
+
+  test('fonction pure : la politique robots cible, verrou simule', () => {
+    // Decision du 16 octobre 2026 : aucune image du site dans Google (droits des images constructeur non documentes),
+    // verrou pose ou leve. Les medias restent servis par l'API, dont le robots.txt reste `Disallow: /`.
+    expect(robotsPolicy(true, true)).toEqual({ index: false, follow: false, noimageindex: true });
+    expect(robotsPolicy(true, false)).toEqual({ index: false, follow: false, noimageindex: true });
+    // Verrou leve : `indexable` decide par l'API (fiche) ou par la page (etat d'interface) ; les liens comptent toujours.
+    expect(robotsPolicy(false, true)).toEqual({ index: true, follow: true, noimageindex: true });
+    expect(robotsPolicy(false, false)).toEqual({ index: false, follow: true, noimageindex: true });
   });
 });
 
@@ -297,11 +307,10 @@ test.describe('JSON-LD', () => {
     });
     expect(produit!.name).not.toContain(build.year_label);
 
-    // Les photos de la galerie, en taille `detail`, en URL absolues.
-    const images = produit!.image as string[];
-    expect(images.length).toBeGreaterThan(0);
-    expect(images).toEqual(build.images.map((image) => image.sizes.detail.url));
-    for (const image of images) expect(image).toMatch(/^https:\/\/.+-detail\.webp$/);
+    // Aucune image (decision du 16 octobre 2026) : les photos sont des photos de constructeur, leurs droits ne sont pas
+    // documentes ; elles restent hors de Google, et sans `offers` ni avis aucun extrait produit n'est possible.
+    expect(build.images.length).toBeGreaterThan(0);
+    expect(produit).not.toHaveProperty('image');
 
     // Le MSRP US n'est pas un prix local : aucune offre. Aucune note fabriquee.
     for (const interdit of ['offers', 'aggregateRating', 'review', 'price']) {

@@ -31,6 +31,19 @@ type AddressBuild = Pick<Build, 'slug' | 'year' | 'is_current' | 'model_path'> &
   brand: Pick<Build['brand'], 'slug'>;
 };
 
+/**
+ * L'adresse canonique de l'édition COURANTE d'un vélo — celle qu'une carte du catalogue représente : l'adresse modèle,
+ * sauf pour un vélo nommé comme sa famille (`model_path` nul, 3 au 14 octobre) dont l'adresse modèle appartient à la
+ * famille — alors son adresse millésime, quand l'année est connue. Le sitemap et `resolveBuildAddress` la partagent.
+ */
+export function currentBuildPath(build: Pick<Build, 'slug' | 'year' | 'model_path'> & {
+  brand: Pick<Build['brand'], 'slug'>;
+}): string {
+  const model = `/bikes/${build.brand.slug}/${build.slug}`;
+
+  return build.model_path === null && build.year !== null ? `${model}-${build.year}` : model;
+}
+
 /** Chemins sous la locale (convention de `absoluteUrl`) : `/bikes/trek/fuel-ex-5-gen-7-2026`. */
 export type BuildAddress =
   | { kind: 'render'; path: string; canonicalPath: string }
@@ -49,7 +62,7 @@ export type BuildAddress =
 export function resolveBuildAddress(requested: { brand: string; slug: string }, build: AddressBuild): BuildAddress {
   const model = `/bikes/${build.brand.slug}/${build.slug}`;
   const edition = build.year === null ? null : `${model}-${build.year}`;
-  const own = edition === null || (build.is_current && build.model_path !== null) ? model : edition;
+  const own = build.is_current ? currentBuildPath(build) : (edition ?? model);
   const asked = `/bikes/${requested.brand}/${requested.slug}`;
 
   if (asked === model) return { kind: 'render', path: model, canonicalPath: model };

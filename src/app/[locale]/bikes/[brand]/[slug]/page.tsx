@@ -63,6 +63,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     canonicalPath: address.canonicalPath,
     title: bikeTitle(build),
     description: bikeDescription(locale, build),
+    // Decide par l'API (photo, seuil de la categorie, adresse provisoire d'api #25) : jamais recalcule ici.
+    indexable: build.indexable,
   });
 }
 

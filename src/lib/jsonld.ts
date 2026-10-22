@@ -116,6 +116,33 @@ export function brandBreadcrumbJsonLd(locale: Locale, brand: { name: string; slu
   ]);
 }
 
+/**
+ * Une page legale (web #16) : son fil d'Ariane, Accueil → Page, et la page elle-meme — `ContactPage` pour le contact,
+ * `WebPage` sinon —, rattachee au site. Textes : le titre et la description de la page, rien d'autre.
+ */
+export function legalPageJsonLd(
+  locale: Locale,
+  page: { type: 'WebPage' | 'ContactPage'; name: string; description: string; path: string },
+): JsonLdObject[] {
+  const t = TRAIL_COPY[locale];
+
+  return [
+    breadcrumbJsonLd(locale, [
+      { name: t.home, path: '' },
+      { name: page.name, path: page.path },
+    ]),
+    {
+      '@context': 'https://schema.org',
+      '@type': page.type,
+      name: page.name,
+      description: page.description,
+      url: absoluteUrl(locale, page.path),
+      inLanguage: language(locale),
+      isPartOf: { '@id': WEBSITE_ID },
+    },
+  ];
+}
+
 /** Le fil d'Ariane d'une page categorie, qui vit a la racine de la locale : Accueil → Categorie. */
 export function categoryBreadcrumbJsonLd(locale: Locale, category: { name: string; path: string }): JsonLdObject {
   const t = TRAIL_COPY[locale];
@@ -127,10 +154,12 @@ export function categoryBreadcrumbJsonLd(locale: Locale, category: { name: strin
 }
 
 /**
- * Le produit d'une fiche. `image` : les photos de la galerie en taille
- * `detail` — toutes portent des droits documentes cote API, condition pour
- * inviter Google Images. L'API n'expose ni description, ni `sku`, ni `model` :
- * ils n'apparaissent pas tant qu'elle ne les fournit pas.
+ * Le produit d'une fiche. Sans `image` (decision du 16 octobre 2026, plan de
+ * levee du noindex) : les photos sont celles des constructeurs, leurs droits
+ * ne sont pas documentes, elles restent hors de Google (`noimageindex`) ; et
+ * sans `offers` ni avis, aucun extrait produit n'est possible de toute facon.
+ * L'API n'expose ni description, ni `sku`, ni `model` : ils n'apparaissent pas
+ * tant qu'elle ne les fournit pas.
  */
 export function productJsonLd(
   locale: Locale,
@@ -145,9 +174,6 @@ export function productJsonLd(
     brand: { '@type': 'Brand', name: build.brand.name },
     url: absoluteUrl(locale, path),
   };
-
-  const images = build.images.map((media) => media.sizes.detail.url);
-  if (images.length > 0) produit.image = images;
 
   return produit;
 }
