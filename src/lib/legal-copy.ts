@@ -173,7 +173,9 @@ export const LEGAL_COPY: Record<LegalPageKey, Record<Locale, LegalPageCopy>> = {
           blocks: [
             {
               ul: [
-                'نعرض الصورة كما نشرتها الشركة المصنّعة، دون تعديل.',
+                // Exception de l'accueil (décision du fondateur du 21 octobre 2026 ; phrase validée le 22) : la photo de
+                // droite y est affichée en miroir (`src/lib/home-hero.ts`). Si l'accueil change, cette phrase change.
+                'نعرض الصورة كما نشرتها الشركة المصنّعة، دون تعديل — باستثناء الصفحة الرئيسية، حيث تُعرض إحدى الصورتين معكوسةً لتتقابل الدراجتان.',
                 'الملاحظات المرسومة التي تشير إلى القطع طبقةٌ مستقلة فوق الصورة؛ والصورة نفسها لا تتغيّر.',
                 'لا نبيع هذه الصور ولا نرخّصها، ولا ندّعي أي حق عليها.',
               ],
@@ -225,7 +227,7 @@ export const LEGAL_COPY: Record<LegalPageKey, Record<Locale, LegalPageCopy>> = {
           blocks: [
             {
               ul: [
-                'We show the photo as the manufacturer published it, without retouching.',
+                'We show the photo as the manufacturer published it, without retouching — except on the home page, where one of the two photos is shown mirrored so that the two bikes face each other.',
                 'The drawn notes pointing to parts are a separate layer over the photo; the photo itself is unchanged.',
                 'We do not sell or license these photos, and we claim no rights over them.',
               ],

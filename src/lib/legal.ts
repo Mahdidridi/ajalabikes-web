@@ -33,7 +33,9 @@ export const LEGAL_FACTS: {
   // `maxage 60` dans /etc/logrotate.d/nginx, appliqué par le fondateur le 21 octobre 2026 (vérifié sur le serveur) :
   // aucun journal d'erreurs n'est gardé plus de 60 jours — « deux mois au plus », sa formulation du 19 octobre.
   logRetention: { 'ar-sa': 'شهرين على الأكثر', 'en-sa': 'two months at most' },
-  updatedAt: null,
+  // Le jour de la mise en ligne des quatre pages, sur l'« OK » du fondateur à la relecture v4 (22 octobre 2026). Même
+  // forme que les dates servies par l'API sur la fiche (« 1 أكتوبر 2026 » / « October 1, 2026 »). À changer avec le texte.
+  updatedAt: { 'ar-sa': '22 أكتوبر 2026', 'en-sa': 'October 22, 2026' },
 };
 
 /**

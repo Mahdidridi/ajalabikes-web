@@ -73,6 +73,27 @@ test('ar-sa : les noms latins sont isoles par <bdi> dans le texte arabe', async 
   await expect(tab.locator('article bdi code', { hasText: /^_ga$/ })).toHaveCount(1);
 });
 
+/**
+ * L'exception de l'accueil (décision du fondateur du 21 octobre 2026 ; phrase validée le 22) : la photo de droite de
+ * l'accueil est affichée en miroir. Tant qu'elle l'est, la page Droits des images le dit, dans les deux langues — sinon
+ * elle dirait le contraire de ce que fait le site. Si l'accueil change, la phrase et ce test changent avec lui.
+ */
+for (const locale of LOCALES)
+  test(`${locale} : la page Droits des images dit le miroir de l'accueil`, async ({ page: tab }) => {
+    await tab.goto(`/${locale}`);
+    const miroirs = await tab.locator('[data-hero-pair] [data-hero-bike]').evaluateAll(
+      (cadres) =>
+        cadres.filter((cadre) => {
+          const style = getComputedStyle(cadre);
+          return style.scale.startsWith('-1 ') || /^matrix\(-1, 0, 0, 1,/.test(style.transform);
+        }).length,
+    );
+    expect(miroirs, "l'accueil montre une photo en miroir").toBe(1);
+
+    await tab.goto(`/${locale}/image-rights`);
+    await expect(tab.locator('article li', { hasText: locale === 'ar-sa' ? 'معكوسةً' : 'shown mirrored' })).toHaveCount(1);
+  });
+
 test('les liens entre pages legales menent a la bonne page, dans la langue de la page', async ({ page: tab }) => {
   await tab.goto('/en-sa/contact');
   await tab.getByRole('link', { name: LEGAL_COPY['image-rights']['en-sa'].title }).click();
