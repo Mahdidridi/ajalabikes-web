@@ -1,49 +1,12 @@
 import { expect, test } from '@playwright/test';
-import { INDEXING_LOCKED, robotsRules } from '@/lib/seo';
+import { robotsRules } from '@/lib/seo';
 import { sitemapEntries, type SitemapData } from '@/lib/sitemap';
 
 /**
- * robots.txt et sitemap.xml derriere le verrou d'indexation (decision du
- * 28 aout 2026, reaffirmee le 2 septembre) : tant qu'il est pose, un robot
- * recoit « tout interdit » et un sitemap vide ; la politique cible existe
- * deja dans le code, sans etre servie.
- *
- * Deux niveaux. Les routes, telles que servies AUJOURD'HUI. Puis les
- * fonctions pures, verrou force a `false` : la politique cible se verifie
- * sans toucher au verrou.
+ * robots.txt et sitemap.xml : les fonctions pures, verrou pose ET leve (le verrou est leve depuis l'ouverture a Google du
+ * 23 octobre 2026). Les routes telles que servies sont gardees par `tests/e2e/indexation.spec.ts`.
  */
 const SITE = 'https://darrajabikes.com';
-
-test.describe('routes servies, verrou pose', () => {
-  test('le verrou est pose — a la levee, ces tests changent avec lui', () => {
-    expect(INDEXING_LOCKED).toBe(true);
-  });
-
-  test('GET /robots.txt interdit tout, sans annoncer de sitemap', async ({ request }) => {
-    const res = await request.get('/robots.txt');
-
-    expect(res.status()).toBe(200);
-    expect(res.headers()['content-type']).toContain('text/plain');
-
-    // Le contenu de l'ancien fichier statique — Next ecrit `User-Agent`, la
-    // casse d'un champ est libre (RFC 9309).
-    const corps = (await res.text()).replace(/\r\n/g, '\n');
-    expect(corps.trim()).toBe('User-Agent: *\nDisallow: /');
-    expect(corps).not.toContain('Sitemap:');
-  });
-
-  test('GET /sitemap.xml repond 200 avec un urlset vide', async ({ request }) => {
-    const res = await request.get('/sitemap.xml');
-
-    expect(res.status()).toBe(200);
-    expect(res.headers()['content-type']).toContain('application/xml');
-
-    const corps = await res.text();
-    expect(corps).toContain('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"');
-    expect(corps).not.toContain('<url>');
-    expect(corps).not.toContain('<loc>');
-  });
-});
 
 test.describe('politique cible, verrou simule', () => {
   const TREK = { slug: 'trek', name: 'Trek' };

@@ -33,16 +33,15 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     description,
     openGraph: { siteName: SITE_NAME, title: SITE_NAME, description },
     /*
-     * NOINDEX SUR TOUT LE SITE, decision du 11 aout 2026, reaffirmee le 28 aout
-     * et le 2 septembre : aucune indexation ni sitemap avant les droits
-     * d'images, les sitemaps et la mesure depuis Riyad.
+     * FILET : une page qui n'appelle pas `seoFor` reste `noindex, nofollow`.
+     * L'indexation s'ouvre page par page via `seoFor` (et `INDEXING_LOCKED`,
+     * `src/lib/seo.ts`), jamais par ce defaut.
      *
-     * Le catalogue est incomplet et les droits d'image ne sont pas encore
-     * accordes : une page indexee aujourd'hui serait vue par Google avant
-     * d'etre prete, et une premiere impression de qualite ne se rejoue pas.
-     *
-     * Ce defaut RESTE apres la levee : c'est `INDEXING_LOCKED` (`src/lib/seo.ts`)
-     * qui s'ouvre, page par page via `seoFor`, jamais ce filet.
+     * Historique : noindex sur tout le site depuis le 11 aout 2026 (reaffirme
+     * les 28 aout et 2 septembre) — le catalogue etait incomplet et les droits
+     * d'image non accordes : une page indexee trop tot serait vue par Google
+     * avant d'etre prete, et une premiere impression de qualite ne se rejoue
+     * pas. Verrou leve par la decision du fondateur du 16 octobre 2026.
      */
     robots: { index: false, follow: false },
   };

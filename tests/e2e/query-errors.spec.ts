@@ -13,8 +13,9 @@ for (const locale of ['ar-sa', 'en-sa'] as const) {
     expect(await cards.evaluateAll((links) => links.map((a) => a.getAttribute('href')))).toEqual(original);
     await expect(page.locator('select#brand')).toHaveValue('canyon');
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', `https://darrajabikes.com${path}`);
-    expect(response!.headers()['x-robots-tag']).toContain('noindex');
-    await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
+    // Un catalogue filtre est un etat d'interface : `noindex, follow` par sa propre balise, plus par un en-tete global.
+    expect(response!.headers()['x-robots-tag']).toBeUndefined();
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex, follow, noimageindex');
     await page.locator('select#sort').selectOption('price_asc');
     await expect(page).toHaveURL(/sort=price_asc/);
     await expect(cards.first()).toBeVisible();

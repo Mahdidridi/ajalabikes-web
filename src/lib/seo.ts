@@ -33,17 +33,24 @@ const DEFAULT_LOCALE: Locale = 'en-sa';
 
 /**
  * VERROU D'INDEXATION — decision du 28 aout 2026, reaffirmee le 2 septembre :
- * rien ne s'indexe avant les droits d'images, les sitemaps, `indexable` cote
- * API et la mesure depuis Riyad. Tant qu'il est pose, chaque page sort en
- * `noindex, nofollow` quelle que soit sa politique cible, l'en-tete
- * `X-Robots-Tag` de `next.config.ts` dit la meme chose, `robots.txt` interdit
- * tout (`robotsRules`) et le sitemap est vide (`src/lib/sitemap.ts`).
+ * rien ne s'indexait avant les droits d'images, les sitemaps, `indexable` cote
+ * API et la mesure depuis Riyad. LEVE par la decision du fondateur du 16 octobre
+ * 2026 (ouverture a Google).
  *
- * A la levee : passer a `false` ET retirer l'en-tete, ensemble — sinon l'un
- * annule l'autre. Le `robots` du layout reste : c'est le defaut des pages qui
+ * Pose, il forcait `noindex, nofollow` sur chaque page quelle que soit sa
+ * politique cible, doublait l'ordre par l'en-tete `X-Robots-Tag` de
+ * `next.config.ts`, interdisait tout dans `robots.txt` (`robotsRules`) et vidait
+ * le sitemap (`src/lib/sitemap.ts`). Leve, chaque page suit sa politique cible
+ * (`robotsPolicy` : l'`indexable` que l'API decide, `noindex, follow` pour un
+ * etat d'interface), `robots.txt` annonce le sitemap et le sitemap liste les
+ * pages indexables.
+ *
+ * Retour arriere d'urgence : repasser a `true` ET remettre l'en-tete dans
+ * `next.config.ts` (son commentaire dit comment), ensemble — sinon l'un annule
+ * l'autre. Le `robots` du layout reste : c'est le defaut des pages qui
  * n'appellent pas `seoFor`.
  */
-export const INDEXING_LOCKED = true as boolean;
+export const INDEXING_LOCKED = false as boolean;
 
 type SeoInput = {
   locale: Locale;

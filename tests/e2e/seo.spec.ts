@@ -5,10 +5,9 @@ import { currentBuild, expectedBikeCount, readBuild, readCatalog, requiredFacet 
 import { expectLatinBrand } from './helpers/catalog-invariants';
 
 /**
- * SEO prepare SANS lever le noindex (decisions du 2 septembre 2026, CLAUDE.md
- * « Routes et locales » points 1 a 5) : canonical absolu et sans query,
- * hreflang reciproques ar-SA / ar / en-SA / en / x-default, JSON-LD assemble depuis
- * l'API — et `noindex` toujours present sur chaque page.
+ * SEO (decisions du 2 septembre 2026, CLAUDE.md « Routes et locales » points 1 a 5) : canonical absolu et sans query,
+ * hreflang reciproques ar-SA / ar / en-SA / en / x-default, JSON-LD assemble depuis l'API. Depuis l'ouverture a Google
+ * du 23 octobre 2026, la balise robots de chaque page suit l'API ou la page : `tests/e2e/indexation.spec.ts`.
  *
  * L'hote canonique est celui de la production : les balises disent ou vit la
  * page, pas d'ou elle est servie. Un serveur local doit donc emettre les
@@ -257,7 +256,8 @@ test.describe('hreflang', () => {
           canonical: `${SITE}/${locale}${path}`,
           languages: expected,
         });
-        expect(metadata.robots).toEqual({ index: false, follow: false, noimageindex: true });
+        // Verrou leve : une page sans avis contraire est indexable ; aucune image dans Google.
+        expect(metadata.robots).toEqual({ index: true, follow: true, noimageindex: true });
       }
     }
   });
@@ -381,26 +381,7 @@ test.describe('JSON-LD', () => {
   });
 });
 
-test.describe('noindex conserve', () => {
-  test('chaque page reste noindex malgre canonical et hreflang', async ({ page, request }) => {
-    // Le verrou global tient tant que la levee n'est pas decidee : rien ne
-    // s'indexe, meme les pages dont la politique cible est « index ».
-    for (const chemin of [
-      '/ar-sa',
-      '/en-sa/bikes',
-      '/en-sa/bikes?brand=trek',
-      modelPath(await currentBuild(request, 'en-sa')),
-      '/en-sa/compare',
-      '/en-sa/finder',
-    ]) {
-      await page.goto(chemin);
-
-      const robots = page.locator('meta[name="robots"]');
-      await expect(robots, chemin).toHaveCount(1);
-      await expect(robots, chemin).toHaveAttribute('content', /noindex/);
-    }
-  });
-
+test.describe('robots sans javascript', () => {
   test('un robot sans JavaScript recoit canonical et hreflang dans le head', async ({ request }) => {
     // Next diffère les metadonnees des pages dynamiques dans le <body> pour
     // les navigateurs ; les robots « HTML seulement » (Bingbot ici) doivent les
@@ -415,7 +396,7 @@ test.describe('noindex conserve', () => {
       expect(head, chemin).toContain('rel="canonical"');
       const languages = Array.from(head.matchAll(/hreflang="([^"]+)"/g), (match) => match[1]);
       expect(languages.sort(), chemin).toEqual(['ar', 'ar-sa', 'en', 'en-sa', 'x-default']);
-      expect(head, chemin).toContain('noindex');
+      expect(head, chemin).toMatch(/<meta name="robots" content="(?:no)?index, follow, noimageindex"/);
     }
   });
 });
@@ -462,7 +443,6 @@ test.describe('pages marque et categorie', () => {
       en: `${SITE}/en-sa/road-bikes`,
       'x-default': `${SITE}/en-sa/road-bikes`,
     });
-    await expect(page.locator('meta[name="robots"]').first()).toHaveAttribute('content', /noindex/);
 
     const fil = bloc(await jsonLd(page), 'BreadcrumbList');
     const maillons = fil!.itemListElement as { item: string }[];

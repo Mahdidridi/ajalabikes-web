@@ -97,14 +97,15 @@ test.describe('POST /api/revalidate', () => {
     expect(new Date(corps.at).toISOString()).toBe(corps.at);
   });
 
-  test('la route porte X-Robots-Tag comme toute reponse du site', async ({ request }) => {
-    // L'en-tete vient de `headers()` dans next.config.ts : il doit couvrir les
-    // routes API, pas seulement les pages.
+  test('la route ne porte plus de X-Robots-Tag : robots.txt la ferme, aucun en-tete global', async ({ request }) => {
+    // L'en-tete global de `next.config.ts` est retire avec le verrou d'indexation ; le webhook reste hors de
+    // portee des robots par `Disallow: /api/` (`tests/e2e/indexation.spec.ts`). Un en-tete global ne peut que
+    // fermer : le remettre desindexerait tout le site.
     const refusee = await revalidate(request, {}, null);
-    expect(refusee.headers()['x-robots-tag']).toBe('noindex, nofollow');
+    expect(refusee.headers()['x-robots-tag']).toBeUndefined();
 
     const acceptee = await revalidate(request, { tags: ['compare'] });
-    expect(acceptee.headers()['x-robots-tag']).toBe('noindex, nofollow');
+    expect(acceptee.headers()['x-robots-tag']).toBeUndefined();
   });
 });
 

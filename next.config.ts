@@ -27,16 +27,20 @@ const nextConfig: NextConfig = {
   skipTrailingSlashRedirect: true,
 
   /**
-   * Aucune indexation tant que les URL ne sont pas figees (decision du
-   * 28 aout 2026). L'en-tete double le <meta name="robots"> du layout : il
-   * couvre aussi ce qui n'a pas de <head> (robots.txt, 404, redirections).
+   * Il y avait ici, tant que le verrou d'indexation tenait (decision du 28 aout
+   * 2026), l'en-tete `X-Robots-Tag: noindex, nofollow` sur TOUTE route — il
+   * doublait le <meta name="robots"> du layout et couvrait ce qui n'a pas de
+   * <head> (robots.txt, 404, redirections). Retire avec le verrou
+   * (`INDEXING_LOCKED`, `src/lib/seo.ts`) : chaque page dit elle-meme si elle
+   * s'indexe. Un en-tete global ne peut que fermer, jamais ouvrir.
+   *
+   * Retour arriere d'urgence : remettre en tete du tableau
+   * `{ source: '/:path*', headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }] }`
+   * et repasser `INDEXING_LOCKED` a `true`, ensemble. `tests/e2e/indexation.spec.ts`
+   * garde l'absence de cet en-tete : le remettre seul desindexerait tout le site.
    */
   async headers() {
     return [
-      {
-        source: '/:path*',
-        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
-      },
       {
         /**
          * Illustrations des tuiles du bikefinder (`public/finder-art`, decision du
