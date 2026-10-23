@@ -5,9 +5,10 @@
 **Projet : Darraja Bikes** (دراجة) — nom technique `darrajabikes`, domaine `darrajabikes.com`
 (décision du 28 août 2026). Le dépôt garde son nom historique, comme `package.json` (`ajala-web`) et
 `ajalaImageLoader` : seul le nom affiché change (header, footer, métadonnées — issue #6).
-**Aucune indexation ni sitemap actif tant que les URL ne sont pas figées** : `robots: { index: false, follow: false }`
-reste global dans `src/app/[locale]/layout.tsx` ; `robots.ts` et `sitemap.ts` existent mais rendent « tout interdit » et un
-`urlset` vide tant que `INDEXING_LOCKED` est posé (voir « SEO ») ; rien n'est soumis à Search Console.
+**Ouvert à Google depuis le 23 octobre 2026** (décision du fondateur du 16 octobre, date révisée le 19) : `INDEXING_LOCKED`
+est à `false` et l'en-tête `X-Robots-Tag` global est retiré ; chaque page dit elle-même si elle s'indexe (`seoFor`, avec
+l'`indexable` décidé par l'API), toujours sans ses images (`noimageindex`) ; le `robots` du layout (`noindex, nofollow`) reste le
+filet d'une page qui n'appellerait pas `seoFor` ; `robots.txt` annonce le sitemap, envoyé à Search Console le même jour (voir « SEO »).
 
 > L'architecture, les règles de données et le périmètre du projet sont définis dans `../CLAUDE.md`.
 > **Le lire avant toute tâche non triviale.** Ce fichier ne couvre que ce dépôt.
@@ -142,8 +143,8 @@ ont chacune une page à chemin propre. Les chemins sont construits par `src/lib/
 - **Collisions** : `[category]` vit à la racine de la locale. Les dossiers statiques `bikes`, `compare`, `finder` gagnent
   (Next préfère un segment littéral — vérifié par `tests/e2e/brand-category.spec.ts`) ; tout autre segment rend 404.
   Une nouvelle page à la racine de la locale doit être un dossier statique, jamais un second segment dynamique.
-- Marque ou catégorie inconnue → `notFound()`. Métadonnées minimales (`title`, `description`, noindex) en attendant le
-  helper SEO. Même schéma de cache que la fiche (voir « Cache »), tag `catalog`.
+- Marque ou catégorie inconnue → `notFound()`. Métadonnées par `seoFor`, avec l'`indexable` décidé par l'API (voir « SEO »).
+  Même schéma de cache que la fiche (voir « Cache »), tag `catalog`.
 - Liens entrants : tuiles de l'accueil (`HomeBrands`, `HomeCategories`) et nom de la marque sur la fiche. Les tuiles des
   pages elles-mêmes mènent au catalogue filtré (`/bikes?brand=…&category=…`), un résultat réel.
 - **Une fiche, une URL** (`src/app/[locale]/bikes/[brand]/[slug]/page.tsx`, `resolve()` partagé par la page et
@@ -196,7 +197,7 @@ inaccessible, et 40 éditions supplantées annotées restaient invisibles. L'API
   type de tag : le contrat du 2 septembre est inchangé.
 - **Laissés de côté** : le sélecteur de millésimes et le bandeau « modèle actuel » (nouveaux textes à valider), le bloc
   « ce qui change » (`changes_since_previous` n'est pas servi), les liens internes (les cartes lient déjà l'adresse
-  modèle, bâtie sur `slug` et non sur `model_path`) et le sitemap (verrouillé), le 404 de l'adresse modèle d'un vélo
+  modèle, bâtie sur `slug` et non sur `model_path`) et le sitemap (les adresses millésime n'y sont pas : web #74), le 404 de l'adresse modèle d'un vélo
   nommé comme sa famille (attend la page famille, #14).
 - **Tests** : `build-address.spec.ts` (résolveur, tags, `canonicalPath`, sur des réponses synthétiques) ;
   `edition-address.spec.ts` (pages réelles, attentes lues dans l'API : Trek Fuel+ EX 9.8 Eagle 90 Gen 2, 2026 et 2027 ;
@@ -298,9 +299,9 @@ Contrat partagé avec l'API : `../tasks/2026-09-02-cache-contrat.md`. Les tags y
   car le setup ET les tests invalident reellement son cache, meme pour une selection de specs. Ne jamais copier le secret dans un rapport ou publier des traces/HTML
   bruts contenant des appels authentifies ; privilegier le workflow manuel avec les logs masques GitHub.
 
-## SEO — préparé, verrouillé
+## SEO — ouvert à Google le 23 octobre 2026
 
-Décisions du 2 septembre 2026 (`../CLAUDE.md`, « Routes et locales », points 1 à 5 ; rapport `../notes/seo-strategie-2026-09-02.md`). Tout est en place **sans lever le noindex**.
+Décisions du 2 septembre 2026 (`../CLAUDE.md`, « Routes et locales », points 1 à 5 ; rapport `../notes/seo-strategie-2026-09-02.md`). Tout a été mis en place sous verrou, **levé le 23 octobre 2026** (dernier point de cette liste).
 
 - **`src/lib/seo.ts` — `seoFor({ locale, path, title?, description?, indexable? })`**, appelé par chaque page (`generateMetadata`) : canonical absolu, auto-référent, **sans query** (`SITE_URL` = `https://darrajabikes.com`, `metadataBase` posé dans le layout) ; hreflang `ar-SA` / `en-SA` dérivés de `LOCALES` (`ae` y entrera tout seul le jour où il sera servi), catchalls `ar` → `ar-sa` et `en` → `en-sa` (fixes sur `sa`, voir ci-dessous) + `x-default` → `en-sa` ; Open Graph (`locale`, `alternateLocale`, `url`, `siteName`) ; `robots`. La réciprocité des hreflang vient de là : toutes les pages émettent le même groupe. Titre = libellé existant de la page + ` · Darraja Bikes` ; fiche = `bikeTitle` (marque, modèle, millésime tel que libellé par l'API, seulement s'il est connu) ; description absente = signature — **sauf la fiche, qui a la sienne** : `bikeDescription(locale, build)` (« دراجة {marque} {modèle} {année} : المواصفات الكاملة، الهندسة حسب المقاس ({n} مقاسات)… » / « {brand} {model} {year}: full specs, geometry by size ({n} sizes)… »), bâtie sur les champs rendus par l'API, un champ absent omis (millésime inconnu, aucune taille), coupée au dernier mot entier au-delà de 160 caractères. La catégorie n'y entre pas tant que `BuildResource` ne l'expose pas.
 - **Vocabulaire arabe mesuré — `src/lib/vocabulary.ts`** (décision du 4 septembre 2026, `../CLAUDE.md` « Routes et
@@ -324,11 +325,12 @@ Décisions du 2 septembre 2026 (`../CLAUDE.md`, « Routes et locales », points 
   la phrase ni etre contamine par elle. Ce que `<bdi>` ne couvre pas : le `<title>` de l'onglet et les
   `<meta>`, qui sont du texte pur — un nom a signe final peut s'y afficher retourne, sans correction propre
   possible.
-- **`INDEXING_LOCKED = true`** force `noindex, nofollow` partout. `indexable: false` (catalogue avec query, comparateur avec query, étapes du bikefinder) est la politique **cible** : `noindex, follow` à la levée. Le `robots: noindex` du layout reste le défaut d'une page qui n'appellerait pas le helper. **Préparé le 19 octobre 2026 pour l'ouverture** (plan du 16 octobre, `../tasks/plans/2026-10-16-levee-noindex.md`) : la politique est la fonction pure `robotsPolicy(locked, indexable)` ; **`noimageindex` toujours**, verrou posé ou levé (les photos sont celles des constructeurs, leurs droits ne sont pas documentés : elles restent hors de Google Images ; les médias, servis par l'API, restent derrière son `robots.txt` `Disallow: /`) ; fiche, marque et catégorie passent l'`indexable` **décidé par l'API** (photo, seuil de 5 vélos, adresse provisoire d'api #25) — le front ne le recalcule pas.
+- **`INDEXING_LOCKED = false` depuis le 23 octobre 2026** (posé, il forçait `noindex, nofollow` partout ; le reposer **avec** l'en-tête `X-Robots-Tag` de `next.config.ts` est le retour arrière d'urgence, leurs commentaires disent comment — l'un sans l'autre annule tout). `indexable: false` (catalogue avec query, comparateur avec query, étapes du bikefinder) donne `noindex, follow`. Le `robots: noindex` du layout reste le défaut d'une page qui n'appellerait pas le helper. **Préparé le 19 octobre 2026 pour l'ouverture** (plan du 16 octobre, `../tasks/plans/2026-10-16-levee-noindex.md`) : la politique est la fonction pure `robotsPolicy(locked, indexable)` ; **`noimageindex` toujours**, verrou posé ou levé (les photos sont celles des constructeurs, leurs droits ne sont pas documentés : elles restent hors de Google Images ; les médias, servis par l'API, restent derrière son `robots.txt` `Disallow: /`) ; fiche, marque et catégorie passent l'`indexable` **décidé par l'API** (photo, seuil de 5 vélos, adresse provisoire d'api #25) — le front ne le recalcule pas.
 - **JSON-LD** : `src/lib/jsonld.ts` construit, `src/components/JsonLd.tsx` rend — un `<script type="application/ld+json">` par bloc, dans la langue de la page, tout vient de la réponse API (un champ absent est omis). Accueil : `WebSite` (+ `alternateName` « دراجة », `inLanguage`) et `Organization`, sans `SearchAction`. Fiche : `BreadcrumbList` (Accueil → Vélos → Marque `/bikes/{brand}` → Fiche) et `Product` (`name`, `brand`, `url`) **sans `image`** (décision du 16 octobre 2026 : les photos restent hors de Google tant que leurs droits ne sont pas documentés), **sans `offers`, sans prix, sans `aggregateRating`**. Catalogue nu : `ItemList` des cartes de la page ; jamais sur un catalogue filtré. Pages légales : `BreadcrumbList` (Accueil → Page) et `WebPage`, ou `ContactPage` pour le contact (`legalPageJsonLd`).
-- **`robots.txt` et `sitemap.xml` — générés, derrière le verrou.** `src/app/robots.ts` rend `robotsRules(INDEXING_LOCKED)` (`src/lib/seo.ts`) : verrouillé, `User-Agent: *` / `Disallow: /` sans ligne `Sitemap:` — le contenu de l'ancien `public/robots.txt`, supprimé (un fichier statique ne coexiste pas avec la route ; Next écrit `User-Agent` avec sa capitale, la casse d'un champ est libre) ; déverrouillé, tout permis sauf `/api/` (le webhook), plus `Sitemap: https://darrajabikes.com/sitemap.xml` — **plus de `Disallow` sur `/{locale}/compare?` ni `/*per_page=` depuis le 16 octobre 2026** : Google ne lit pas le `noindex` d'une adresse qu'on lui interdit de visiter, et chaque fiche lie une dizaine de comparaisons ; elles restent `noindex, follow` par leur propre balise. `src/app/sitemap.ts` rend `sitemapEntries(INDEXING_LOCKED, données)` (`src/lib/sitemap.ts`, fonction pure) : verrouillé, un `urlset` vide sans appel à l'API ; déverrouillé, un seul fichier par locale servie — **seulement ce que l'API dit indexable** (décision du 16 octobre 2026) : accueil, catalogue nu, `/finder`, les quatre pages légales, pages marque (facette `brands`) et catégorie (facette `categories` sauf `uncategorized`, slug de `routes.ts`) indexables, fiches indexables à leur adresse canonique (`currentBuildPath` : l'adresse millésime pour un vélo nommé comme sa famille), lues par `getCatalog` à `per_page=800` (borne haute de l'API, ramenée silencieusement, absente du contrat) puis par curseur — chacune avec son groupe hreflang (`hreflangGroup`, le même que le `<head>`). `lastmod` = `last_changed_at` des fiches (api #13) ; les autres pages n'ont pas de date fiable et n'en reçoivent aucune ; ni `changefreq` ni `priority`. `revalidate = 86400`, re-rendu sur le tag `catalog`.
-- **Tests** : `tests/e2e/seo.spec.ts` — canonical, hreflang réciproques, JSON-LD, noindex, et le `<head>` reçu par un robot sans JavaScript (UA Bingbot : Next diffère sinon les métadonnées des pages dynamiques dans le `<body>`). `tests/e2e/sitemap.spec.ts` — les routes telles que servies (verrou posé) et les fonctions pures avec le verrou simulé à `false` : la politique cible se vérifie sans le lever. Son premier test échoue le jour de la levée : voulu, il dit de mettre à jour les attentes.
-- **Avant la levée** : droits d'images documentés · `indexable` + `last_changed_at` exposés par l'API (contrat régénéré, puis `lastmod` dans le sitemap) · Search Console · mesure TTFB depuis Riyad · audit crawler et Rich Results Test. *État au 22 octobre 2026* : `noimageindex` tient lieu de droits documentés ; `indexable` et `lastmod` faits (api #79 en production le 19 octobre) ; pages légales en production (section suivante) ; audit crawler fait le 16 octobre ; Search Console validée le 22 octobre (propriété de domaine, DNS chez Cloudflare) ; mesure depuis Riyad non faite. **Le jour J** : `INDEXING_LOCKED` à `false` **et** retrait de l'en-tête `X-Robots-Tag` de `next.config.ts`, ensemble — `robots.txt` et le sitemap suivent d'eux-mêmes.
+- **`robots.txt` et `sitemap.xml` — générés, derrière le verrou** (levé le 23 octobre 2026 : la branche « déverrouillé » est servie). `src/app/robots.ts` rend `robotsRules(INDEXING_LOCKED)` (`src/lib/seo.ts`) : verrouillé, `User-Agent: *` / `Disallow: /` sans ligne `Sitemap:` — le contenu de l'ancien `public/robots.txt`, supprimé (un fichier statique ne coexiste pas avec la route ; Next écrit `User-Agent` avec sa capitale, la casse d'un champ est libre) ; déverrouillé, tout permis sauf `/api/` (le webhook), plus `Sitemap: https://darrajabikes.com/sitemap.xml` — **plus de `Disallow` sur `/{locale}/compare?` ni `/*per_page=` depuis le 16 octobre 2026** : Google ne lit pas le `noindex` d'une adresse qu'on lui interdit de visiter, et chaque fiche lie une dizaine de comparaisons ; elles restent `noindex, follow` par leur propre balise. `src/app/sitemap.ts` rend `sitemapEntries(INDEXING_LOCKED, données)` (`src/lib/sitemap.ts`, fonction pure) : verrouillé, un `urlset` vide sans appel à l'API ; déverrouillé, un seul fichier par locale servie — **seulement ce que l'API dit indexable** (décision du 16 octobre 2026) : accueil, catalogue nu, `/finder`, les quatre pages légales, pages marque (facette `brands`) et catégorie (facette `categories` sauf `uncategorized`, slug de `routes.ts`) indexables, fiches indexables à leur adresse canonique (`currentBuildPath` : l'adresse millésime pour un vélo nommé comme sa famille), lues par `getCatalog` à `per_page=800` (borne haute de l'API, ramenée silencieusement, absente du contrat) puis par curseur — chacune avec son groupe hreflang (`hreflangGroup`, le même que le `<head>`). `lastmod` = `last_changed_at` des fiches (api #13) ; les autres pages n'ont pas de date fiable et n'en reçoivent aucune ; ni `changefreq` ni `priority`. `revalidate = 86400`, re-rendu sur le tag `catalog`.
+- **Tests** : `tests/e2e/indexation.spec.ts` (ex-`noindex.spec.ts`, retourné à l'ouverture) — les routes telles que servies : aucune réponse du site ne porte `X-Robots-Tag` (le remettre seul désindexerait tout), `robots.txt` ouvert sauf le webhook et sitemap annoncé, chaque page en `index, follow, noimageindex` ou `noindex, follow, noimageindex` selon l'avis de l'API **au moment du test** (son oracle, jamais le code du site), le sitemap égal aux fiches que l'API dit indexables. `tests/e2e/seo.spec.ts` — canonical, hreflang réciproques, JSON-LD, balise robots, et le `<head>` reçu par un robot sans JavaScript (UA Bingbot : Next diffère sinon les métadonnées des pages dynamiques dans le `<body>`). `tests/e2e/sitemap.spec.ts` — les fonctions pures, verrou posé et levé.
+- **Prérequis de la levée** (droits d'images documentés · `indexable` + `last_changed_at` exposés par l'API · Search Console · mesure TTFB depuis Riyad · audit crawler et Rich Results Test), *état au 23 octobre 2026* : `noimageindex` tient lieu de droits documentés ; `indexable` et `lastmod` faits (api #79 en production le 19 octobre) ; pages légales en production le 22 (section suivante) ; audit crawler du 16 octobre (JSON-LD valide partout) ; Search Console validée le 22 (propriété de domaine, DNS chez Cloudflare) ; **mesure depuis Riyad non faite** (Cloudflare toujours sans proxy : aucun bord devant le site).
+- **Ouverture à Google — en production le 23 octobre 2026**, sur le « Ouvre » du fondateur : PR #89 (`main` `62d21bb`, arbre = tête testée `cc46ffa`), release `20261023140420` (retour arrière `20261022153101` : `current` → cette release, `pm2 reload site-3364441`, purge — ou le retour arrière d'urgence du verrou ci-dessus) ; CI verte ; suite e2e complète **896/898** avant fusion (les 2 échecs connus api #76, mot pour mot ceux du 22 octobre sur le code de `main`) ; purge (`compare:version` 43). Contrôle de prod en lecture seule : les **1 042** adresses du sitemap une à une (998 fiches avec `lastmod`, les huit pages légales) — 200 sans redirection, aucun `X-Robots-Tag`, `index, follow, noimageindex`, canonical = adresse du sitemap, cinq hreflang réciproques — plus `robots.txt` ouvert avec `Sitemap:`, racine en 308, `robots.txt` de l'API toujours `Disallow: /` et une photo servie en `X-Robots-Tag: noindex` : **0 écart** ; comparateur avec `?bikes=` et catalogue filtré en `noindex, follow, noimageindex`, canonical vers la page nue. **Search Console** : sitemap `https://darrajabikes.com/sitemap.xml` envoyé le même jour et lu aussitôt — « Opération effectuée », 1 042 pages découvertes (affiché « Impossible de récupérer » pendant la première minute : l'état d'un sitemap pas encore lu, pas une erreur). **Reste** : mesure depuis Riyad, Bing Webmaster Tools, facettes et pagination (web #19).
 
 ### Catchalls hreflang — décision du 5 septembre 2026, appliquée le 5 octobre (web #18)
 
@@ -338,7 +340,7 @@ déplacer `en`) ; aucune route `/ar` ou `/en` n'est créée. Les huit types de p
 groupe : accueil, catalogue (nu ou filtré), fiche vélo, marque, catégorie, comparateur, entrée du finder et étapes du
 finder — même groupe depuis les deux locales, canonical propre inchangé. Le sitemap consomme déjà ce helper : ses
 tests de politique cible, verrou simulé à `false`, attendent aussi les cinq liens ; son code ne change pas.
-`INDEXING_LOCKED`, le noindex global, `robots.txt`, le sitemap servi vide et la signature de `seoFor` restent inchangés.
+`INDEXING_LOCKED`, le noindex global, `robots.txt`, le sitemap servi vide et la signature de `seoFor` restaient inchangés (verrou levé le 23 octobre 2026, voir « SEO »).
 
 ## Pages légales (web #16) — rédigées le 19 octobre 2026, validées par le fondateur le 22
 
@@ -362,10 +364,10 @@ légales), `/{locale}/terms` (conditions d'utilisation).
   (exception décidée le 21 octobre, section « Accueil » ci-dessous). Si l'accueil change, la phrase change :
   `legal-pages.spec.ts` vérifie que la page le dit tant que l'accueil montre une photo en miroir.
 - **Autour** : quatre liens au pied de page de tout le site ; JSON-LD `BreadcrumbList` + `WebPage` / `ContactPage` ; les quatre
-  pages entrent au sitemap à la levée du verrou.
+  pages sont au sitemap depuis la levée du verrou, le 23 octobre 2026.
 - **Pas un avis juridique** : les cookies et l'adresse IP de Google Analytics 4 ont été vérifiés dans l'aide Google le
   19 octobre ; une relecture par un avocat saoudien reste souhaitable après l'ouverture.
-- **Tests** : `tests/e2e/legal-pages.spec.ts` — page, titre, canonical, hreflang, JSON-LD et `noindex` (verrou posé) des huit
+- **Tests** : `tests/e2e/legal-pages.spec.ts` — page, titre, canonical, hreflang, JSON-LD et balise robots (`index, follow, noimageindex` depuis le 23 octobre 2026) des huit
   pages ; liens du pied de page (cible tactile de 24 px) ; aucun défilement en largeur à 320 px ; `<bdi>` ; liens entre pages ;
   le miroir de l'accueil dit par la page Droits des images ; aucun fait manquant.
 - **En production le 22 octobre 2026** (PR #87, `main` `b427f63`, arbre = tête testée `1deabe4`, release `20261022153101`, retour
@@ -375,7 +377,7 @@ légales), `/{locale}/terms` (conditions d'utilisation).
   `X-Robots-Tag` et `noindex, nofollow, noimageindex`, aucun fait manquant, date du 22 octobre, phrase du miroir, e-mail, quatre
   liens au pied de page des deux accueils, paire de vélos, `robots.txt` `Disallow: /`, sitemap vide, une fiche et une photo en 200).
   **Search Console** : propriété de domaine `darrajabikes.com` validée le même jour, par la validation automatique Google ↔ Cloudflare
-  (une ligne TXT `google-site-verification` ajoutée à la zone : **ne jamais la supprimer**) ; le sitemap s'enverra à l'ouverture.
+  (une ligne TXT `google-site-verification` ajoutée à la zone : **ne jamais la supprimer**) ; sitemap envoyé à l'ouverture, le 23 octobre (voir « SEO »).
 
 ## Pages d'erreur (web #10)
 
@@ -390,7 +392,8 @@ légales), `/{locale}/terms` (conditions d'utilisation).
   servent uniquement ce secours ; aucune politique de cache n'est modifiee. La coexistence Pages/App rend
   les hooks de navigation nullable dans les types Next, d'ou les gardes dans les composants concernes.
 - `ThemeScript` applique le meme choix memorise dans les trois documents ; la 404 racine peut etre montee
-  cote client, d'ou `next/script` afterInteractive dans ce seul repli. Le `X-Robots-Tag` global suffit.
+  cote client, d'ou `next/script` afterInteractive dans ce seul repli. Plus d'en-tête `X-Robots-Tag` depuis le 23 octobre 2026 :
+  Google n'indexe pas une réponse 404 ou 500, et `not-found.spec.ts` garde l'absence de l'en-tête.
 - `tests/e2e/not-found.spec.ts` lance ses propres serveurs Next **de production** et API simulee sur ports libres.
   Construire d'abord avec une API disponible (`API_BASE_URL`), puis `npx playwright test tests/e2e/not-found.spec.ts`.
   Les autres specs conservent leur serveur externe. Les captures sont des pieces jointes du rapport Playwright,
