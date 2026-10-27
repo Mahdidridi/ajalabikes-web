@@ -52,7 +52,8 @@ export async function currentBuild(
   return readBuild(request, locale, card!.brand.slug, card!.slug);
 }
 
-export function requiredFacet(buckets: CatalogPage['facets']['brands'], key: string) {
+/** Le seau `key` d'une facette — marques (avec `name_ar`) ou categories : le type suit la facette passee. */
+export function requiredFacet<Bucket extends CatalogPage['facets']['categories'][number]>(buckets: Bucket[], key: string) {
   const bucket = buckets.find((item) => item.key === key);
   expect(bucket, `Facette API requise : ${key}`).toBeDefined();
   return bucket!;

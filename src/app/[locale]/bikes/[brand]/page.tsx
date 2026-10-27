@@ -5,7 +5,7 @@ import { CollectionHeader } from '@/components/collection/CollectionHeader';
 import { FacetTiles } from '@/components/collection/FacetTiles';
 import { RecentBikes } from '@/components/collection/RecentBikes';
 import { isLocale, type Locale } from '@/lib/api';
-import { getBrandPage } from '@/lib/api-pages';
+import { getBrandPage, type BrandBucket } from '@/lib/api-pages';
 import { brandBreadcrumbJsonLd } from '@/lib/jsonld';
 import { catalogPath } from '@/lib/routes';
 import { seoFor } from '@/lib/seo';
@@ -54,6 +54,18 @@ const COPY = {
   },
 } as const satisfies Record<Locale, Record<string, string>>;
 
+/**
+ * Le nom de la marque dans le TITRE de la page. En arabe, ses lettres arabes
+ * quand l'API les connait (`name_ar`) : « دراجات كانيون » — decision du
+ * fondateur du 27 octobre 2026, c'est ainsi qu'on la tape en Arabie (meme
+ * regle que le titre de la fiche, `bikePageTitle`). Sinon, et en anglais, le
+ * nom latin. Le H1, la description et le fil d'Ariane gardent le nom latin.
+ */
+const TITLE_NAME: Record<Locale, (bucket: BrandBucket) => string> = {
+  'ar-sa': (bucket) => bucket.name_ar ?? bucket.label,
+  'en-sa': (bucket) => bucket.label,
+};
+
 type Props = PageProps<'/[locale]/bikes/[brand]'>;
 
 /** Résout la marque de l'URL, ou rend 404 — partagé par la page et ses métadonnées. */
@@ -79,7 +91,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return seoFor({
     locale,
     path: `/bikes/${bucket.key}`,
-    title: t.title.replace('{name}', bucket.label),
+    title: t.title.replace('{name}', TITLE_NAME[locale](bucket)),
     description: t.description
       .replace('{name}', bucket.label)
       .replace('{count}', bikesCount(locale, page.meta.total)),

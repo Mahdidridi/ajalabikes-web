@@ -4,7 +4,7 @@ import { BuildDetails } from '@/components/BuildDetails';
 import { headAnnotation } from '@/components/hotspots/annotation';
 import { getBuild, getGeometryGlossary, getSimilarBuilds, isLocale } from '@/lib/api';
 import { resolveBuildAddress } from '@/lib/build-address';
-import { bikeDescription, bikeTitle, seoFor } from '@/lib/seo';
+import { bikeDescription, bikePageTitle, seoFor } from '@/lib/seo';
 
 /**
  * Rendue au premier appel, puis servie du cache : le tag `build:…` porte par
@@ -61,7 +61,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     locale,
     path: address.path,
     canonicalPath: address.canonicalPath,
-    title: bikeTitle(build),
+    title: bikePageTitle(locale, build),
     description: bikeDescription(locale, build),
     // Decide par l'API (photo, seuil de la categorie, adresse provisoire d'api #25) : jamais recalcule ici.
     indexable: build.indexable,

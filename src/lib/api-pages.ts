@@ -10,9 +10,12 @@ import { getCatalog, type CatalogPage, type Facets, type Locale } from '@/lib/ap
 /** Un seau de facette : clé, libellé traduit par l'API, décompte. Type du contrat. */
 export type FacetBucket = Facets['categories'][number];
 
-export type CollectionPage = {
+/** Un seau de la facette marques : le même, plus le nom arabe de la marque (`name_ar`, nul s'il n'est pas connu). */
+export type BrandBucket = Facets['brands'][number];
+
+export type CollectionPage<Bucket extends FacetBucket = FacetBucket> = {
   /** Le seau de la collection : son nom tel que l'API le rend, dans la langue de la page. */
-  bucket: FacetBucket;
+  bucket: Bucket;
   /** Le catalogue filtré : total, facettes DU FILTRE, cartes les plus récentes. */
   page: CatalogPage;
 };
@@ -28,7 +31,7 @@ const RECENT = '12';
  * revenir en arrière. Une clé absente est une marque inconnue : `null`, la
  * page rend 404.
  */
-export async function getBrandPage(locale: Locale, brand: string): Promise<CollectionPage | null> {
+export async function getBrandPage(locale: Locale, brand: string): Promise<CollectionPage<BrandBucket> | null> {
   const page = await getCatalog(locale, { brand, sort: 'year_desc', per_page: RECENT });
   const bucket = page.facets.brands.find((b) => b.key === brand);
 
