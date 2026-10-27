@@ -130,13 +130,40 @@ export function bikeName({ brand, model_name }: Pick<Build, 'brand' | 'model_nam
   return `${brand.name} ${model_name}`;
 }
 
+/** Un nom suivi du millesime tel que l'API le libelle — et seulement s'il est connu. */
+function withYear(build: Pick<Build, 'year' | 'year_label'>, name: string): string {
+  return build.year === null ? name : `${name} ${build.year_label}`;
+}
+
 /**
  * Le titre d'une fiche : le nom complet, suivi du millesime tel que l'API le
  * libelle — et seulement s'il est connu. Un millesime absent n'apparait pas
  * dans un titre, il reste « non renseigne » sur la page.
  */
 export function bikeTitle(build: Pick<Build, 'brand' | 'model_name' | 'year' | 'year_label'>): string {
-  return build.year === null ? bikeName(build) : `${bikeName(build)} ${build.year_label}`;
+  return withYear(build, bikeName(build));
+}
+
+/**
+ * Le titre de la page d'une fiche, par langue. En arabe : « دراجة », la marque
+ * en lettres arabes telle que l'API la sert (`brand.name_ar`), le modele et le
+ * millesime — « دراجة كانيون Endurace CF SLX 8 Di2 2027 ».
+ *
+ * Decision du fondateur du 27 octobre 2026 : en Arabie, on tape « دراجة كانيون »,
+ * la marque en lettres arabes ; seule, elle y veut dire autre chose (la voiture
+ * GMC, une societe de livraison), et « دراجة » devant leve l'ambiguite
+ * (autocompletion geolocalisee, `notes/data/marques-arabe-2026-10-27/` a la
+ * racine du projet). Sans nom arabe, le titre latin. La description garde la
+ * marque en latin : le resultat Google porte les deux ecritures.
+ */
+const BIKE_TITLE: Record<Locale, (build: Pick<Build, 'brand' | 'model_name' | 'year' | 'year_label'>) => string> = {
+  'ar-sa': (build) =>
+    build.brand.name_ar ? withYear(build, `دراجة ${build.brand.name_ar} ${build.model_name}`) : bikeTitle(build),
+  'en-sa': (build) => bikeTitle(build),
+};
+
+export function bikePageTitle(locale: Locale, build: Pick<Build, 'brand' | 'model_name' | 'year' | 'year_label'>): string {
+  return BIKE_TITLE[locale](build);
 }
 
 /**

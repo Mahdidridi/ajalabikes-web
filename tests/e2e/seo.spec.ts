@@ -1,6 +1,6 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 import type { Build, BuildCard, Locale } from '@/lib/api';
-import { bikeDescription, hreflangGroup, robotsPolicy, seoFor } from '@/lib/seo';
+import { bikeDescription, bikePageTitle, hreflangGroup, robotsPolicy, seoFor } from '@/lib/seo';
 import { currentBuild, expectedBikeCount, readBuild, readCatalog, requiredFacet } from './helpers/catalog-api';
 import { expectLatinBrand } from './helpers/catalog-invariants';
 
@@ -418,8 +418,11 @@ test.describe('pages marque et categorie', () => {
       en: `${SITE}/en-sa/bikes/trek`,
       'x-default': `${SITE}/en-sa/bikes/trek`,
     });
-    // « دراجات Trek » : le generique en tete du titre — jamais « سياكل Trek ».
-    await expect(page).toHaveTitle(`دراجات ${brand.label} · Darraja Bikes`);
+    // « دراجات تريك » : le generique en tete du titre — jamais « سياكل » —, puis la marque en lettres arabes,
+    // comme on la tape en Arabie (decision du fondateur du 27 octobre 2026). La description garde le nom latin :
+    // le resultat Google porte les deux ecritures.
+    expect(brand.name_ar).toBe('تريك');
+    await expect(page).toHaveTitle(`دراجات ${brand.name_ar} · Darraja Bikes`);
     await expect(page.locator('meta[name="description"]')).toHaveAttribute(
       'content',
       `${expectedBikeCount('ar-sa', catalog.meta.total)} من ${brand.label}: المواصفات الكاملة والهندسة حسب المقاس ومقارنة الدراجات الهوائية جنبًا إلى جنب.`,
@@ -429,6 +432,10 @@ test.describe('pages marque et categorie', () => {
     const maillons = fil!.itemListElement as { item: string }[];
     expect(maillons).toHaveLength(3);
     expect(maillons[2].item).toBe(`${SITE}/ar-sa/bikes/trek`);
+
+    // En anglais, rien ne change : le nom latin.
+    await page.goto('/en-sa/bikes/trek');
+    await expect(page).toHaveTitle('Trek bikes · Darraja Bikes');
   });
 
   test('la page categorie porte canonical, hreflang et un fil d Ariane a 2 maillons', async ({ page }) => {
@@ -507,7 +514,7 @@ test.describe('description des fiches', () => {
 
   test('la fonction omet ce que la fiche ne publie pas, et coupe proprement', () => {
     const base = {
-      brand: { slug: 'marque', name: 'Marque' },
+      brand: { slug: 'marque', name: 'Marque', name_ar: null },
       model_name: 'Modele',
       year: null,
       year_label: 'non renseigne',
@@ -531,5 +538,50 @@ test.describe('description des fiches', () => {
     const longue = bikeDescription('en-sa', { ...base, model_name: 'Modele '.repeat(30).trim() });
     expect(longue.length).toBeLessThanOrEqual(160);
     expect(longue).toMatch(/Modele…$/);
+  });
+});
+
+/**
+ * Decision du fondateur du 27 octobre 2026 : en Arabie, on tape « دراجة كانيون », la marque en lettres arabes
+ * (autocompletion Google geolocalisee, `notes/data/marques-arabe-2026-10-27/` a la racine du projet). Le titre
+ * arabe d'une fiche l'ecrit ainsi ; la description garde le nom latin.
+ */
+test.describe('titre des fiches', () => {
+  const titled = (name: string, build: Build) => `${name}${build.year === null ? '' : ` ${build.year_label}`} · Darraja Bikes`;
+
+  test('en arabe : « دراجة », la marque en lettres arabes, le modele ; en anglais, le nom latin', async ({ page, request }) => {
+    const build = await seoBuild(request, 'ar-sa');
+    expect(build.brand.name_ar, 'La marque du sujet doit avoir un nom arabe').toBeTruthy();
+    await page.goto(modelPath(build));
+
+    const titre = titled(`دراجة ${build.brand.name_ar} ${build.model_name}`, build);
+    await expect(page).toHaveTitle(titre);
+    await expect(page.locator('meta[property="og:title"]')).toHaveAttribute('content', titre);
+    // Les deux ecritures dans le resultat Google : la description garde la marque en latin.
+    await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', fullDescription('ar-sa', build));
+
+    const english = await localizedBuild(request, 'en-sa', build);
+    await page.goto(modelPath(english));
+    await expect(page).toHaveTitle(titled(`${english.brand.name} ${english.model_name}`, english));
+  });
+
+  test('la fonction : sans nom arabe, le titre latin ; sans millesime, pas d annee', () => {
+    const build = {
+      brand: { slug: 'canyon', name: 'Canyon', name_ar: 'كانيون' },
+      model_name: 'Endurace CF SLX 8 Di2',
+      year: 2027,
+      year_label: '2027',
+    };
+
+    expect(bikePageTitle('ar-sa', build)).toBe('دراجة كانيون Endurace CF SLX 8 Di2 2027');
+    expect(bikePageTitle('en-sa', build)).toBe('Canyon Endurace CF SLX 8 Di2 2027');
+    expect(bikePageTitle('ar-sa', { ...build, brand: { ...build.brand, name_ar: null } })).toBe(
+      'Canyon Endurace CF SLX 8 Di2 2027',
+    );
+    expect(bikePageTitle('ar-sa', { ...build, year: null, year_label: 'غير محدد' })).toBe('دراجة كانيون Endurace CF SLX 8 Di2');
+    // La description ne change pas : « دراجة » puis la marque en latin.
+    expect(bikeDescription('ar-sa', { ...build, sizes: [] })).toBe(
+      'دراجة Canyon Endurace CF SLX 8 Di2 2027: المواصفات الكاملة، الهندسة حسب المقاس، المكونات، والمقارنة مع دراجات أخرى.',
+    );
   });
 });

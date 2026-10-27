@@ -261,6 +261,12 @@ export interface components {
             brand: {
                 slug: string;
                 name: string;
+                /**
+                 * @description Le nom arabe de la marque, nul s'il n'est pas connu : le titre
+                 *     arabe de la fiche l'ecrit en lettres arabes (decision du
+                 *     27 octobre 2026). Le nom canonique reste `name`.
+                 */
+                name_ar: string | null;
             };
             family: {
                 key: string;
@@ -922,6 +928,7 @@ export interface operations {
                                 key: string;
                                 label: string;
                                 count: number;
+                                name_ar: string | null;
                                 indexable: boolean;
                             }[];
                             categories: {

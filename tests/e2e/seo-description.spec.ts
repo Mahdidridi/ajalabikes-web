@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { bikeDescription } from '@/lib/seo';
 
 const build = {
-  brand: { slug: 'specialized', name: 'Specialized' },
+  brand: { slug: 'specialized', name: 'Specialized', name_ar: null },
   model_name: 'Stumpjumper 15 Comp  - SRAM S-1000 AXS, FOX Performance',
   year: 2025,
   year_label: '2025',
@@ -17,7 +17,7 @@ test('la description garde le mot entier avant une espace a l index 159', () => 
 
 test('la description conserve les doubles espaces internes et retire ceux avant la coupe', () => {
   expect(bikeDescription('en-sa', {
-    brand: { slug: 'test', name: 'Test' },
+    brand: { slug: 'test', name: 'Test', name_ar: null },
     model_name: 'Endurance Road Performance Edition Long Distance Carbon Frame Electronic Groupset Integrated Cockpit Lightweight Wheels Racing Saddle  Final  Model',
     year: null, year_label: 'Unknown', sizes: [],
   })).toBe(
@@ -27,7 +27,7 @@ test('la description conserve les doubles espaces internes et retire ceux avant 
 
 test('une description courte reste litteralement intacte', () => {
   expect(bikeDescription('en-sa', {
-    brand: { slug: 'trek', name: 'Trek' },
+    brand: { slug: 'trek', name: 'Trek', name_ar: null },
     model_name: 'Marlin', year: null, year_label: 'Unknown', sizes: [],
   })).toBe('Trek Marlin: full specs, geometry by size, components and side-by-side comparison.');
 });
