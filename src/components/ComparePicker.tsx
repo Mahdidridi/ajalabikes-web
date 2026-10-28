@@ -2,22 +2,32 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import type { Locale } from '@/lib/api';
+import { compareHref, withBike, type CompareSelection } from '@/lib/compare-url';
 
 /**
  * Ajouter un vélo à la comparaison : un champ, la liste filtrée, un clic.
  *
- * Les 98 options arrivent DU SERVEUR avec leur URL de destination déjà
- * construite — le composant filtre du texte et navigue, rien d'autre.
- * Le filtrage est de l'interface pure, pas une règle métier.
+ * Les options arrivent DU SERVEUR avec leur nom et leur clé `marque/slug` ;
+ * l'adresse de destination se compose AU CLIC (`compareHref`), jamais à
+ * l'avance : des adresses toutes faites dans le code de la page sont des
+ * adresses que Google explore (décision du 28 octobre 2026,
+ * `src/lib/compare-url.ts`). Le filtrage est de l'interface pure, pas une
+ * règle métier.
  */
 export function ComparePicker({
   placeholder,
   empty,
   options,
+  locale,
+  selection,
 }: {
   placeholder: string;
   empty: string;
-  options: { label: string; href: string }[];
+  options: { label: string; value: string }[];
+  locale: Locale;
+  /** La sélection de l'adresse, que le vélo choisi complète. */
+  selection: CompareSelection;
 }) {
   const router = useRouter();
   const [texte, setTexte] = useState('');
@@ -43,12 +53,12 @@ export function ComparePicker({
             <li className="px-3 py-2 text-sm text-muted">{empty}</li>
           ) : (
             resultats.map((o) => (
-              <li key={o.href}>
+              <li key={o.value}>
                 <button
                   type="button"
                   onClick={() => {
                     setTexte('');
-                    router.push(o.href, { scroll: false });
+                    router.push(compareHref(locale, withBike(selection, o.value)), { scroll: false });
                   }}
                   className="w-full px-3 py-2 text-start text-sm transition hover:bg-surface"
                 >

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { compareHref, toggleDiff, withBike, withoutColumn, withSize } from '@/lib/compare-url';
 
 /**
  * Le comparateur. Deux Trek de la même famille : ils partagent le cadre et
@@ -209,4 +210,38 @@ test('un velo inconnu dans l URL donne un 404, pas une page a moitie vide', asyn
   const reponse = await page.goto(`${EN}?bikes=${A},trek/nexistepas`);
 
   expect(reponse!.status()).toBe(404);
+});
+
+test('le code d une comparaison ne contient aucune adresse de comparaison hors de ses vrais liens', async ({ request }) => {
+  // Relevé du 28 octobre 2026 : le sélecteur « ajouter un vélo » recevait du serveur une adresse toute faite par vélo du
+  // catalogue (539 adresses à trois vélos dans le code d'une comparaison à deux), et les menus de taille autant. Google
+  // lit ces adresses comme des liens et les visitait une à une : 142 000 requêtes en cinq jours, presque toutes sur des
+  // comparaisons à trois vélos. Les adresses se composent désormais au clic ; le code ne porte que les vrais liens.
+  const html = await (await request.get(`${EN}?bikes=${A},${B}`)).text();
+  // `&` s'écrit `&amp;` dans un lien et `&` dans les données embarquées de Next : une seule graphie avant de comparer.
+  const source = html.replace(/&amp;/g, '&').replace(/\\u0026/g, '&');
+  const liens = new Set([...source.matchAll(/<a [^>]*href="(\/en-sa\/compare\?[^"]*)"/g)].map((m) => m[1]));
+  const adresses = new Set(source.match(/\/en-sa\/compare\?[^"'\\\s<]*/g));
+
+  expect(liens.size, 'Les vrais liens (retirer, différences seulement) restent').toBeGreaterThan(0);
+  expect([...adresses].filter((a) => !liens.has(a)), 'Aucune adresse hors des vrais liens').toEqual([]);
+});
+
+test.describe('compareHref : l adresse se compose au clic, la meme qu avant', () => {
+  const deux = { bikes: [A, B], sizes: [null, null], diff: false };
+
+  test('les memes adresses que les liens du serveur : URLSearchParams, rien pour une selection vide', () => {
+    expect(compareHref('en-sa', { bikes: [], sizes: [], diff: false })).toBe('/en-sa/compare');
+    expect(compareHref('en-sa', deux)).toBe('/en-sa/compare?bikes=trek%2Ffarley-5%2Ctrek%2Ffarley-7');
+    expect(compareHref('ar-sa', withSize(deux, 1, 'M'))).toBe('/ar-sa/compare?bikes=trek%2Ffarley-5%2Ctrek%2Ffarley-7&sizes=%2CM');
+    expect(compareHref('en-sa', toggleDiff(deux))).toBe('/en-sa/compare?bikes=trek%2Ffarley-5%2Ctrek%2Ffarley-7&diff=1');
+  });
+
+  test('ajouter, retirer et changer une taille gardent les tailles alignees sur les velos', () => {
+    const trois = withBike(withSize(deux, 0, 'M'), 'specialized/chisel');
+
+    expect(trois).toEqual({ bikes: [A, B, 'specialized/chisel'], sizes: ['M', null, null], diff: false });
+    expect(withoutColumn(trois, 1)).toEqual({ bikes: [A, 'specialized/chisel'], sizes: ['M', null], diff: false });
+    expect(toggleDiff(toggleDiff(trois))).toEqual(trois);
+  });
 });

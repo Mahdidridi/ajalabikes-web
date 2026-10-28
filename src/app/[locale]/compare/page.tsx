@@ -12,6 +12,7 @@ import {
   type BuildCard, type CompareData, type Locale,
 } from '@/lib/api';
 import { exampleSelection } from '@/lib/compare-example';
+import { compareHref, toggleDiff, withoutColumn, type CompareSelection } from '@/lib/compare-url';
 import { GEOMETRY_COPY } from '@/lib/geometry-copy';
 import { sizeCatalogue } from '@/lib/images';
 import { seoFor } from '@/lib/seo';
@@ -124,25 +125,19 @@ export default async function ComparePage({ params, searchParams }: PageProps<'/
     ? data.bikes
     : (paires.map((p) => carteDe.get(p)).filter(Boolean) as BuildCard[]);
 
-  /** TOUTE construction d'URL vit ici, côté serveur — l'état, c'est l'URL. */
-  const urlCompare = (b: string[], s: (string | null)[], diff: boolean) => {
-    const p = new URLSearchParams();
-    if (b.length > 0) p.set('bikes', b.join(','));
-    if (s.some(Boolean)) p.set('sizes', s.map((x) => x ?? '').join(','));
-    if (diff) p.set('diff', '1');
-    const qs = p.toString();
-
-    return `/${locale}/compare${qs ? `?${qs}` : ''}`;
-  };
-
-  const sansIndex = <T,>(liste: T[], i: number) => liste.filter((_, j) => j !== i);
+  // L'état, c'est l'URL — mais AUCUNE adresse toute faite dans le code de la page : Google les lit comme des liens et
+  // les visite (décision du 28 octobre 2026, `src/lib/compare-url.ts`). Les liens rendus ici et les menus côté
+  // navigateur composent leurs adresses par la même fonction, au clic.
+  /** La sélection de l'ADRESSE : c'est elle que le sélecteur complète, jamais l'exemple. */
+  const adresse: CompareSelection = { bikes: choisis, sizes: taillesChoisies, diff: diffOnly };
+  /** Ce que la page montre — l'exemple, ou la sélection de l'adresse : tailles, retrait et filtre partent d'ici. */
+  const affichee: CompareSelection = { bikes: paires, sizes, diff: diffOnly };
 
   // Le sélecteur complète la sélection de l'adresse, jamais l'exemple : depuis la page nue, choisir un vélo démarre SA
-  // comparaison, comme avant l'exemple (deux choix pour comparer deux vélos, pas quatre).
+  // comparaison, comme avant l'exemple (deux choix pour comparer deux vélos, pas quatre). Des noms et des clés, pas d'adresses.
   const optionsAjout = catalogue.data
     .map((b) => ({ value: `${b.brand.slug}/${b.slug}`, label: `${b.brand.name} ${b.model_name}` }))
-    .filter((o) => !choisis.includes(o.value))
-    .map((o) => ({ label: o.label, href: urlCompare([...choisis, o.value], [...taillesChoisies, null], diffOnly) }));
+    .filter((o) => !choisis.includes(o.value));
 
   const sections = data?.sections.map((section) => ({
     ...section,
@@ -157,12 +152,9 @@ export default async function ComparePage({ params, searchParams }: PageProps<'/
   const velosDeLaPlanche = cartes.map((bike, i) => ({
     name: `${bike.brand.name} ${bike.model_name}`,
     size: data?.sizes_selected[i] ?? null,
-    // Les mêmes URL que le sélecteur de la carte : une seule construction, côté
-    // serveur, pour que la taille se choisisse aussi sous les yeux du dessin.
-    sizeOptions: bike.sizes.map((label) => ({
-      label,
-      href: urlCompare(paires, sizes.map((s, j) => (j === i ? label : s)), diffOnly),
-    })),
+    // Les tailles publiées : la planche compose l'adresse au choix, comme le
+    // sélecteur de la carte, pour que la taille se choisisse aussi sous les yeux du dessin.
+    sizes: bike.sizes,
   }));
 
   // Cartes et données partagent UNE table : c'est ce qui garantit que la
@@ -196,7 +188,7 @@ export default async function ComparePage({ params, searchParams }: PageProps<'/
         // Un lien, pas un état client : le filtre se partage avec l'URL.
         <div className="flex justify-end">
           <Link
-            href={urlCompare(paires, sizes, !diffOnly)}
+            href={compareHref(locale, toggleDiff(affichee))}
             className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted transition hover:border-foreground hover:text-foreground"
           >
             {diffOnly ? t.all_rows : t.diff_only}
@@ -246,10 +238,10 @@ export default async function ComparePage({ params, searchParams }: PageProps<'/
                         <SizeSelect
                           label={t.size}
                           current={sizes[i]}
-                          options={bike.sizes.map((label) => ({
-                            label,
-                            href: urlCompare(paires, sizes.map((s, j) => (j === i ? label : s)), diffOnly),
-                          }))}
+                          sizes={bike.sizes}
+                          locale={locale}
+                          selection={affichee}
+                          column={i}
                         />
                         <div className="flex items-center justify-between text-xs">
                           <Link
@@ -259,7 +251,7 @@ export default async function ComparePage({ params, searchParams }: PageProps<'/
                             {t.view}
                           </Link>
                           <Link
-                            href={urlCompare(sansIndex(paires, i), sansIndex(sizes, i), diffOnly)}
+                            href={compareHref(locale, withoutColumn(affichee, i))}
                             className="text-muted underline-offset-2 transition hover:text-foreground hover:underline"
                           >
                             {t.remove}
@@ -275,7 +267,13 @@ export default async function ComparePage({ params, searchParams }: PageProps<'/
                 <th scope="col" className="p-1.5 align-top sm:p-2">
                   <div className="flex h-full min-h-48 flex-col justify-center gap-2 rounded-xl border border-dashed border-border p-4 text-start font-normal">
                     <p className="text-sm font-medium">{t.add}</p>
-                    <ComparePicker placeholder={t.search} empty={t.no_match} options={optionsAjout} />
+                    <ComparePicker
+                      placeholder={t.search}
+                      empty={t.no_match}
+                      options={optionsAjout}
+                      locale={locale}
+                      selection={adresse}
+                    />
                   </div>
                 </th>
               )}
@@ -300,6 +298,8 @@ export default async function ComparePage({ params, searchParams }: PageProps<'/
           bikes={velosDeLaPlanche}
           glossary={glossaire}
           labels={g}
+          locale={locale}
+          selection={affichee}
         />
       )}
     </main>

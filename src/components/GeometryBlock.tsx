@@ -6,7 +6,8 @@ import {
   fill, GeometryFigure, SeriesMark, type GeometryFigureLabels,
 } from '@/components/GeometryFigure';
 import { GeometryGlossaryPanel } from '@/components/GeometryGlossaryPanel';
-import type { CompareRow, CompareSection, GeometryGlossary } from '@/lib/api';
+import type { CompareRow, CompareSection, GeometryGlossary, Locale } from '@/lib/api';
+import { compareHref, withSize, type CompareSelection } from '@/lib/compare-url';
 
 /**
  * La planche de géométrie du comparateur : cadres superposés, puis la matrice
@@ -50,15 +51,18 @@ export type GeometryBlockLabels = GeometryFigureLabels & {
 type Bike = {
   name: string;
   size: string | null;
-  /** Chaque option porte son URL complète, construite par le serveur. */
-  sizeOptions: { label: string; href: string }[];
+  /** Les tailles publiées ; l'adresse se compose au choix (`compareHref`), jamais à l'avance. */
+  sizes: string[];
 };
 
-export function GeometryBlock({ section, bikes, glossary, labels }: {
+export function GeometryBlock({ section, bikes, glossary, labels, locale, selection }: {
   section: CompareSection;
   bikes: Bike[];
   glossary: GeometryGlossary | null;
   labels: GeometryBlockLabels;
+  locale: Locale;
+  /** La comparaison affichée, que le choix d'une taille complète (décision du 28 octobre 2026). */
+  selection: CompareSelection;
 }) {
   const router = useRouter();
   const [enCours, demarrer] = useTransition();
@@ -180,20 +184,21 @@ export function GeometryBlock({ section, bikes, glossary, labels }: {
                   {/* La taille se choisit ICI, sous les yeux du dessin. La
                       navigation garde l'URL partageable et ne fait pas sauter
                       la page ; le bloc s'estompe le temps du calcul. */}
-                  {bike.sizeOptions.length > 0 && (
+                  {bike.sizes.length > 0 && (
                     <select
                       aria-label={fill(labels.size, { label: bike.name })}
                       value={bike.size ?? ''}
                       disabled={enCours}
                       onChange={(event) => {
-                        const choix = bike.sizeOptions.find((o) => o.label === event.target.value);
-                        if (choix) demarrer(() => router.push(choix.href, { scroll: false }));
+                        const choix = event.target.value;
+                        if (!bike.sizes.includes(choix)) return;
+                        demarrer(() => router.push(compareHref(locale, withSize(selection, i, choix)), { scroll: false }));
                       }}
                       className="mt-1 w-full rounded-lg border border-border bg-background px-2 py-1 text-sm"
                     >
                       <option value="" disabled>{labels.size}</option>
-                      {bike.sizeOptions.map((o) => (
-                        <option key={o.label} value={o.label}>{o.label}</option>
+                      {bike.sizes.map((label) => (
+                        <option key={label} value={label}>{label}</option>
                       ))}
                     </select>
                   )}
