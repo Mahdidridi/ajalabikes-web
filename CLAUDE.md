@@ -524,8 +524,8 @@ dans l'en-tête, le pied de page et les deux pages d'erreur autonomes (404 racin
 - **Tests** : `tests/e2e/brand-logo.spec.ts` (noir en clair, blanc en sombre, choix gardé au rechargement, préférence du
   système, sans JavaScript, encre masquée du pied de page jamais téléchargée, tailles, place réservée = proportions du
   fichier, huit fichiers en WebP immuable, nom latin de l'en-tête sans place à l'écran) ; `not-found.spec.ts` (logo dans les 404 et la 500, encre blanche en sombre).
-- **Pas fait, à décider** : le favicon (toujours celui de `create-next-app`), le `logo` de l'`Organization` en JSON-LD,
-  une image Open Graph.
+- **Pas fait, à décider** : le `logo` de l'`Organization` en JSON-LD, une image Open Graph. Le favicon est fait : section
+  « Favicon » ci-dessous (28 octobre 2026).
 - **En production le 15 octobre 2026** (PR #75, `main` `510488b`, release `20261015160517`, retour arrière
   `20261014233318`), sur « Oui, fusionne et déploie » du fondateur : suite e2e complète 806/808 avant fusion (les 2 échecs
   sont le défaut de données connu api #76, les cibles tactiles du Vado SL 2 à 320 px, identiques sur `main`), purge
@@ -543,6 +543,37 @@ dans l'en-tête, le pied de page et les deux pages d'erreur autonomes (404 racin
   390 et 360 px : en-tête de 59 px sur une ligne, lien de la marque de 76,8 px dès 640 px et de 48 px en dessous, bonne
   encre, nom accessible du lien inchangé, aucun défilement en largeur, aucune erreur de console), plus la 404 racine lue dans
   un navigateur (nom latin écrit visible, bonne encre ; son seul message de console est celui de toute réponse 404).
+
+## Favicon (décision du fondateur du 28 octobre 2026)
+
+Jusqu'au 28 octobre 2026, le site servait le favicon de `create-next-app`, le triangle de Next.js, et Google l'affichait à côté de
+ses résultats. Décision du fondateur, après plusieurs essais montrés en vraie taille dans des onglets clairs et sombres : **un vélo
+de route classique, silhouette noire, sur une pastille jaune #FACB3B** aux coins arrondis. Ce jaune est celui du crayon du logo,
+mesuré sur son dessin (médiane des pixels opaques du trait jaune).
+
+- **Provenance et droits** : une image de 512 × 512 fournie par le fondateur le 28 octobre 2026, dessinée par lui avec ChatGPT
+  **de zéro, à partir d'une description en mots, sans image de départ** (déclaré par lui le même jour) ; l'original est conservé
+  hors dépôt. Une première version a été écartée : ChatGPT l'avait redessinée d'après la photo et le dessin de géométrie d'un vélo
+  de marque, et sa silhouette gardait la forme de ce cadre (règle « Images » du `CLAUDE.md` racine ; et un site qui compare les
+  marques ne prend pas pour symbole le vélo vedette de l'une d'elles). Le cadre classique à tubes ronds n'appartient à aucune marque.
+- **Fichiers**, à la racine de `src/app` (convention de Next 16 : il écrit lui-même les balises `<link>` de chaque page, avec `type`
+  et `sizes` lus dans le fichier et une empreinte dans l'adresse) :
+  - `favicon.ico` : 16, 32 et 48 pixels ;
+  - `icon.png` : 192 × 192, un multiple de 48 comme Google le demande pour l'icône des résultats de recherche ;
+  - `apple-icon.png` : 180 × 180, **carré plein sans transparence** (RVB) — l'iPhone noircit la transparence et arrondit lui-même
+    les coins.
+- **Recette** (Pillow, depuis l'image de 512) : la pastille réduite en Lanczos **en alpha prémultiplié**. Pour 16, 32 et 48 pixels,
+  le noir du vélo est d'abord élargi (filtre maximum de 7, 4 et 2 points de rayon, mesurés à 512) : simplement réduits, ses tubes
+  fins pâlissaient jusqu'à presque disparaître (mesuré sur le 16 pixels : 8 points nettement foncés en réduction simple, 61 avec le
+  trait élargi). Le dessin ne change pas, seule l'épaisseur du trait change aux petites tailles. `icon.png` est l'image réduite telle
+  quelle ; `apple-icon.png` est l'image posée sur un carré du même jaune, puis réduite.
+- **Ce qui ne change pas** : le logo, la règle « Images », `robots.txt` (ces adresses restent ouvertes : Google doit pouvoir lire le
+  favicon). Google met à jour l'icône de ses résultats à son propre rythme, en quelques jours ou quelques semaines.
+- **Tests** : `tests/e2e/favicon.spec.ts` — `favicon.ico` servi tel qu'il est dans le dépôt, en 16, 32 et 48 pixels, et plus le
+  triangle de `create-next-app` ; sur l'accueil arabe et anglais, le catalogue et une fiche : un `favicon.ico`, un `icon.png` de
+  192 × 192 et un `apple-touch-icon` de 180 × 180 déclarés, servis tels qu'ils sont dans le dépôt, le dernier sans transparence.
+- **Changer d'icône** : ces trois fichiers, ce test et cette section, dans le même commit. Les adresses portent une empreinte posée
+  par Next, donc aucun ancien fichier n'est servi après un changement ; les navigateurs, eux, gardent un favicon en cache.
 
 ## Pilote des hotspots éditoriaux (web #49, étape 1) — décisions du fondateur du 10 octobre 2026
 
