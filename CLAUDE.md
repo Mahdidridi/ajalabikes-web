@@ -917,6 +917,33 @@ un vélo ») mais sur une vraie comparaison de deux vélos, qui montre d'emblée
   et paire choisie sans étiquette ; navigateur à 1280, 390 et 320 px : étiquette, deux colonnes, M sur les deux cartes, dessin de
   géométrie, aucun défilement en largeur, aucune erreur de console ; choisir un vélo depuis l'exemple démarre sa propre comparaison).
 
+## Comparateur — les adresses se composent au clic, jamais dans le code de la page (décision du 28 octobre 2026)
+
+Relevé du 28 octobre 2026 (Search Console, cinq jours après l'ouverture à Google) : **142 000 requêtes de Googlebot en cinq jours**,
+68 % en `?_rsc=` (la charge interne de Next) et 31 % en HTML ; dans les exemples des deux familles, huit requêtes sur dix visaient des
+comparaisons libres à trois vélos (`/compare?bikes=a,b,c`, `&diff=1`) — des pages `noindex, follow` que personne ne lie. Cause mesurée
+sur une comparaison à deux vélos en production : son code embarquait **539 adresses à trois vélos** (le sélecteur « ajouter un vélo »
+recevait du serveur une adresse toute faite par vélo du catalogue, sérialisée dans les données de Next même si l'écran ne montre que
+des boutons) et 32 adresses de taille, pour 3 vrais liens. Google lit ces adresses comme des liens et les visite une à une ; chaque
+page à trois vélos en porte d'autres. Décision du fondateur (« Oui, prépare la PR ») : fermer le piège à la racine, sans toucher à la
+politique robots ni à la décision du 16 octobre.
+
+- **Règle** : le code d'une page de comparaison ne contient aucune adresse de comparaison hors de ses vrais liens (« Remove »,
+  « Differences only » / « All rows », le canonical). Le sélecteur (`ComparePicker`), le menu de taille de la carte (`SizeSelect`) et
+  celui de la planche (`GeometryBlock`) reçoivent la **sélection** (`CompareSelection` : vélos `marque/slug`, tailles alignées, filtre)
+  et des noms ; l'adresse se compose **au clic** par `compareHref()` (`src/lib/compare-url.ts`, avec `withBike`, `withSize`,
+  `withoutColumn`, `toggleDiff`), une fonction pure partagée par le serveur et le navigateur — une seule construction, les mêmes
+  adresses qu'avant (`URLSearchParams`), et l'état vit toujours dans l'URL (règle 4). La page distingue la sélection de l'**adresse**
+  (que le sélecteur complète, jamais l'exemple) de la sélection **affichée** (l'exemple ou l'adresse : tailles, retrait et filtre).
+- **Inchangé** : `noindex, follow, noimageindex` sur toute comparaison avec sélection, canonical vers la page nue, aucun `Disallow`
+  sur le comparateur dans `robots.txt` (décision du 16 octobre 2026 : Google ne lit pas le `noindex` d'une adresse interdite). Le
+  bruit `?_rsc=` (préchargement des liens par Next pendant le rendu de Google) n'est pas traité : à remesurer deux semaines après la
+  mise en ligne, dans les statistiques d'exploration de Search Console.
+- **Garde** : `compare.spec.ts`, « le code d'une comparaison ne contient aucune adresse de comparaison hors de ses vrais liens » — lit
+  le HTML servi, ramène `&amp;` et la forme échappée de « & » des données de Next à une seule graphie, et exige que toute adresse
+  `/compare?` du code soit un `<a href>` de la page. Rouge sur le code d'avant (547 adresses de trop sur Farley 5 / Farley 7), vert
+  après. Les fonctions pures ont leurs cas littéraux dans le même spec (adresses identiques à celles d'avant, tailles alignées).
+
 ## Mesure d'audience — Google Analytics 4 (décision du 16 octobre 2026)
 
 Décision du fondateur du 16 octobre 2026 : mesurer l'audience avant et après la levée du noindex du 21 octobre (`../CLAUDE.md`,
