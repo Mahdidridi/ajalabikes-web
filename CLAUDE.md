@@ -943,6 +943,13 @@ politique robots ni à la décision du 16 octobre.
   le HTML servi, ramène `&amp;` et la forme échappée de « & » des données de Next à une seule graphie, et exige que toute adresse
   `/compare?` du code soit un `<a href>` de la page. Rouge sur le code d'avant (547 adresses de trop sur Farley 5 / Farley 7), vert
   après. Les fonctions pures ont leurs cas littéraux dans le même spec (adresses identiques à celles d'avant, tailles alignées).
+- **En production le 28 octobre 2026** (PR #92, `main` `fc2f9f8`, arbre = tête testée `1f24482`, release `20261028082243`, retour arrière
+  `20261027134848`), sur « tu peux merger, mettre en ligne » du fondateur : CI verte ; suite e2e complète **906/908** avant fusion (les 2 échecs
+  connus api #76, cibles tactiles du Vado SL 2 à 320 px, « cible de 16.2 px ») ; purge `ajala:revalidate-web --all` ; contrôle de prod en lecture
+  seule, sans navigateur : **67 vérifications conformes, 0 écart** (comparaisons à un, deux et trois vélos, avec tailles et filtre, en arabe et en anglais : aucune adresse
+  hors des vrais liens, `noindex, follow, noimageindex`, canonical ; page nue avec l'exemple ; accueil, une fiche et le sitemap inchangés).
+  **À remesurer vers le 11 novembre 2026** dans Search Console (Paramètres → Statistiques sur l'exploration) : part des comparaisons dans les
+  exemples HTML, volume `?_rsc=`.
 
 ## Mesure d'audience — Google Analytics 4 (décision du 16 octobre 2026)
 
