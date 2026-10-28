@@ -574,6 +574,15 @@ mesuré sur son dessin (médiane des pixels opaques du trait jaune).
   192 × 192 et un `apple-touch-icon` de 180 × 180 déclarés, servis tels qu'ils sont dans le dépôt, le dernier sans transparence.
 - **Changer d'icône** : ces trois fichiers, ce test et cette section, dans le même commit. Les adresses portent une empreinte posée
   par Next, donc aucun ancien fichier n'est servi après un changement ; les navigateurs, eux, gardent un favicon en cache.
+- **En production le 28 octobre 2026** (PR #94, `main` `f8691f0`, arbre = tête testée `18db7ac`, release `20261028153054`, retour arrière
+  `20261028082243`), sur « Oui, mets en ligne » du fondateur : CI verte ; suite e2e complète **916/918** avant fusion (les 2 échecs connus
+  api #76, cibles tactiles du Vado SL 2 à 320 px, « cible de 16.2 px ») ; purge `ajala:revalidate-web --all` (`compare:version` 46) ;
+  contrôle de prod en lecture seule, sans navigateur : **232 vérifications conformes, 0 écart** — les trois fichiers servis octet pour
+  octet comme dans le dépôt, l'ico en 16, 32 et 48 pixels, plus de triangle, l'icône du téléphone en RVB ; onze pages en arabe et en
+  anglais (accueil, catalogue, deux fiches, marque, catégorie, comparateur, confidentialité, bikefinder), pour un navigateur et pour un
+  robot : 200, les trois balises exactes (48x48, 192x192, 180x180), leurs adresses servies, plus l'ancienne empreinte du favicon,
+  `noimageindex` intact, aucun `X-Robots-Tag`. Le même contrôle relevait 120 écarts avant le déploiement. Google remplace l'icône de ses
+  résultats à son propre rythme.
 
 ## Pilote des hotspots éditoriaux (web #49, étape 1) — décisions du fondateur du 10 octobre 2026
 
